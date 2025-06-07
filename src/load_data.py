@@ -16,7 +16,7 @@ class DataStore:
         self.airlines.drop(columns=[0], inplace=True) 
 
         self.routes.columns = [
-            "Airline", "Airline ID", "Source airport", "Source airport ID",
+            "Airline Code", "IDK", "Source airport", "Source airport ID",
             "Destination airport", "Destination airport ID", "Codeshare", "Stops", "Equipment"
         ]
         self.airlines.columns = [
@@ -27,18 +27,22 @@ class DataStore:
             "Latitude", "Longitude", "Altitude", "Timezone", "DST", "Tz", "Type", "Source"
         ]
 
+    def user_airline(self):
+        input_airline = input("Enter an airline: ")
+        matched_airline = self.airlines[self.airlines['Airline'].str.lower() == input_airline.lower()]
+        airline_code = matched_airline['IATA'].values[0] if not matched_airline.empty else None
+        
+        airline_routes = self.routes[self.routes['Airline Code'].str.lower() == airline_code.lower()]
+        count_routes = len(airline_routes)
+        print(f"{input_airline} has {count_routes} routes in the dataset.")
+
+
+
 def main():
     data_storage = DataStore()
     data_storage.load_data()
+    data_storage.user_airline()
 
-    print("Routes:")
-    print(data_storage.routes.head())
-
-    print("\nAirlines:")
-    print(data_storage.airlines.head())
-
-    print("\nAirports:")
-    print(data_storage.airports.head())
 
 if __name__ == "__main__":
     main()
