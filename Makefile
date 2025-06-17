@@ -14,7 +14,6 @@ data:
 	@python3 -c "import os; f='data/routes.dat'; print(f'Data check: {f}') if os.path.exists(f) else __import__('urllib.request').urlretrieve('https://raw.githubusercontent.com/jpatokal/openflights/master/data/routes.dat', f)"
 	@python3 -c "import os; f='data/airports.dat'; print(f'Data check: {f}') if os.path.exists(f) else __import__('urllib.request').urlretrieve('https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat', f)"
 
-
 # Step 3: Run the main script
 run:
 	python3 main.py
