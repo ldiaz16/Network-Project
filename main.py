@@ -22,7 +22,7 @@ def main():
     Airline_y_Network = data_storage.analyze_network(Airline_y_Network)
     ## data_storage.draw_network(Airline_Network)
     print(f"Network analysis for Airlines")
-    print("\nAirline X Network:")
+    print("Airline X Network:")
     for key, value in Airline_x_Network.items():
         print(f"{key}: {value}")
     print("\n")
