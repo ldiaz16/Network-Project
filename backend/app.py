@@ -32,6 +32,11 @@ data_store = DataStore()
 data_store.load_data()
 
 
+@app.get("/")
+def index():
+    return jsonify({"message": "Airline Route Optimizer API"})
+
+
 @app.get("/health")
 def healthcheck():
     return jsonify({"status": "ok"})
