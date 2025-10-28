@@ -1,0 +1,3 @@
+Proposed Source,Proposed Destination,Proposed Source City,Proposed Destination City,Source CBSA,Destination CBSA,Reference Route,Reference ASM,Reference Performance Score,Estimated Distance (miles),Distance Similarity,Opportunity Score,Rationale
+ATL,YEG,Atlanta,Edmonton,"Atlanta-Sandy Springs-Roswell, GA",non-US,ATL-FCO,1414966.4958461216,0.7195949521108074,1972.8,0.392,0.426,"Shares CBSA pair Atlanta-Sandy Springs-Roswell, GA ↔ non-US with top route ATL-FCO"
+YEG,ATL,Edmonton,Atlanta,non-US,"Atlanta-Sandy Springs-Roswell, GA",FCO-ATL,1414966.4958461216,0.7195949521108074,1972.8,0.392,0.426,"Shares CBSA pair non-US ↔ Atlanta-Sandy Springs-Roswell, GA with top route FCO-ATL"

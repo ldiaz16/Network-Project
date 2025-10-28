@@ -725,22 +725,27 @@ class DataStore:
             (merged_df['Airline (Normalized)_x'].notna()) & (merged_df['Airline (Normalized)_y'].notna())
         ]
 
+        def _airline_label(row, airline_key, normalized_key):
+            if airline_key in row and pd.notna(row[airline_key]):
+                return row[airline_key]
+            return row[normalized_key]
+
         long_format = pd.DataFrame([
-        {
-            "Source": row["Source airport"],
-            "Dest": row["Destination airport"],
-            row["Airline (Normalized)_x"]: row["ASM_x"],
-            row["Airline (Normalized)_y"]: row["ASM_y"],
-        }
-        for _, row in competing_routes.iterrows()
-    ])
+            {
+                "Source": row["Source airport"],
+                "Dest": row["Destination airport"],
+                _airline_label(row, "Airline_x", "Airline (Normalized)_x"): row["ASM_x"],
+                _airline_label(row, "Airline_y", "Airline (Normalized)_y"): row["ASM_y"],
+            }
+            for _, row in competing_routes.iterrows()
+        ])
         
         aircraft_info = pd.DataFrame([
             {
                 "Source": row["Source airport"],
                 "Dest": row["Destination airport"],
-                f"{row['Airline (Normalized)_x']}_Aircraft": row["Equipment_x"],
-                f"{row['Airline (Normalized)_y']}_Aircraft": row["Equipment_y"],
+                f"{_airline_label(row, 'Airline_x', 'Airline (Normalized)_x')}_Aircraft": row["Equipment_x"],
+                f"{_airline_label(row, 'Airline_y', 'Airline (Normalized)_y')}_Aircraft": row["Equipment_y"],
             }
             for _, row in competing_routes.iterrows()
         ])

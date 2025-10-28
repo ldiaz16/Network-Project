@@ -137,12 +137,37 @@ def build_report(args, packages, cbsa_targets, ds):
     if len(packages) == 2:
         lines.append("## Competing Route Overlap\n")
         comparison = ds.find_competing_routes(packages[0]["cost"], packages[1]["cost"])
-        comp_cols = [
-            "Source",
-            "Dest",
-            packages[0]["normalized"],
-            packages[1]["normalized"],
-        ]
+
+        def _candidate_columns(package):
+            bases = []
+            for key in ("name", "normalized"):
+                value = package.get(key)
+                if isinstance(value, str) and value:
+                    bases.append(value)
+            return bases
+
+        def _find_first(df, bases, suffix=""):
+            for base in bases:
+                candidate = f"{base}{suffix}"
+                if candidate in df.columns:
+                    return candidate
+            return None
+
+        base_columns = ["Source", "Dest"]
+        airlines_a = _candidate_columns(packages[0])
+        airlines_b = _candidate_columns(packages[1])
+
+        dynamic_cols = []
+        for bases in (airlines_a, airlines_b):
+            col = _find_first(comparison, bases)
+            if col:
+                dynamic_cols.append(col)
+        for bases in (airlines_a, airlines_b):
+            col = _find_first(comparison, bases, "_Aircraft")
+            if col:
+                dynamic_cols.append(col)
+
+        comp_cols = base_columns + dynamic_cols
         existing_cols = [col for col in comp_cols if col in comparison.columns]
         lines.append(df_to_markdown(comparison, existing_cols or None, args.max_print))
 

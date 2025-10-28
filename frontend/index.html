@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base" content="http://localhost:8000/api">
+    <title>Airline Route Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Airline Route Optimizer</h1>
+        <p>Compare airline networks and explore CBSA-aligned route opportunities.</p>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Analysis Configuration</h2>
+            <form id="analysis-form">
+                <fieldset>
+                    <legend>Airline Comparison</legend>
+                    <label>
+                        Airline 1
+                        <input type="text" name="comparison_airline_1" list="airline-suggestions" placeholder="e.g. Delta Air Lines">
+                    </label>
+                    <label>
+                        Airline 2
+                        <input type="text" name="comparison_airline_2" list="airline-suggestions" placeholder="e.g. United Airlines">
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" name="skip_comparison">
+                        Skip comparison
+                    </label>
+                </fieldset>
+
+                <fieldset>
+                    <legend>CBSA Simulation</legend>
+                    <label>
+                        Additional airlines for CBSA simulation
+                        <textarea name="cbsa_airlines" rows="3" placeholder="Enter one airline per line"></textarea>
+                    </label>
+                    <div class="grid">
+                        <label>
+                            Top N routes
+                            <input type="number" name="cbsa_top_n" min="1" max="20" value="5">
+                        </label>
+                        <label>
+                            Suggestions per route
+                            <input type="number" name="cbsa_suggestions" min="1" max="10" value="3">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>CBSA Cache (optional)</legend>
+                    <label class="checkbox">
+                        <input type="checkbox" name="build_cbsa_cache">
+                        Build CBSA cache
+                    </label>
+                    <label>
+                        Countries (comma-separated)
+                        <input type="text" name="cbsa_cache_country" placeholder="United States">
+                    </label>
+                    <div class="grid">
+                        <label>
+                            Limit airports
+                            <input type="number" name="cbsa_cache_limit" min="1" placeholder="Leave blank for all">
+                        </label>
+                        <label>
+                            Chunk size
+                            <input type="number" name="cbsa_cache_chunk_size" min="50" value="200">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <button type="submit" class="primary">Run Analysis</button>
+            </form>
+            <datalist id="airline-suggestions"></datalist>
+        </section>
+
+        <section id="results" class="card">
+            <h2>Results</h2>
+            <div id="status" class="status"></div>
+            <div id="messages" class="messages"></div>
+            <div id="comparison-results"></div>
+            <div id="cbsa-results"></div>
+        </section>
+    </main>
+
+    <template id="table-template">
+        <div class="table-wrapper">
+            <table>
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </template>
+
+    <script src="app.js" defer></script>
+</body>
+</html>

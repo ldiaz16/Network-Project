@@ -23,13 +23,18 @@ _Auto-generated using scripts/report.py._
 ## Competing Route Overlap
 
 
-| Source | Dest | deltalines | american |
-| --- | --- | --- | --- |
-| ATL | CLT | 0.0 | 0.0 |
-| ATL | DFW | 0.0 | 0.0 |
-| ATL | LHR | 0.0 | 0.0 |
-| ATL | MIA | 0.0 | 0.0 |
-| ATL | ORD | 0.0 | 0.0 |
+| Source | Dest | Delta Air Lines | American Airlines | Delta Air Lines_Aircraft | American Airlines_Aircraft |
+| --- | --- | --- | --- | --- | --- |
+| ATL | CLT | 0.0 | 0.0 | M90 M88 319 | 319 320 CR9 321 |
+| ATL | DFW | 0.0 | 0.0 | M88 319 738 | M80 319 M83 |
+| ATL | LHR | 0.0 | 0.0 | 764 77L 76W | 777 |
+| ATL | MIA | 0.0 | 0.0 | M88 M90 757 320 73H  | 738 |
+| ATL | ORD | 0.0 | 0.0 | 757 319 320 717 M88 M90 | CR7 E75 |
+| ATL | PHL | 0.0 | 0.0 | 757 320 M88 M90 73H | E75 E90 319 CRJ E70 |
+| ATL | PHX | 0.0 | 0.0 | 757 73H 739 738 | 320 321 |
+| AUS | JFK | 200828.3280019206 | 0.0 | 319 | 738 |
+| BCN | JFK | 1076601.1075156648 | 0.0 | 333 | 763 |
+| BDA | JFK | 121945.84797725899 | 0.0 | 73H | 738 |
 
 
 ## CBSA Opportunity Highlights
@@ -39,7 +44,7 @@ _Auto-generated using scripts/report.py._
 **Top CBSA corridors**
 
 | Route | Source CBSA Name | Destination CBSA Name | ASM | Total Seats | Performance Score |
-| --- | --- | --- | --- | --- | --- |
+| ---   | ---------------- | --------------- | --- | --- | ----------- |
 | ATL-FCO | Atlanta-Sandy Springs-Roswell, GA | non-US | 1414966.4958461216 | 281.0 | 0.7195949521108074 |
 | FCO-ATL | non-US | Atlanta-Sandy Springs-Roswell, GA | 1414966.4958461216 | 281.0 | 0.7195949521108074 |
 | AMS-PDX | non-US | Portland-Vancouver-Hillsboro, OR-WA | 1406000.9782794781 | 281.0 | 0.7152845580543193 |
@@ -56,6 +61,11 @@ _Auto-generated using scripts/report.py._
 | YEG | ATL | non-US | Atlanta-Sandy Springs-Roswell, GA | FCO-ATL | 0.426 |
 | \\N | YHZ | Portland-Vancouver-Hillsboro, OR-WA | non-US | PDX-AMS | 0.426 |
 | YEG | FTY | non-US | Atlanta-Sandy Springs-Roswell, GA | FCO-ATL | 0.425 |
+| YEG | \\N | non-US | Portland-Vancouver-Hillsboro, OR-WA | AMS-PDX | 0.406 |
+| \\N | YEG | Portland-Vancouver-Hillsboro, OR-WA | non-US | PDX-AMS | 0.406 |
+| YEG | ROW | non-US | Atlanta-Sandy Springs-Roswell, GA | FCO-ATL | 0.394 |
+| \\N | YOW | Portland-Vancouver-Hillsboro, OR-WA | non-US | PDX-AMS | 0.393 |
+| ATL | YHZ | Atlanta-Sandy Springs-Roswell, GA | non-US | ATL-FCO | 0.388 |
 
 
 ### American Airlines
@@ -80,6 +90,11 @@ _Auto-generated using scripts/report.py._
 | ESN | CLT | Allentown-Bethlehem-Easton, PA-NJ | Charlotte-Concord-Gastonia, NC-SC | ABE-CLT | 0.0 |
 | MDW | BNA | Chicago-Naperville-Elgin, IL-IN | Nashville-Davidson--Murfreesboro--Franklin, TN | ORD-BNA | 0.0 |
 | MDW | FKL | Chicago-Naperville-Elgin, IL-IN | Nashville-Davidson--Murfreesboro--Franklin, TN | ORD-BNA | 0.0 |
+| MDW | \\N | Chicago-Naperville-Elgin, IL-IN | Nashville-Davidson--Murfreesboro--Franklin, TN | ORD-BNA | 0.0 |
+| OMA | MDW | Omaha, NE-IA | Chicago-Naperville-Elgin, IL-IN | OMA-ORD | 0.0 |
+| OMA | UGN | Omaha, NE-IA | Chicago-Naperville-Elgin, IL-IN | OMA-ORD | 0.0 |
+| OMA | CGX | Omaha, NE-IA | Chicago-Naperville-Elgin, IL-IN | OMA-ORD | 0.0 |
+| OMA | LUF | Omaha, NE-IA | Phoenix-Mesa-Chandler, AZ | OMA-PHX | 0.0 |
 
 
 ## Next Steps

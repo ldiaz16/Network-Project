@@ -1,9 +1,9 @@
 # Makefile for airline_route_optimizer
 
-.PHONY: all run data journal clean
+.PHONY: all run data report journal clean
 
 # Default: run everything
-all: data run
+all: data report run
 
 # Step 1: Install Python dependencies
 
@@ -17,6 +17,12 @@ data:
 # Step 3: Run the main script
 run:
 	python3 main.py
+
+api:
+	uvicorn src.api:app --reload
+
+report: data
+	python3 scripts/report.py --output-markdown reports/demo_report.md --output-pdf reports/demo_report.pdf
 
 # Optional: create a journal entry for today
 journal:
