@@ -2,6 +2,10 @@ import argparse
 from pathlib import Path
 
 from src.load_data import DataStore
+from backend.app import app as flask_app
+
+# Expose Flask app for serverless platforms expecting `app`.
+app = flask_app
 
 
 def parse_args():
