@@ -1,5 +1,10 @@
 const metaApiBase = document.querySelector('meta[name="api-base"]');
-const DEFAULT_API_BASE = "http://localhost:8000/api";
+const DEFAULT_API_BASE = (() => {
+    if (typeof window !== "undefined" && window.location && window.location.origin && window.location.origin !== "null") {
+        return `${window.location.origin}/api`;
+    }
+    return "http://localhost:8000/api";
+})();
 const API_BASE = (() => {
     const candidate = window.API_BASE || (metaApiBase && metaApiBase.content) || DEFAULT_API_BASE;
     return candidate.replace(/\/+$/, "");

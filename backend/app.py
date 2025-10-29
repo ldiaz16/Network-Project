@@ -1,6 +1,7 @@
 import os
+from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from pydantic import ValidationError
 
@@ -25,7 +26,9 @@ default_origins = [
 raw_origins = os.environ.get("CORS_ALLOW_ORIGINS", ",".join(default_origins))
 allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()] or ["*"]
 
-app = Flask(__name__)
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
+
+app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
 data_store = DataStore()
@@ -34,7 +37,16 @@ data_store.load_data()
 
 @app.get("/")
 def index():
-    return jsonify({"message": "Airline Route Optimizer API"})
+    # Serve the prebuilt static UI.
+    return app.send_static_file("index.html")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    icon_path = FRONTEND_DIR / "favicon.ico"
+    if icon_path.exists():
+        return send_from_directory(app.static_folder, "favicon.ico")
+    return ("", 204)
 
 
 @app.get("/health")
