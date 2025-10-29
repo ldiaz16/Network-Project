@@ -1,6 +1,6 @@
 import sys
-import os
 import json
+from pathlib import Path
 import requests
 import pandas as pd
 from data.airlines import normalize_name
@@ -10,11 +10,13 @@ from geopy.distance import geodesic
 from data.aircraft_config import AIRLINE_SEAT_CONFIG
 from collections import defaultdict
 
+DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
 
 
 class DataStore:
-    def __init__(self, data_dir="data/"):
-        self.data_dir = data_dir
+    def __init__(self, data_dir=None):
+        base_dir = Path(data_dir) if data_dir else DATA_DIR_ROOT
+        self.data_dir = base_dir
         self.routes = None
         self.airlines = None
         self.airports = None
@@ -23,16 +25,16 @@ class DataStore:
         self.cbsa_cache = {}
         self._cbsa_cache_dirty = False
         self.cbsa_lookup = None
-        self.cbsa_cache_path = os.path.join(self.data_dir, "cbsa_cache.json")
+        self.cbsa_cache_path = self.data_dir / "cbsa_cache.json"
         self._load_cbsa_cache()
 
     def load_data(self):
         """Load data from CSV files into DataFrames and preprocess them."""
         ## Create DataFrames for each dataset
-        self.routes = pd.read_csv(f"{self.data_dir}routes.dat", header=None)
-        self.airlines = pd.read_csv(f"{self.data_dir}airlines.dat", header=None)
-        self.airports = pd.read_csv(f"{self.data_dir}airports.dat", header=None)
-        self.cbsa = pd.read_csv(f"{self.data_dir}cbsa.csv", skiprows=2)
+        self.routes = pd.read_csv(self.data_dir / "routes.dat", header=None)
+        self.airlines = pd.read_csv(self.data_dir / "airlines.dat", header=None)
+        self.airports = pd.read_csv(self.data_dir / "airports.dat", header=None)
+        self.cbsa = pd.read_csv(self.data_dir / "cbsa.csv", skiprows=2)
         self.cbsa_lookup = self.cbsa[[
             "CBSA Title",
             "County/County Equivalent",
@@ -101,8 +103,8 @@ class DataStore:
     def _load_cbsa_cache(self):
         """Load cached CBSA lookups from disk if available."""
         try:
-            if os.path.exists(self.cbsa_cache_path):
-                with open(self.cbsa_cache_path, "r", encoding="utf-8") as cache_file:
+            if self.cbsa_cache_path.exists():
+                with self.cbsa_cache_path.open("r", encoding="utf-8") as cache_file:
                     data = json.load(cache_file)
                     if isinstance(data, dict):
                         self.cbsa_cache = data
@@ -116,8 +118,8 @@ class DataStore:
         if not self._cbsa_cache_dirty:
             return
         try:
-            os.makedirs(os.path.dirname(self.cbsa_cache_path), exist_ok=True)
-            with open(self.cbsa_cache_path, "w", encoding="utf-8") as cache_file:
+            self.cbsa_cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.cbsa_cache_path.open("w", encoding="utf-8") as cache_file:
                 json.dump(self.cbsa_cache, cache_file)
             self._cbsa_cache_dirty = False
         except Exception:
