@@ -43,16 +43,22 @@ class AnalysisRequest(BaseModel):
         return value
 
     @validator("comparison_airlines")
-    def _drop_blank_comparison(cls, values: List[str]) -> List[str]:
-        return [item for item in values if item]
+    def _drop_blank_comparison(cls, value: List[str]) -> List[str]:
+        if not value:
+            return []
+        return [item for item in value if item]
 
     @validator("cbsa_airlines")
-    def _drop_blank_cbsa(cls, values: List[str]) -> List[str]:
-        return [item for item in values if item]
+    def _drop_blank_cbsa(cls, value: List[str]) -> List[str]:
+        if not value:
+            return []
+        return [item for item in value if item]
 
     @validator("cbsa_cache_country")
-    def _drop_blank_countries(cls, values: List[str]) -> List[str]:
-        return [item for item in values if item]
+    def _drop_blank_countries(cls, value: List[str]) -> List[str]:
+        if not value:
+            return []
+        return [item for item in value if item]
 
 
 class AirlineSearchResponse(BaseModel):
@@ -202,4 +208,3 @@ def run_analysis(data_store, payload: AnalysisRequest) -> Dict[str, Any]:
         raise AnalysisError(400, "No analysis was performed. Provide airlines for comparison and/or CBSA simulation.")
 
     return response
-
