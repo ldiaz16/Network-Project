@@ -3,7 +3,7 @@ import pytest
 from geopy.distance import geodesic
 
 from data.airlines import normalize_name
-from src.load_data import DataStore
+from src.load_data import DataStore, GENERIC_SEAT_GUESSES
 
 
 @pytest.fixture
@@ -172,6 +172,31 @@ def test_cost_analysis_computes_capacity_metrics(datastore):
     assert analyzed.loc[0, "Airline (Normalized)"] == normalize_name("Sample Airways")
 
 
+def test_process_routes_estimates_seats_when_config_missing(datastore):
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "JFK", "Name": "John F. Kennedy", "Latitude": 40.6413, "Longitude": -73.7781},
+            {"IATA": "LAX", "Name": "Los Angeles", "Latitude": 33.9416, "Longitude": -118.4085},
+        ]
+    )
+    datastore.aircraft_config = pd.DataFrame(columns=["Airline", "Aircraft", "Y", "W", "J", "F", "Total"])
+    datastore.equipment_capacity_lookup = datastore._build_equipment_capacity_lookup(datastore.aircraft_config)
+
+    routes_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "JFK",
+                "Destination airport": "LAX",
+                "Airline (Normalized)": normalize_name("Sample Airways"),
+                "Equipment": "738",
+            }
+        ]
+    )
+
+    enriched = datastore.process_routes(routes_df)
+    assert enriched.loc[0, "Total"] == GENERIC_SEAT_GUESSES["738"]
+
+
 def test_find_competing_routes_identifies_common_pairs(datastore):
     airline_x_df = pd.DataFrame(
         [
@@ -201,7 +226,7 @@ def test_find_competing_routes_identifies_common_pairs(datastore):
     assert len(competing) == 1
     assert competing.loc[0, "Source"] == "JFK"
     assert competing.loc[0, "Dest"] == "LAX"
-    assert competing.loc[0, "sample"] == 10000.0
-    assert competing.loc[0, "other"] == 8000.0
-    assert competing.loc[0, "sample_Aircraft"] == "A320"
-    assert competing.loc[0, "other_Aircraft"] == "B738"
+    assert competing.loc[0, "sample ASM"] == "10,000"
+    assert competing.loc[0, "other ASM"] == "8,000"
+    assert competing.loc[0, "sample Aircraft"] == "A320"
+    assert competing.loc[0, "other Aircraft"] == "B738"

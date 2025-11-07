@@ -12,6 +12,64 @@ from collections import defaultdict
 
 DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
 
+GENERIC_SEAT_GUESSES = {
+    "100": 100,  # Fokker 100 / similar regional jets
+    "318": 120,
+    "319": 136,
+    "320": 162,
+    "321": 191,
+    "332": 223,
+    "333": 281,
+    "330": 275,
+    "343": 275,
+    "359": 306,
+    "717": 110,
+    "720": 149,
+    "733": 130,
+    "735": 118,
+    "737": 143,
+    "738": 175,
+    "739": 180,
+    "73C": 143,
+    "73G": 143,
+    "73H": 160,
+    "73W": 143,
+    "752": 199,
+    "753": 234,
+    "757": 199,
+    "763": 226,
+    "764": 238,
+    "772": 314,
+    "777": 314,
+    "77W": 368,
+    "787": 248,
+    "788": 242,
+    "789": 285,
+    "A20N": 188,
+    "AT7": 70,
+    "ATR": 70,
+    "CR2": 50,
+    "CR7": 65,
+    "CR9": 70,
+    "CRJ": 50,
+    "DH2": 37,
+    "DH3": 50,
+    "DH4": 76,
+    "DH8": 50,
+    "E70": 70,
+    "E75": 76,
+    "E90": 100,
+    "E95": 110,
+    "ER3": 50,
+    "ER4": 50,
+    "ERD": 50,
+    "ERJ": 50,
+    "M80": 140,
+    "M83": 140,
+    "M88": 150,
+    "SF3": 34,
+    "SU9": 98,
+}
 
 class DataStore:
     def __init__(self, data_dir=None):
@@ -21,6 +79,8 @@ class DataStore:
         self.airlines = None
         self.airports = None
         self.aircraft_config = None
+        self.equipment_capacity_lookup = {}
+        self._equipment_lookup_keys = []
         self.airports_metadata = None
         self.cbsa_cache = {}
         self._cbsa_cache_dirty = False
@@ -71,6 +131,7 @@ class DataStore:
         ## Remove rows with missing or empty IATA codes (Non-operational airlines)
         self.airlines = self.airlines[self.airlines["IATA"].apply(lambda x: isinstance(x, str) and x.strip() != "")]
         self.aircraft_config = self.convert_aircraft_config_to_df(AIRLINE_SEAT_CONFIG)
+        self.equipment_capacity_lookup = self._build_equipment_capacity_lookup(self.aircraft_config)
         ## print(self.aircraft_config.head())
         
 
@@ -141,6 +202,81 @@ class DataStore:
             return []
         city_block = cbsa_name.split(",")[0]
         return [token.strip() for token in city_block.split("-") if token.strip()]
+
+    @staticmethod
+    def _split_equipment_tokens(equipment_value):
+        """Split equipment strings like 'ERD ER4 CRJ' into canonical tokens."""
+        if not isinstance(equipment_value, str):
+            return []
+        cleaned = equipment_value.replace("/", " ")
+        tokens = [
+            token.strip().upper()
+            for token in cleaned.split()
+            if token and token.strip()
+        ]
+        return tokens
+
+    @staticmethod
+    def _normalize_equipment_code(code):
+        if not isinstance(code, str):
+            return None
+        cleaned = "".join(ch for ch in code.upper() if ch.isalnum())
+        return cleaned or None
+
+    def _build_equipment_capacity_lookup(self, aircraft_df):
+        """Create a lookup of equipment tokens to typical seat counts."""
+        lookup = {}
+        if aircraft_df is not None and not aircraft_df.empty:
+            for _, row in aircraft_df.iterrows():
+                seats = row.get("Total")
+                if pd.isna(seats):
+                    continue
+                raw_code = str(row.get("Aircraft") or "").strip().upper()
+                if not raw_code:
+                    continue
+                seat_value = int(seats)
+                lookup.setdefault(raw_code, seat_value)
+                normalized = self._normalize_equipment_code(raw_code)
+                if normalized:
+                    lookup.setdefault(normalized, seat_value)
+
+        for code, seats in GENERIC_SEAT_GUESSES.items():
+            normalized = self._normalize_equipment_code(code)
+            if normalized:
+                lookup.setdefault(normalized, seats)
+            lookup.setdefault(code.upper(), seats)
+
+        self._equipment_lookup_keys = sorted(set(lookup.keys()))
+        return lookup
+
+    def _estimate_seat_capacity(self, equipment_value):
+        """Return a best-effort seat count for the provided equipment string."""
+        if not self.equipment_capacity_lookup:
+            return None
+
+        tokens = self._split_equipment_tokens(equipment_value)
+        for token in tokens:
+            normalized = self._normalize_equipment_code(token)
+            for candidate in filter(None, (token, normalized)):
+                seats = self.equipment_capacity_lookup.get(candidate)
+                if seats:
+                    return seats
+
+        if tokens and self._equipment_lookup_keys:
+            for token in tokens:
+                normalized = self._normalize_equipment_code(token) or token
+                match = process.extractOne(
+                    normalized,
+                    self._equipment_lookup_keys,
+                    scorer=fuzz.WRatio,
+                    score_cutoff=88
+                )
+                if match:
+                    seats = self.equipment_capacity_lookup.get(match[0])
+                    if seats:
+                        return seats
+
+        return None
 
 
     def lookup_cbsa_title(self, county, state):
@@ -412,6 +548,8 @@ class DataStore:
 
     def process_routes(self, routes_df):
         """Enrich routes_df with airport coordinates and compute geodesic distances directly."""
+        if (not self.equipment_capacity_lookup) and self.aircraft_config is not None and not self.aircraft_config.empty:
+            self.equipment_capacity_lookup = self._build_equipment_capacity_lookup(self.aircraft_config)
 
         # Merge source airport info
         source_airports = self.airports[["IATA", "Name", "Latitude", "Longitude"]].rename(
@@ -433,12 +571,26 @@ class DataStore:
             }
         )
 
-        seats_on_route = self.aircraft_config.copy()
+        if self.aircraft_config is not None:
+            seats_on_route = self.aircraft_config.copy()
+        else:
+            seats_on_route = pd.DataFrame(columns=["Airline", "Aircraft", "Total"])
         
         # Merge the routes_df with the aircraft configuration
-        routes_df = routes_df.merge(seats_on_route, left_on=["Airline (Normalized)", "Equipment"], right_on=["Airline", "Aircraft"], how="left")
-        aircraft_list = routes_df["Equipment"].unique()
-        ## print(aircraft_list)
+        routes_df = routes_df.merge(
+            seats_on_route,
+            left_on=["Airline (Normalized)", "Equipment"],
+            right_on=["Airline", "Aircraft"],
+            how="left"
+        )
+
+        seat_estimates = routes_df["Equipment"].apply(self._estimate_seat_capacity)
+        seat_estimates = pd.to_numeric(seat_estimates, errors="coerce")
+        if "Total" in routes_df.columns:
+            routes_df["Total"] = pd.to_numeric(routes_df["Total"], errors="coerce")
+            routes_df["Total"] = routes_df["Total"].fillna(seat_estimates)
+        else:
+            routes_df["Total"] = seat_estimates
         
         # Merge both into the routes_df
         enriched_df = routes_df.merge(source_airports, on="Source airport", how="left")
