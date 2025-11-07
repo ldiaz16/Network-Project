@@ -34,6 +34,7 @@ const {
     CardHeader,
     Alert,
     Table,
+    TableContainer,
     TableHead,
     TableRow,
     TableCell,
@@ -127,7 +128,7 @@ const StatusAlert = ({ status }) => {
     );
 };
 
-const DataTable = ({ rows, title }) => {
+const DataTable = ({ rows, title, maxHeight }) => {
     if (!rows || !rows.length) {
         return (
             <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
@@ -146,24 +147,26 @@ const DataTable = ({ rows, title }) => {
                 overflowX: "auto",
             }}
         >
-            <Table size="small">
-                <TableHead>
-                    <TableRow>
-                        {headers.map((header) => (
-                            <TableCell key={header}>{header}</TableCell>
-                        ))}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
+            <TableContainer sx={maxHeight ? { maxHeight } : undefined}>
+                <Table size="small" stickyHeader={Boolean(maxHeight)}>
+                    <TableHead>
+                        <TableRow>
                             {headers.map((header) => (
-                                <TableCell key={`${rowIndex}-${header}`}>{formatValue(row[header])}</TableCell>
+                                <TableCell key={header}>{header}</TableCell>
                             ))}
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHead>
+                    <TableBody>
+                        {rows.map((row, rowIndex) => (
+                            <TableRow key={rowIndex}>
+                                {headers.map((header) => (
+                                    <TableCell key={`${rowIndex}-${header}`}>{formatValue(row[header])}</TableCell>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
         </Paper>
     );
 };
@@ -624,7 +627,11 @@ function App() {
                                         Competing Routes
                                     </Typography>
                                     <NetworkSummary airlines={comparison.airlines} />
-                                    <DataTable rows={comparison.competing_routes} title="Competing Routes" />
+                                    <DataTable
+                                        rows={comparison.competing_routes}
+                                        title="Competing Routes"
+                                        maxHeight={360}
+                                    />
                                 </Box>
                             )}
 

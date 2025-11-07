@@ -915,7 +915,17 @@ class DataStore:
             col for col in pivoted.columns
             if col not in {"Source", "Dest"} and not col.endswith("_Aircraft")
         ]
+
+        total_asm = pivoted[asm_columns].sum(axis=1, min_count=1)
+        safe_total = total_asm.replace({0: pd.NA})
+        share_columns = []
+        for col in asm_columns:
+            share_col = f"{col}_Share"
+            share_columns.append(share_col)
+            pivoted[share_col] = pivoted[col] / safe_total
+
         rename_map = {col: f"{col} ASM" for col in asm_columns}
+        rename_map.update({share_col: f"{col} ASM Share" for col, share_col in zip(asm_columns, share_columns)})
         aircraft_suffix = "_Aircraft"
 
         def _aircraft_label(column_name: str) -> str:
@@ -934,17 +944,36 @@ class DataStore:
         def _format_asm(value):
             if pd.isna(value):
                 return None
-            if isinstance(value, (int, float)):
-                return f"{value:,.0f}"
-            return value
+            if not isinstance(value, (int, float)):
+                return value
+            abs_value = abs(value)
+            if abs_value >= 1_000_000_000:
+                return f"{value / 1_000_000_000:.2f}B"
+            if abs_value >= 1_000_000:
+                return f"{value / 1_000_000:.2f}M"
+            if abs_value >= 1_000:
+                return f"{value / 1_000:.0f}K"
+            return f"{value:,.0f}"
+
+        def _format_share(value):
+            if pd.isna(value):
+                return None
+            return f"{value * 100:.1f}%"
 
         for col in (rename_map[col] for col in asm_columns):
             formatted[col] = formatted[col].apply(_format_asm)
+        for col in (rename_map[col] for col in share_columns):
+            if col in formatted.columns:
+                formatted[col] = formatted[col].apply(_format_share)
 
         ordered_columns = ["Source", "Dest"]
         for original in asm_columns:
             asm_col = rename_map[original]
             ordered_columns.append(asm_col)
+            share_original = f"{original}_Share"
+            share_col = rename_map.get(share_original)
+            if share_col and share_col in formatted.columns:
+                ordered_columns.append(share_col)
             aircraft_original = f"{original}_Aircraft"
             aircraft_col = rename_map.get(aircraft_original)
             if aircraft_col and aircraft_col in formatted.columns:

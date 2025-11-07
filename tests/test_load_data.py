@@ -226,7 +226,9 @@ def test_find_competing_routes_identifies_common_pairs(datastore):
     assert len(competing) == 1
     assert competing.loc[0, "Source"] == "JFK"
     assert competing.loc[0, "Dest"] == "LAX"
-    assert competing.loc[0, "sample ASM"] == "10,000"
-    assert competing.loc[0, "other ASM"] == "8,000"
+    assert competing.loc[0, "sample ASM"] == "10K"
+    assert competing.loc[0, "other ASM"] == "8K"
+    assert competing.loc[0, "sample ASM Share"] == "55.6%"
+    assert competing.loc[0, "other ASM Share"] == "44.4%"
     assert competing.loc[0, "sample Aircraft"] == "A320"
     assert competing.loc[0, "other Aircraft"] == "B738"
