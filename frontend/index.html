@@ -5,97 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="api-base" content="/api">
     <title>Airline Route Optimizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>Airline Route Optimizer</h1>
-        <p>Compare airline networks and explore CBSA-aligned route opportunities.</p>
-    </header>
+    <div id="root"></div>
 
-    <main>
-        <section class="card">
-            <h2>Analysis Configuration</h2>
-            <form id="analysis-form">
-                <fieldset>
-                    <legend>Airline Comparison</legend>
-                    <label>
-                        Airline 1
-                        <input type="text" name="comparison_airline_1" list="airline-suggestions" placeholder="e.g. Delta Air Lines">
-                    </label>
-                    <label>
-                        Airline 2
-                        <input type="text" name="comparison_airline_2" list="airline-suggestions" placeholder="e.g. United Airlines">
-                    </label>
-                    <label class="checkbox">
-                        <input type="checkbox" name="skip_comparison">
-                        Skip comparison
-                    </label>
-                </fieldset>
-
-                <fieldset>
-                    <legend>CBSA Simulation</legend>
-                    <label>
-                        Additional airlines for CBSA simulation
-                        <textarea name="cbsa_airlines" rows="3" placeholder="Enter one airline per line"></textarea>
-                    </label>
-                    <div class="grid">
-                        <label>
-                            Top N routes
-                            <input type="number" name="cbsa_top_n" min="1" max="20" value="5">
-                        </label>
-                        <label>
-                            Suggestions per route
-                            <input type="number" name="cbsa_suggestions" min="1" max="10" value="3">
-                        </label>
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>CBSA Cache (optional)</legend>
-                    <label class="checkbox">
-                        <input type="checkbox" name="build_cbsa_cache">
-                        Build CBSA cache
-                    </label>
-                    <label>
-                        Countries (comma-separated)
-                        <input type="text" name="cbsa_cache_country" placeholder="United States">
-                    </label>
-                    <div class="grid">
-                        <label>
-                            Limit airports
-                            <input type="number" name="cbsa_cache_limit" min="1" placeholder="Leave blank for all">
-                        </label>
-                        <label>
-                            Chunk size
-                            <input type="number" name="cbsa_cache_chunk_size" min="50" value="200">
-                        </label>
-                    </div>
-                </fieldset>
-
-                <button type="submit" class="primary">Run Analysis</button>
-            </form>
-            <datalist id="airline-suggestions"></datalist>
-        </section>
-
-        <section id="results" class="card">
-            <h2>Results</h2>
-            <div id="status" class="status"></div>
-            <div id="messages" class="messages"></div>
-            <div id="comparison-results"></div>
-            <div id="cbsa-results"></div>
-        </section>
-    </main>
-
-    <template id="table-template">
-        <div class="table-wrapper">
-            <table>
-                <thead></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </template>
-
-    <script src="app.js" defer></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@emotion/react@11.11.4/dist/emotion-react.umd.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@mui/material@5.15.15/umd/material-ui.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
+    <script type="text/babel" data-presets="env,react" src="app.js"></script>
 </body>
 </html>

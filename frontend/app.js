@@ -10,69 +10,87 @@ const API_BASE = (() => {
     return candidate.replace(/\/+$/, "");
 })();
 
-const form = document.getElementById("analysis-form");
-const statusElement = document.getElementById("status");
-const messagesElement = document.getElementById("messages");
-const comparisonElement = document.getElementById("comparison-results");
-const cbsaElement = document.getElementById("cbsa-results");
-const suggestionsList = document.getElementById("airline-suggestions");
-const tableTemplate = document.getElementById("table-template");
+const {
+    ThemeProvider,
+    createTheme,
+    CssBaseline,
+    Container,
+    Box,
+    AppBar,
+    Toolbar,
+    Typography,
+    Paper,
+    Grid,
+    TextField,
+    Button,
+    FormControlLabel,
+    Switch,
+    Checkbox,
+    Stack,
+    Divider,
+    Chip,
+    Card,
+    CardContent,
+    CardHeader,
+    Alert,
+    Table,
+    TableHead,
+    TableRow,
+    TableCell,
+    TableBody,
+    Autocomplete,
+    CircularProgress,
+} = MaterialUI;
 
-let lastQuery = "";
-let debounceHandle = null;
+const darkTheme = createTheme({
+    palette: {
+        mode: "dark",
+        primary: {
+            main: "#8ab4f8",
+        },
+        secondary: {
+            main: "#f28b82",
+        },
+        background: {
+            default: "#050c1a",
+            paper: "#0f172a",
+        },
+    },
+    shape: {
+        borderRadius: 16,
+    },
+    components: {
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    backgroundImage: "none",
+                },
+            },
+        },
+    },
+});
 
-function setStatus(text, kind = "") {
-    statusElement.textContent = text;
-    statusElement.className = kind ? `status ${kind}` : "status";
-}
+const defaultFormState = {
+    comparison_airline_1: "",
+    comparison_airline_2: "",
+    skip_comparison: false,
+    cbsa_airlines: "",
+    cbsa_top_n: 5,
+    cbsa_suggestions: 3,
+    build_cbsa_cache: false,
+    cbsa_cache_country: "",
+    cbsa_cache_limit: "",
+    cbsa_cache_chunk_size: 200,
+};
 
-function resetResults() {
-    messagesElement.innerHTML = "";
-    comparisonElement.innerHTML = "";
-    cbsaElement.innerHTML = "";
-}
-
-function createTable(records, title) {
-    if (!records || !records.length) {
-        const placeholder = document.createElement("p");
-        placeholder.className = "placeholder";
-        placeholder.textContent = `No ${title.toLowerCase()} available.`;
-        return placeholder;
-    }
-
-    const wrapper = tableTemplate.content.firstElementChild.cloneNode(true);
-    const table = wrapper.querySelector("table");
-    const thead = table.querySelector("thead");
-    const tbody = table.querySelector("tbody");
-
-    const headers = Object.keys(records[0]);
-    const headerRow = document.createElement("tr");
-    headers.forEach((header) => {
-        const th = document.createElement("th");
-        th.textContent = header;
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-
-    records.forEach((row) => {
-        const tr = document.createElement("tr");
-        headers.forEach((header) => {
-            const td = document.createElement("td");
-            td.textContent = formatValue(row[header]);
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-
-    return wrapper;
-}
+const MAX_AIRLINE_SUGGESTIONS = 25;
 
 function formatValue(value) {
     if (value === null || value === undefined || value === "") {
         return "—";
     }
     if (Array.isArray(value)) {
-        return value.map((item) => formatValue(item)).join(", ");
+        return value.map((entry) => formatValue(entry)).join(", ");
     }
     if (typeof value === "object") {
         return JSON.stringify(value);
@@ -80,217 +98,549 @@ function formatValue(value) {
     return value;
 }
 
-function renderMessages(messages = []) {
-    messages.forEach((message) => {
-        const pill = document.createElement("div");
-        pill.className = "message-pill";
-        pill.textContent = message;
-        messagesElement.appendChild(pill);
-    });
+function formatNetworkStat(key, value) {
+    if (value === null || value === undefined) {
+        return "—";
+    }
+    if (key.toLowerCase().includes("hub") && Array.isArray(value)) {
+        return value
+            .map((hub) => (Array.isArray(hub) ? `${hub[0]} — ${hub[1]}` : formatValue(hub)))
+            .join(", ");
+    }
+    return formatValue(value);
 }
 
-function renderNetworkStats(airlines) {
+const StatusAlert = ({ status }) => {
+    if (!status.message) {
+        return null;
+    }
+    let severity = "info";
+    if (status.kind === "error") {
+        severity = "error";
+    } else if (status.kind === "success") {
+        severity = "success";
+    }
+    return (
+        <Alert severity={severity} sx={{ mb: 2 }}>
+            {status.message}
+        </Alert>
+    );
+};
+
+const DataTable = ({ rows, title }) => {
+    if (!rows || !rows.length) {
+        return (
+            <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+                <Typography color="text.secondary">No {title.toLowerCase()} available.</Typography>
+            </Paper>
+        );
+    }
+
+    const headers = Object.keys(rows[0]);
+
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                mb: 3,
+                overflowX: "auto",
+            }}
+        >
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        {headers.map((header) => (
+                            <TableCell key={header}>{header}</TableCell>
+                        ))}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {rows.map((row, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                            {headers.map((header) => (
+                                <TableCell key={`${rowIndex}-${header}`}>{formatValue(row[header])}</TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </Paper>
+    );
+};
+
+const NetworkSummary = ({ airlines }) => {
     if (!airlines || !airlines.length) {
-        return;
+        return null;
     }
 
-    const heading = document.createElement("h3");
-    heading.className = "section-heading";
-    heading.textContent = "Network Summary";
-    comparisonElement.appendChild(heading);
+    return (
+        <Stack spacing={2} sx={{ mb: 2 }}>
+            <Typography variant="h5">Network Summary</Typography>
+            <Grid container spacing={2}>
+                {airlines.map((airline, index) => (
+                    <Grid item xs={12} md={6} key={airline.name || airline.iata || String(index)}>
+                        <Card
+                            variant="outlined"
+                            sx={{
+                                height: "100%",
+                                borderColor: "rgba(255,255,255,0.08)",
+                                backgroundColor: "rgba(255,255,255,0.03)",
+                            }}
+                        >
+                            <CardHeader
+                                title={airline.name || "Unknown Airline"}
+                                subheader={airline.iata ? `IATA: ${airline.iata}` : null}
+                            />
+                            <CardContent>
+                                <Stack component="ul" spacing={1} sx={{ listStyle: "none", p: 0, m: 0 }}>
+                                    {Object.entries(airline.network_stats || {}).map(([key, value]) => (
+                                        <Box
+                                            key={`${airline.name}-${key}`}
+                                            component="li"
+                                            sx={{ color: "text.secondary", fontSize: "0.95rem" }}
+                                        >
+                                            <strong>{key}:</strong> {formatNetworkStat(key, value)}
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+        </Stack>
+    );
+};
 
-    const grid = document.createElement("div");
-    grid.className = "network-grid";
+const CbsaOpportunities = ({ entries }) => {
+    if (!entries || !entries.length) {
+        return null;
+    }
 
-    airlines.forEach((airline) => {
-        const card = document.createElement("div");
-        card.className = "network-card";
+    return (
+        <Stack spacing={2}>
+            <Typography variant="h5">CBSA Opportunities</Typography>
+            {entries.map((entry, index) => (
+                <Card
+                    key={`${entry.airline}-${index}`}
+                    variant="outlined"
+                    sx={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }}
+                >
+                    <CardHeader title={entry.airline || "Airline"} />
+                    <CardContent>
+                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                            Top Routes
+                        </Typography>
+                        <DataTable rows={entry.best_routes} title="Top Routes" />
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                            Suggested Opportunities
+                        </Typography>
+                        <DataTable rows={entry.suggestions} title="Suggested Opportunities" />
+                    </CardContent>
+                </Card>
+            ))}
+        </Stack>
+    );
+};
 
-        const title = document.createElement("h3");
-        title.textContent = airline.name;
-        card.appendChild(title);
+function App() {
+    const [formState, setFormState] = React.useState(defaultFormState);
+    const [status, setStatus] = React.useState({ message: "", kind: "" });
+    const [messages, setMessages] = React.useState([]);
+    const [comparison, setComparison] = React.useState(null);
+    const [cbsaResults, setCbsaResults] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const [suggestions, setSuggestions] = React.useState([]);
+    const debounceRef = React.useRef(null);
+    const lastQueryRef = React.useRef("");
 
-        const list = document.createElement("ul");
-        const stats = airline.network_stats || {};
-
-        Object.entries(stats).forEach(([key, value]) => {
-            const item = document.createElement("li");
-            if (key.toLowerCase().includes("hub") && Array.isArray(value)) {
-                const formatted = value
-                    .map((hub) => Array.isArray(hub) ? `${hub[0]} — ${hub[1]}` : String(hub))
-                    .join(", ");
-                item.textContent = `${key}: ${formatted}`;
-            } else {
-                item.textContent = `${key}: ${formatValue(value)}`;
+    const fetchSuggestions = React.useCallback(async (query = "") => {
+        try {
+            const url = query ? `${API_BASE}/airlines?query=${encodeURIComponent(query)}` : `${API_BASE}/airlines`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                return;
             }
-            list.appendChild(item);
-        });
-
-        card.appendChild(list);
-        grid.appendChild(card);
-    });
-
-    comparisonElement.appendChild(grid);
-}
-
-function renderComparison(comparison) {
-    if (!comparison) {
-        return;
-    }
-
-    renderNetworkStats(comparison.airlines);
-
-    const heading = document.createElement("h3");
-    heading.className = "section-heading";
-    heading.textContent = "Competing Routes";
-    comparisonElement.appendChild(heading);
-    comparisonElement.appendChild(createTable(comparison.competing_routes, "Competing Routes"));
-}
-
-function renderCbsa(cbsaResults) {
-    if (!cbsaResults || !cbsaResults.length) {
-        return;
-    }
-
-    const heading = document.createElement("h3");
-    heading.className = "section-heading";
-    heading.textContent = "CBSA Opportunities";
-    cbsaElement.appendChild(heading);
-
-    cbsaResults.forEach((entry) => {
-        const container = document.createElement("section");
-        container.className = "cbsa-entry";
-
-        const title = document.createElement("h3");
-        title.textContent = entry.airline;
-        container.appendChild(title);
-
-        const bestRoutesHeading = document.createElement("h4");
-        bestRoutesHeading.textContent = "Top Routes";
-        container.appendChild(bestRoutesHeading);
-        container.appendChild(createTable(entry.best_routes, "Top Routes"));
-
-        const suggestHeading = document.createElement("h4");
-        suggestHeading.textContent = "Suggested Opportunities";
-        container.appendChild(suggestHeading);
-        container.appendChild(createTable(entry.suggestions, "Suggested Opportunities"));
-
-        cbsaElement.appendChild(container);
-    });
-}
-
-async function fetchSuggestions(query = "") {
-    try {
-        const url = query ? `${API_BASE}/airlines?query=${encodeURIComponent(query)}` : `${API_BASE}/airlines`;
-        const response = await fetch(url);
-        if (!response.ok) {
-            return;
+            const data = await response.json();
+            const next = data
+                .map((entry) => entry.airline)
+                .filter(Boolean);
+            setSuggestions((prev) => {
+                const merged = new Set([...(prev || []), ...next]);
+                return Array.from(merged).sort();
+            });
+        } catch (error) {
+            // Ignore suggestion errors to keep the form responsive.
         }
-        const airlines = await response.json();
-        populateDatalist(airlines);
-    } catch (error) {
-        // Silently ignore suggestion errors to avoid blocking the UI.
-    }
-}
+    }, []);
 
-function populateDatalist(airlines) {
-    const existing = new Set(Array.from(suggestionsList.children).map((node) => node.value));
-    airlines.forEach((airline) => {
-        if (!existing.has(airline.airline)) {
-            const option = document.createElement("option");
-            option.value = airline.airline;
-            suggestionsList.appendChild(option);
-        }
-    });
-}
+    React.useEffect(() => {
+        fetchSuggestions();
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, [fetchSuggestions]);
 
-async function handleSubmit(event) {
-    event.preventDefault();
-    resetResults();
-    setStatus("Running analysis…");
-    form.querySelector("button[type='submit']").disabled = true;
+    const handleSuggestionQuery = React.useCallback(
+        (value) => {
+            const trimmed = (value || "").trim();
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+            if (trimmed.length < 2 || trimmed === lastQueryRef.current) {
+                return;
+            }
+            debounceRef.current = setTimeout(() => {
+                fetchSuggestions(trimmed);
+                lastQueryRef.current = trimmed;
+            }, 250);
+        },
+        [fetchSuggestions]
+    );
 
-    const formData = new FormData(form);
-    const skipComparison = formData.get("skip_comparison") === "on";
-    const comparisonAirlines = [
-        formData.get("comparison_airline_1")?.trim() || "",
-        formData.get("comparison_airline_2")?.trim() || "",
-    ].filter(Boolean);
-
-    const cbsaAirlines = (formData.get("cbsa_airlines") || "")
-        .split(/\r?\n|,/)
-        .map((entry) => entry.trim())
-        .filter(Boolean);
-
-    const payload = {
-        comparison_airlines: skipComparison ? [] : comparisonAirlines,
-        skip_comparison: skipComparison,
-        cbsa_airlines: cbsaAirlines,
-        cbsa_top_n: Number(formData.get("cbsa_top_n")) || 5,
-        cbsa_suggestions: Number(formData.get("cbsa_suggestions")) || 3,
-        build_cbsa_cache: formData.get("build_cbsa_cache") === "on",
+    const handleFieldChange = (field) => (event) => {
+        const value = event.target.value;
+        setFormState((prev) => ({ ...prev, [field]: value }));
     };
 
-    const countriesRaw = formData.get("cbsa_cache_country");
-    if (countriesRaw && countriesRaw.trim()) {
-        payload.cbsa_cache_country = countriesRaw.split(",").map((country) => country.trim()).filter(Boolean);
-    }
+    const handleCheckboxChange = (field) => (_, checked) => {
+        setFormState((prev) => ({ ...prev, [field]: checked }));
+    };
 
-    const cacheLimit = formData.get("cbsa_cache_limit");
-    if (cacheLimit) {
-        payload.cbsa_cache_limit = Number(cacheLimit);
-    }
+    const resetResults = () => {
+        setMessages([]);
+        setComparison(null);
+        setCbsaResults([]);
+    };
 
-    const chunkSize = formData.get("cbsa_cache_chunk_size");
-    if (chunkSize) {
-        payload.cbsa_cache_chunk_size = Number(chunkSize);
-    }
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        resetResults();
+        setStatus({ message: "Running analysis…", kind: "info" });
+        setLoading(true);
 
-    try {
-        const response = await fetch(`${API_BASE}/run`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
+        const comparisonAirlines = formState.skip_comparison
+            ? []
+            : [formState.comparison_airline_1, formState.comparison_airline_2]
+                  .map((entry) => entry.trim())
+                  .filter(Boolean);
 
-        const result = await response.json();
-        if (!response.ok) {
-            throw new Error(result.detail || "Request failed");
+        const cbsaAirlines = (formState.cbsa_airlines || "")
+            .split(/\r?\n|,/)
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+
+        const payload = {
+            comparison_airlines: comparisonAirlines,
+            skip_comparison: formState.skip_comparison,
+            cbsa_airlines: cbsaAirlines,
+            cbsa_top_n: Number(formState.cbsa_top_n) || 5,
+            cbsa_suggestions: Number(formState.cbsa_suggestions) || 3,
+            build_cbsa_cache: formState.build_cbsa_cache,
+        };
+
+        const countriesRaw = formState.cbsa_cache_country;
+        if (countriesRaw && countriesRaw.trim()) {
+            payload.cbsa_cache_country = countriesRaw
+                .split(",")
+                .map((country) => country.trim())
+                .filter(Boolean);
         }
 
-        setStatus("Analysis complete.", "success");
-        renderMessages(result.messages);
-        renderComparison(result.comparison);
-        renderCbsa(result.cbsa);
-    } catch (error) {
-        setStatus(error.message || "Unable to complete the request.", "error");
-    } finally {
-        form.querySelector("button[type='submit']").disabled = false;
-    }
+        if (formState.cbsa_cache_limit) {
+            payload.cbsa_cache_limit = Number(formState.cbsa_cache_limit);
+        }
+
+        if (formState.cbsa_cache_chunk_size) {
+            payload.cbsa_cache_chunk_size = Number(formState.cbsa_cache_chunk_size);
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/run`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.detail || "Request failed.");
+            }
+
+            setStatus({ message: "Analysis complete.", kind: "success" });
+            setMessages(result.messages || []);
+            setComparison(result.comparison || null);
+            setCbsaResults(result.cbsa || []);
+        } catch (error) {
+            setStatus({ message: error.message || "Unable to complete the request.", kind: "error" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderAirlineField = (label, field) => (
+        <Autocomplete
+            freeSolo
+            options={suggestions}
+            filterOptions={(options, { inputValue }) => {
+                const normalized = (inputValue || "").trim().toLowerCase();
+                const filtered = normalized
+                    ? options.filter((option) => option.toLowerCase().includes(normalized))
+                    : options;
+                return filtered.slice(0, MAX_AIRLINE_SUGGESTIONS);
+            }}
+            openOnFocus
+            autoHighlight
+            noOptionsText="No matching airlines"
+            value={formState[field]}
+            inputValue={formState[field]}
+            onChange={(_, value) => {
+                setFormState((prev) => ({ ...prev, [field]: value || "" }));
+            }}
+            onInputChange={(_, value) => {
+                const nextValue = value || "";
+                setFormState((prev) => ({ ...prev, [field]: nextValue }));
+                handleSuggestionQuery(nextValue);
+            }}
+            renderInput={(params) => (
+                <TextField
+                    {...params}
+                    label={label}
+                    variant="outlined"
+                />
+            )}
+        />
+    );
+
+    return (
+        <Box
+            sx={{
+                minHeight: "100vh",
+                background: "radial-gradient(circle at top, #102040 0%, #050c1a 55%)",
+                pb: 6,
+            }}
+        >
+            <AppBar
+                position="static"
+                elevation={0}
+                sx={{
+                    background: "transparent",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(12px)",
+                }}
+            >
+                <Toolbar sx={{ minHeight: 88 }}>
+                    <Box>
+                        <Typography variant="h5" fontWeight={700}>
+                            Airline Route Optimizer
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                            Compare airline networks and surface CBSA-aligned opportunities.
+                        </Typography>
+                    </Box>
+                </Toolbar>
+            </AppBar>
+
+            <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                        <Paper
+                            component="form"
+                            onSubmit={handleSubmit}
+                            sx={{
+                                p: { xs: 2.5, md: 3 },
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 3,
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="h6">Analysis Configuration</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Choose airlines to compare, then tune CBSA simulation parameters.
+                                </Typography>
+                            </Box>
+
+                            <Stack spacing={2}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Airline Comparison
+                                </Typography>
+                                {renderAirlineField("Airline 1", "comparison_airline_1")}
+                                {renderAirlineField("Airline 2", "comparison_airline_2")}
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            color="secondary"
+                                            checked={formState.skip_comparison}
+                                            onChange={handleCheckboxChange("skip_comparison")}
+                                        />
+                                    }
+                                    label="Skip comparison"
+                                />
+                            </Stack>
+
+                            <Divider flexItem />
+
+                            <Stack spacing={2}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    CBSA Simulation
+                                </Typography>
+                                <TextField
+                                    label="Additional airlines"
+                                    placeholder="Enter one airline per line"
+                                    multiline
+                                    minRows={4}
+                                    value={formState.cbsa_airlines}
+                                    onChange={handleFieldChange("cbsa_airlines")}
+                                />
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            label="Top N routes"
+                                            type="number"
+                                            inputProps={{ min: 1, max: 20 }}
+                                            value={formState.cbsa_top_n}
+                                            onChange={handleFieldChange("cbsa_top_n")}
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            label="Suggestions per route"
+                                            type="number"
+                                            inputProps={{ min: 1, max: 10 }}
+                                            value={formState.cbsa_suggestions}
+                                            onChange={handleFieldChange("cbsa_suggestions")}
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                </Grid>
+                            </Stack>
+
+                            <Divider flexItem />
+
+                            <Stack spacing={2}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    CBSA Cache (optional)
+                                </Typography>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={formState.build_cbsa_cache}
+                                            onChange={handleCheckboxChange("build_cbsa_cache")}
+                                        />
+                                    }
+                                    label="Build CBSA cache"
+                                />
+                                <TextField
+                                    label="Countries (comma-separated)"
+                                    placeholder="United States, Canada"
+                                    value={formState.cbsa_cache_country}
+                                    onChange={handleFieldChange("cbsa_cache_country")}
+                                />
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            label="Limit airports"
+                                            type="number"
+                                            inputProps={{ min: 1 }}
+                                            value={formState.cbsa_cache_limit}
+                                            onChange={handleFieldChange("cbsa_cache_limit")}
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            label="Chunk size"
+                                            type="number"
+                                            inputProps={{ min: 50 }}
+                                            value={formState.cbsa_cache_chunk_size}
+                                            onChange={handleFieldChange("cbsa_cache_chunk_size")}
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                </Grid>
+                            </Stack>
+
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                size="large"
+                                disabled={loading}
+                                sx={{ alignSelf: "flex-start", mt: 1 }}
+                            >
+                                {loading ? (
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <CircularProgress size={20} color="inherit" />
+                                        <span>Running...</span>
+                                    </Stack>
+                                ) : (
+                                    "Run Analysis"
+                                )}
+                            </Button>
+                        </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                        <Paper
+                            sx={{
+                                p: { xs: 2.5, md: 3 },
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                                minHeight: { md: "100%" },
+                            }}
+                        >
+                            <Typography variant="h6" sx={{ mb: 2 }}>
+                                Results
+                            </Typography>
+                            <StatusAlert status={status} />
+
+                            {messages.length > 0 && (
+                                <Stack
+                                    direction="row"
+                                    flexWrap="wrap"
+                                    gap={1}
+                                    sx={{ mb: 3 }}
+                                >
+                                    {messages.map((message, index) => (
+                                        <Chip
+                                            key={`${message}-${index}`}
+                                            label={message}
+                                            color="primary"
+                                            variant="outlined"
+                                        />
+                                    ))}
+                                </Stack>
+                            )}
+
+                            {comparison && (
+                                <Box sx={{ mb: 3 }}>
+                                    <Typography variant="h5" sx={{ mb: 1 }}>
+                                        Competing Routes
+                                    </Typography>
+                                    <NetworkSummary airlines={comparison.airlines} />
+                                    <DataTable rows={comparison.competing_routes} title="Competing Routes" />
+                                </Box>
+                            )}
+
+                            <CbsaOpportunities entries={cbsaResults} />
+                        </Paper>
+                    </Grid>
+                </Grid>
+            </Container>
+        </Box>
+    );
 }
 
-function watchSuggestionInputs() {
-    const comparisonInputs = form.querySelectorAll("input[list='airline-suggestions']");
-    comparisonInputs.forEach((input) => {
-        input.addEventListener("input", () => {
-            const value = input.value.trim();
-            if (value.length < 2) {
-                return;
-            }
-            if (value === lastQuery) {
-                return;
-            }
-            lastQuery = value;
-            if (debounceHandle) {
-                clearTimeout(debounceHandle);
-            }
-            debounceHandle = setTimeout(() => {
-                fetchSuggestions(value);
-            }, 200);
-        });
-    });
-}
-
-form.addEventListener("submit", handleSubmit);
-watchSuggestionInputs();
-fetchSuggestions();
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+    <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <App />
+    </ThemeProvider>
+);

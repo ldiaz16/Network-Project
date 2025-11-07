@@ -758,9 +758,51 @@ class DataStore:
         pivoted = pivoted.merge(aircraft_info, on=["Source", "Dest"], how="left")
         pivoted.columns.name = None  # remove column index name
 
-        print(f"Found {len(pivoted)} competing routes between the two airlines.")
-        print("Printing ASM for each airline on the competing routes:")
-        return pivoted
+        # Rename columns to be human-friendly and format numeric values.
+        asm_columns = [
+            col for col in pivoted.columns
+            if col not in {"Source", "Dest"} and not col.endswith("_Aircraft")
+        ]
+        rename_map = {col: f"{col} ASM" for col in asm_columns}
+        aircraft_suffix = "_Aircraft"
+
+        def _aircraft_label(column_name: str) -> str:
+            if column_name.endswith(aircraft_suffix):
+                base = column_name[:-len(aircraft_suffix)]
+            else:
+                base = column_name
+            return f"{base} Aircraft"
+
+        rename_map.update({
+            col: _aircraft_label(col)
+            for col in pivoted.columns if col.endswith(aircraft_suffix)
+        })
+        formatted = pivoted.rename(columns=rename_map)
+
+        def _format_asm(value):
+            if pd.isna(value):
+                return None
+            if isinstance(value, (int, float)):
+                return f"{value:,.0f}"
+            return value
+
+        for col in (rename_map[col] for col in asm_columns):
+            formatted[col] = formatted[col].apply(_format_asm)
+
+        ordered_columns = ["Source", "Dest"]
+        for original in asm_columns:
+            asm_col = rename_map[original]
+            ordered_columns.append(asm_col)
+            aircraft_original = f"{original}_Aircraft"
+            aircraft_col = rename_map.get(aircraft_original)
+            if aircraft_col and aircraft_col in formatted.columns:
+                ordered_columns.append(aircraft_col)
+
+        remaining = [col for col in formatted.columns if col not in ordered_columns]
+        if remaining:
+            ordered_columns.extend(remaining)
+
+        return formatted[ordered_columns]
 
 
             
