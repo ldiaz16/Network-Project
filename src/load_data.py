@@ -669,6 +669,27 @@ class DataStore:
                 "suggested_routes": pd.DataFrame()
             }
 
+        airport_cbsa["Country"] = airport_cbsa["Country"].astype(str).str.strip()
+        airport_cbsa["CBSA Name"] = (
+            airport_cbsa["CBSA Name"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+        airport_cbsa = airport_cbsa[
+            (airport_cbsa["Country"] == "United States") &
+            (airport_cbsa["CBSA Name"] != "")
+        ].copy()
+
+        if airport_cbsa.empty:
+            return {
+                "best_routes": pd.DataFrame(),
+                "suggested_routes": pd.DataFrame()
+            }
+
+        airport_cbsa["__cbsa_key"] = airport_cbsa["CBSA Name"].str.lower()
+        airport_cbsa_for_merge = airport_cbsa.drop(columns="__cbsa_key")
+
         source_columns = {
             "IATA": "Source airport",
             "Name": "Source Name",
@@ -695,12 +716,12 @@ class DataStore:
         }
 
         routes_with_cbsa = airline_cost_df.merge(
-            airport_cbsa.rename(columns=source_columns),
+            airport_cbsa_for_merge.rename(columns=source_columns),
             on="Source airport",
             how="left"
         )
         routes_with_cbsa = routes_with_cbsa.merge(
-            airport_cbsa.rename(columns=dest_columns),
+            airport_cbsa_for_merge.rename(columns=dest_columns),
             on="Destination airport",
             how="left"
         )
@@ -755,26 +776,21 @@ class DataStore:
 
         cbsa_airport_cache = {}
 
+        def _normalize_cbsa(value):
+            if not isinstance(value, str):
+                return ""
+            return value.strip().lower()
+
         def get_airports_for_cbsa(cbsa_name):
-            if not isinstance(cbsa_name, str):
+            normalized = _normalize_cbsa(cbsa_name)
+            if not normalized:
                 return pd.DataFrame()
-            if cbsa_name in cbsa_airport_cache:
-                return cbsa_airport_cache[cbsa_name]
+            if normalized in cbsa_airport_cache:
+                return cbsa_airport_cache[normalized]
 
-            city_tokens = self._extract_cbsa_city_tokens(cbsa_name)
-            if not city_tokens:
-                cbsa_airport_cache[cbsa_name] = pd.DataFrame()
-                return cbsa_airport_cache[cbsa_name]
-
-            country_series = self.airports["Country"].astype(str).str.strip()
-            city_series = self.airports["City"].astype(str).str.strip()
-            candidate_subset = self.airports[
-                (country_series == "United States") &
-                (city_series.isin(city_tokens))
-            ]
-            annotated = self.annotate_airports_with_cbsa(candidate_subset)
-            cbsa_airport_cache[cbsa_name] = annotated
-            return annotated
+            matches = airport_cbsa[airport_cbsa["__cbsa_key"] == normalized]
+            cbsa_airport_cache[normalized] = matches
+            return matches
 
         suggestions = []
         for _, route in best_routes.iterrows():
@@ -787,12 +803,7 @@ class DataStore:
             source_candidates = get_airports_for_cbsa(source_cbsa_name)
             dest_candidates = get_airports_for_cbsa(dest_cbsa_name)
 
-            if source_candidates.empty:
-                source_candidates = airport_cbsa[airport_cbsa["CBSA Name"] == source_cbsa_name]
-            if dest_candidates.empty:
-                dest_candidates = airport_cbsa[airport_cbsa["CBSA Name"] == dest_cbsa_name]
-
-            if source_candidates is None or dest_candidates is None:
+            if source_candidates.empty or dest_candidates.empty:
                 continue
 
             suggestions_added = 0
@@ -807,6 +818,8 @@ class DataStore:
                     if pd.isna(source_candidate["Latitude"]) or pd.isna(dest_candidate["Latitude"]):
                         continue
                     if pd.isna(source_candidate["Longitude"]) or pd.isna(dest_candidate["Longitude"]):
+                        continue
+                    if pd.isna(source_candidate["CBSA Name"]) or pd.isna(dest_candidate["CBSA Name"]):
                         continue
 
                     distance = geodesic(

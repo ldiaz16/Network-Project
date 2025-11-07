@@ -221,28 +221,54 @@ const CbsaOpportunities = ({ entries }) => {
     }
 
     return (
-        <Stack spacing={2}>
-            <Typography variant="h5">CBSA Opportunities</Typography>
-            {entries.map((entry, index) => (
-                <Card
-                    key={`${entry.airline}-${index}`}
-                    variant="outlined"
-                    sx={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }}
-                >
-                    <CardHeader title={entry.airline || "Airline"} />
-                    <CardContent>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                            Top Routes
-                        </Typography>
-                        <DataTable rows={entry.best_routes} title="Top Routes" />
-                        <Divider sx={{ my: 2 }} />
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                            Suggested Opportunities
-                        </Typography>
-                        <DataTable rows={entry.suggestions} title="Suggested Opportunities" />
-                    </CardContent>
-                </Card>
-            ))}
+        <Stack spacing={3}>
+            <Box>
+                <Typography variant="h5">CBSA Opportunities</Typography>
+                <Typography variant="body2" color="text.secondary">
+                    Review each airline&apos;s strongest CBSA corridors alongside network-aligned potential routes.
+                </Typography>
+            </Box>
+            {entries.map((entry, index) => {
+                const bestRoutes = entry.best_routes || [];
+                const potentialRoutes = entry.suggestions || [];
+                return (
+                    <Paper
+                        key={`${entry.airline}-${index}`}
+                        variant="outlined"
+                        sx={{
+                            p: { xs: 2.5, md: 3 },
+                            borderColor: "rgba(255,255,255,0.08)",
+                            backgroundColor: "rgba(8,15,33,0.9)",
+                            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.02)",
+                        }}
+                    >
+                        <Stack spacing={2.5}>
+                            <Box>
+                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                    {entry.airline || "Airline"}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Based on the airline&apos;s active U.S. network and CBSA coverage.
+                                </Typography>
+                            </Box>
+                            <Grid container spacing={2.5}>
+                                <Grid item xs={12} md={6}>
+                                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                                        Top CBSA Routes
+                                    </Typography>
+                                    <DataTable rows={bestRoutes} title="Top CBSA Routes" maxHeight={320} />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                                        Potential CBSA Routes
+                                    </Typography>
+                                    <DataTable rows={potentialRoutes} title="Potential CBSA Routes" maxHeight={420} />
+                                </Grid>
+                            </Grid>
+                        </Stack>
+                    </Paper>
+                );
+            })}
         </Stack>
     );
 };
@@ -447,9 +473,9 @@ function App() {
                 </Toolbar>
             </AppBar>
 
-            <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-                <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+            <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
+                <Grid container spacing={3} alignItems="stretch">
+                    <Grid item xs={12} md={5} lg={4}>
                         <Paper
                             component="form"
                             onSubmit={handleSubmit}
@@ -460,6 +486,7 @@ function App() {
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: 3,
+                                height: "100%",
                             }}
                         >
                             <Box>
@@ -589,18 +616,24 @@ function App() {
                         </Paper>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={7} lg={8}>
                         <Paper
                             sx={{
                                 p: { xs: 2.5, md: 3 },
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
-                                minHeight: { md: "100%" },
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 3,
                             }}
                         >
-                            <Typography variant="h6" sx={{ mb: 2 }}>
-                                Results
-                            </Typography>
+                            <Box>
+                                <Typography variant="h6">Results</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Explore head-to-head routes plus CBSA opportunity areas.
+                                </Typography>
+                            </Box>
                             <StatusAlert status={status} />
 
                             {messages.length > 0 && (
@@ -622,7 +655,7 @@ function App() {
                             )}
 
                             {comparison && (
-                                <Box sx={{ mb: 3 }}>
+                                <Box sx={{ mb: 1 }}>
                                     <Typography variant="h5" sx={{ mb: 1 }}>
                                         Competing Routes
                                     </Typography>
@@ -630,7 +663,7 @@ function App() {
                                     <DataTable
                                         rows={comparison.competing_routes}
                                         title="Competing Routes"
-                                        maxHeight={360}
+                                        maxHeight={420}
                                     />
                                 </Box>
                             )}
