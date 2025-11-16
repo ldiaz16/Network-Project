@@ -314,3 +314,84 @@ def test_find_competing_routes_identifies_common_pairs(datastore):
     assert competing.loc[0, "other ASM Share"] == "44.4%"
     assert competing.loc[0, "sample Aircraft"] == "A320"
     assert competing.loc[0, "other Aircraft"] == "B738"
+
+
+def test_find_competing_routes_uses_all_airline_totals_for_share(datastore):
+    airports = pd.DataFrame(
+        [
+            {"IATA": "SRC", "Name": "Source", "Latitude": 0.0, "Longitude": 0.0},
+            {"IATA": "DST", "Name": "Destination", "Latitude": 0.0, "Longitude": 1.0},
+        ]
+    )
+    airports["City"] = ""
+    airports["Country"] = ""
+    datastore.airports = airports
+
+    airlines = pd.DataFrame(
+        [
+            {"Airline": "Sample Air", "Alias": "", "IATA": "SA", "ICAO": "", "Callsign": "", "Country": "US", "Active": "Y"},
+            {"Airline": "Other Air", "Alias": "", "IATA": "OA", "ICAO": "", "Callsign": "", "Country": "US", "Active": "Y"},
+            {"Airline": "Third Air", "Alias": "", "IATA": "TA", "ICAO": "", "Callsign": "", "Country": "US", "Active": "Y"},
+        ]
+    )
+    airlines["Airline (Normalized)"] = airlines["Airline"].apply(normalize_name)
+    datastore.airlines = airlines
+
+    config = {
+        "Sample Air": {"A320": {"Y": 100, "W": 0, "J": 0, "F": 0, "Total": 100}},
+        "Other Air": {"A321": {"Y": 150, "W": 0, "J": 0, "F": 0, "Total": 150}},
+        "Third Air": {"B738": {"Y": 200, "W": 0, "J": 0, "F": 0, "Total": 200}},
+    }
+    datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+
+    routes_columns = [
+        "Airline Code",
+        "IDK",
+        "Source airport",
+        "Source airport ID",
+        "Destination airport",
+        "Destination airport ID",
+        "Codeshare",
+        "Stops",
+        "Equipment",
+    ]
+    datastore.routes = pd.DataFrame(
+        [
+            {"Airline Code": "SA", "Source airport": "SRC", "Destination airport": "DST", "Equipment": "A320"},
+            {"Airline Code": "OA", "Source airport": "SRC", "Destination airport": "DST", "Equipment": "A321"},
+            {"Airline Code": "TA", "Source airport": "SRC", "Destination airport": "DST", "Equipment": "B738"},
+        ],
+        columns=routes_columns,
+    )
+
+    sample_norm = normalize_name("Sample Air")
+    other_norm = normalize_name("Other Air")
+    distance = geodesic((0.0, 0.0), (0.0, 1.0)).miles
+
+    airline_x_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "SRC",
+                "Destination airport": "DST",
+                "Airline (Normalized)": sample_norm,
+                "ASM": distance * 100,
+                "Equipment": "A320",
+            }
+        ]
+    )
+    airline_y_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "SRC",
+                "Destination airport": "DST",
+                "Airline (Normalized)": other_norm,
+                "ASM": distance * 150,
+                "Equipment": "A321",
+            }
+        ]
+    )
+
+    competing = datastore.find_competing_routes(airline_x_df, airline_y_df)
+
+    assert competing.loc[0, "sample ASM Share"] == "22.2%"
+    assert competing.loc[0, "other ASM Share"] == "33.3%"
