@@ -200,7 +200,7 @@ const StatusAlert = ({ status }) => {
     );
 };
 
-const DataTable = ({ rows, title, maxHeight }) => {
+const DataTable = ({ rows, title, maxHeight, enableWrapping = false }) => {
     if (!rows || !rows.length) {
         return (
             <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
@@ -210,6 +210,8 @@ const DataTable = ({ rows, title, maxHeight }) => {
     }
 
     const headers = Object.keys(rows[0]);
+    const headerCellSx = enableWrapping ? { whiteSpace: "normal" } : undefined;
+    const bodyCellSx = enableWrapping ? { whiteSpace: "normal", wordBreak: "break-word" } : undefined;
 
     return (
         <Paper
@@ -224,7 +226,9 @@ const DataTable = ({ rows, title, maxHeight }) => {
                     <TableHead>
                         <TableRow>
                             {headers.map((header) => (
-                                <TableCell key={header}>{header}</TableCell>
+                                <TableCell key={header} sx={headerCellSx}>
+                                    {header}
+                                </TableCell>
                             ))}
                         </TableRow>
                     </TableHead>
@@ -232,7 +236,9 @@ const DataTable = ({ rows, title, maxHeight }) => {
                         {rows.map((row, rowIndex) => (
                             <TableRow key={rowIndex}>
                                 {headers.map((header) => (
-                                    <TableCell key={`${rowIndex}-${header}`}>{formatValue(row[header])}</TableCell>
+                                    <TableCell key={`${rowIndex}-${header}`} sx={bodyCellSx}>
+                                        {formatValue(row[header])}
+                                    </TableCell>
                                 ))}
                             </TableRow>
                         ))}
@@ -324,17 +330,17 @@ const CbsaOpportunities = ({ entries }) => {
                                 </Typography>
                             </Box>
                             <Grid container spacing={2.5}>
-                                <Grid item xs={12} md={6}>
+                                <Grid item xs={12} xl={6}>
                                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                                         Top CBSA Routes
                                     </Typography>
-                                    <DataTable rows={bestRoutes} title="Top CBSA Routes" maxHeight={320} />
+                                    <DataTable rows={bestRoutes} title="Top CBSA Routes" enableWrapping />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid item xs={12} xl={6}>
                                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                                         Potential CBSA Routes
                                     </Typography>
-                                    <DataTable rows={potentialRoutes} title="Potential CBSA Routes" maxHeight={420} />
+                                    <DataTable rows={potentialRoutes} title="Potential CBSA Routes" enableWrapping />
                                 </Grid>
                             </Grid>
                         </Stack>
