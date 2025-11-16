@@ -1,0 +1,67 @@
+Source: OAG, Milanamos
+(*) ASK –Available Seat Kilometer , a measure used to assess airline 
+capacity. It represents the total number of seats available for sale 
+multiplied by the total distance flown by those seats.  B.A. - 43%
+jetBlue - 29%
+Emirates - 83%
+B.A. - 36%
+Singapore Airlines - 54%
+United Airlines - 38%
+ANA - 24%
+Air France - 49%
+Air China - 38%
+American Airlines - 27%
+Air France - 32%
+Air China - 36%
+EVA Air - 47%
+Thai Airways - 36%
+JAL - 49%
+Air China - 42%
+China Eastern – 44%
+ANA - 42%
+Singapore – 45%
+ANA - 41%
+United Airlines - 38%
+Singapore – 34%
+Asiana - 42%
+EVA Air - 53%
+El Al - 44%
+ANA - 38%
+Air Canada - 56%
+Cathay Pacific - 77%
+Korean Air - 22%
+Qantas - 35% -  10  20  30  40
+London - New York
+Los Angeles - New York
+Dubai - London
+Los Angeles - London
+London - Singapore
+New York - San Francisco
+Los Angeles - Tokyo
+New York - Paris
+Beijing - Shenzhen
+Miami - New York
+Paris - St. Denis
+Beijing - Guangzhou
+Los Angeles - Taipei
+Bangkok - Tokyo
+New York - Tokyo
+Beijing - Chengdu
+Beijing - Shanghai
+Okinawa - Tokyo
+Singapore - Sydney
+Sapporo - Tokyo
+London - San Francisco
+Singapore - Tokyo
+Los Angeles - Seoul
+San Francisco - Taipei
+New York - Tel Aviv
+Fukuoka - Tokyo
+Toronto - Vancouver
+Hong Kong - London
+Bangkok - Seoul
+Los Angeles - SydneyWORLD’S BUSIEST AIRLINE ROUTES
+2023 – by ASK* (billions)
+Domestic
+InternationalLargest operator - % Seats
+AvBench

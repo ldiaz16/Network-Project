@@ -1,0 +1,97 @@
+AvBenchGLOBAL BENCHMARK
+FOCUS: A321neo, 737 -8 MAX, 737 -800 NG, A220 -300, 
+    787-9, A350 -900 & ATR72 
+November 2024NETWORK 
+AGGRESSIVENESS
+
+AvBenchNETWORK AGGRESSIVENESS
+A321neo
+November 2024
+Source: Milanamos  & ch -aviation
+37% of Lufthansa's A321neo 
+capacity is deployed on 
+monopolistic routes, while 
+only 19% is on routes facing 
+multiple competitors
+95% of Vistara's A321neo 
+capacity is deployed on routes 
+facing multiple competitorsIntense Competition Low Competition
+AvBenchNETWORK AGGRESSIVENESS
+737-8 MAX
+89% of Ethiopian’s 737 -8 
+capacity is deployed on 
+monopolistic routes
+100% of Akasa’s  737-8 
+is facing competitionIntense Competition Low Competition
+November 2024
+Source: Milanamos  & ch -aviation
+AvBenchNETWORK AGGRESSIVENESS
+737-800 NG
+Only 18% of Turkish’s 737 -800 
+capacity is deployed on routes 
+facing multiple competitors
+94% of Jeju’s 737 -800 capacity 
+faces competitionIntense Competition Low Competition
+November 2024
+Source: Milanamos  & ch -aviation
+AvBenchNETWORK AGGRESSIVENESS
+A220 -300
+58% of airBaltic’s A220 -300 
+capacity is deployed on 
+monopolistic routes, while 
+only 13% is on routes facing 
+multiple competitors
+97% of Korean Air’s A220 -300 
+capacity faces competitionIntense Competition Low Competition
+November 2024
+Source: Milanamos  & ch -aviation
+AvBenchNETWORK AGGRESSIVENESS
+787-9
+78% of Qatar’s 787 -9 
+capacity is deployed on 
+monopolistic routes
+96% of Scoot’s 787 -9 capacity is 
+deployed on routes facing 
+multiple competitorsIntense Competition Low Competition
+November 2024
+Source: Milanamos  & ch -aviation
+AvBenchNETWORK AGGRESSIVENESS
+A350 -900
+85% of Qatar’s A350 -900 
+capacity is deployed on 
+monopolistic routes
+100% of French Bee’s A350 -900
+is facing competition
+November 2024
+Source: MilanamosIntense Competition Low Competition
+AvBenchNETWORK AGGRESSIVENESS
+ATR72
+97% of Firefly’s ATR72
+is facing competitionIntense Competition Low Competition
+November 2024
+Source: Milanamos  & ch -aviation
+AvBenchNETWORK AGGRESSIVENESS
+LESSORS’ FULL PORTFOLIO
+Weighted average based on the number of aircraft
+November 2024
+Source: Milanamos  & ch -aviation
+AvBenchNETWORK AGGRESSIVENESS
+LESSORS’ NARROWBODY PORTFOLIO
+Weighted average based on the number of aircraft
+November 2024
+Source: Milanamos  & ch -aviation
+Understand why and how each aircraft contributes
+to the operational and commercial success of an airline
+30+ commercial and operational metrics 
+to explain ahead of time the airline’s financial performance 
+and the role of each asset.
+For more information, visit www.avbench.com or email us at info@avbench.com.AvBenchNetwork  Aggressiveness : reflects  the current  competitive  
+pressure  experienced  by a specific  aircraft  or subfleet  in the 
+airline’s  network  over  the past  24 months . 
+This assessment  considers  the percentage  of routes  and their  
+corresponding  weight  by seat capacity  in the network  where  
+the aircraft  faces  competition . It is categorized  as either  a 
+monopoly,  duopoly,  or having  multiple  players,  relative  to 
+industry  benchmarks .
+A score  of 5 indicates  an average  level  of competitive  pressure,  
+while  a higher  score  represents  a more  favorable  environment .

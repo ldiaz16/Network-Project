@@ -149,6 +149,7 @@ const defaultFormState = {
 const MAX_AIRLINE_SUGGESTIONS = 25;
 const integerNumberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 const decimalNumberFormatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const percentFormatter = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 0 });
 
 function formatValue(value) {
     if (value === null || value === undefined || value === "") {
@@ -182,6 +183,140 @@ function formatNetworkStat(key, value) {
     }
     return formatValue(value);
 }
+
+function formatPercent(value) {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+        return "—";
+    }
+    return percentFormatter.format(value);
+}
+
+const ScorecardView = ({ data }) => {
+    if (!data) {
+        return null;
+    }
+    const competitionEntries = Object.entries(data.competition || {}).filter(([, value]) => typeof value === "number");
+    const maturityEntries = Object.entries(data.maturity || {}).filter(([, value]) => typeof value === "number");
+    const yieldStats = data.yield || {};
+    const yieldEntries = Object.entries(yieldStats).filter(([, value]) => typeof value === "number" && Number.isFinite(value));
+    const hasContent = competitionEntries.length || maturityEntries.length || yieldEntries.length;
+    if (!hasContent) {
+        return null;
+    }
+
+    return (
+        <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+                Route Scorecard
+            </Typography>
+            <Grid container spacing={2}>
+                {competitionEntries.length > 0 && (
+                    <Grid item xs={12} md={6}>
+                        <Typography variant="caption" color="text.secondary">
+                            Competition Mix
+                        </Typography>
+                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
+                            {competitionEntries.map(([label, value]) => (
+                                <Chip key={label} label={`${label}: ${formatPercent(value)}`} size="small" variant="outlined" />
+                            ))}
+                        </Stack>
+                    </Grid>
+                )}
+                {maturityEntries.length > 0 && (
+                    <Grid item xs={12} md={6}>
+                        <Typography variant="caption" color="text.secondary">
+                            Network Maturity
+                        </Typography>
+                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
+                            {maturityEntries.map(([label, value]) => (
+                                <Chip key={label} label={`${label}: ${formatPercent(value)}`} size="small" variant="outlined" />
+                            ))}
+                        </Stack>
+                    </Grid>
+                )}
+                {yieldEntries.length > 0 && (
+                    <Grid item xs={12}>
+                        <Typography variant="caption" color="text.secondary">
+                            Yield Proxy (lower values lean cost-leader)
+                        </Typography>
+                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
+                            {yieldEntries.map(([label, value]) => (
+                                <Chip key={label} label={`${label.toUpperCase()}: ${value.toFixed(2)}`} size="small" variant="outlined" />
+                            ))}
+                        </Stack>
+                    </Grid>
+                )}
+            </Grid>
+        </Box>
+    );
+};
+
+const MarketShareList = ({ rows, maxRows = 5 }) => {
+    if (!rows || !rows.length) {
+        return null;
+    }
+    const topRows = rows.slice(0, maxRows);
+
+    return (
+        <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+                Top O&D Market Share
+            </Typography>
+            <Table size="small" sx={{ mt: 1 }}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Route</TableCell>
+                        <TableCell align="right">Airline Share</TableCell>
+                        <TableCell>Competition</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {topRows.map((row, index) => (
+                        <TableRow key={`${row.Source}-${row.Destination}-${index}`}>
+                            <TableCell>{`${row.Source || "?"} → ${row.Destination || "?"}`}</TableCell>
+                            <TableCell align="right">{formatPercent(row["Market Share"])}</TableCell>
+                            <TableCell>{row["Competition Level"] || "—"}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </Box>
+    );
+};
+
+const FleetUtilizationList = ({ rows, maxRows = 5 }) => {
+    if (!rows || !rows.length) {
+        return null;
+    }
+    const subset = rows.slice(0, maxRows);
+    return (
+        <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+                Fleet Utilization Snapshot
+            </Typography>
+            <Table size="small" sx={{ mt: 1 }}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Equipment</TableCell>
+                        <TableCell align="right">Routes</TableCell>
+                        <TableCell align="right">Avg Dist (mi)</TableCell>
+                        <TableCell align="right">Utilization</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {subset.map((row, index) => (
+                        <TableRow key={`${row.Equipment}-${index}`}>
+                            <TableCell>{row.Equipment || "Unknown"}</TableCell>
+                            <TableCell align="right">{formatValue(row["Route Count"])}</TableCell>
+                            <TableCell align="right">{formatValue(row["Average Distance"])}</TableCell>
+                            <TableCell align="right">{formatPercent(row["Utilization Score"])}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </Box>
+    );
+};
 
 const StatusAlert = ({ status }) => {
     if (!status.message) {
@@ -284,6 +419,9 @@ const NetworkSummary = ({ airlines }) => {
                                         </Box>
                                     ))}
                                 </Stack>
+                                <ScorecardView data={airline.scorecard} />
+                                <MarketShareList rows={airline.market_share} />
+                                <FleetUtilizationList rows={airline.fleet_utilization} />
                             </CardContent>
                         </Card>
                     </Grid>
@@ -330,6 +468,11 @@ const CbsaOpportunities = ({ entries }) => {
                                 </Typography>
                             </Box>
                             <Grid container spacing={2.5}>
+                                <Grid item xs={12}>
+                                    <ScorecardView data={entry.scorecard} />
+                                    <MarketShareList rows={entry.market_share} />
+                                    <FleetUtilizationList rows={entry.fleet_utilization} />
+                                </Grid>
                                 <Grid item xs={12} xl={6}>
                                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                                         Top CBSA Routes

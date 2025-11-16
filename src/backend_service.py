@@ -76,6 +76,9 @@ def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
 
     processed_df = data_store.process_routes(routes_df)
     cost_df = data_store.cost_analysis(processed_df)
+    scorecard = data_store.build_route_scorecard(cost_df)
+    market_share = data_store.compute_market_share_snapshot(cost_df)
+    fleet_utilization = data_store.summarize_fleet_utilization(cost_df)
     airline_name = routes_df["Airline"].iloc[0]
     normalized_name = routes_df["Airline (Normalized)"].iloc[0]
 
@@ -87,6 +90,9 @@ def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
         "processed": processed_df,
         "cost": cost_df,
         "metadata": metadata,
+        "scorecard": scorecard,
+        "market_share": market_share,
+        "fleet_utilization": fleet_utilization,
     }
 
 
@@ -100,6 +106,9 @@ def _run_cbsa_simulation(data_store, package: Dict[str, Any], args: AnalysisRequ
         "airline": package["name"],
         "best_routes": _dataframe_to_records(result.get("best_routes")),
         "suggestions": _dataframe_to_records(result.get("suggested_routes")),
+        "scorecard": package.get("scorecard"),
+        "market_share": _dataframe_to_records(package.get("market_share")),
+        "fleet_utilization": _dataframe_to_records(package.get("fleet_utilization")),
     }
 
 
@@ -172,10 +181,16 @@ def run_analysis(data_store, payload: AnalysisRequest) -> Dict[str, Any]:
                 {
                     "name": airline_x_pkg["name"],
                     "network_stats": airline_x_stats,
+                    "scorecard": airline_x_pkg.get("scorecard"),
+                    "market_share": _dataframe_to_records(airline_x_pkg.get("market_share")),
+                    "fleet_utilization": _dataframe_to_records(airline_x_pkg.get("fleet_utilization")),
                 },
                 {
                     "name": airline_y_pkg["name"],
                     "network_stats": airline_y_stats,
+                    "scorecard": airline_y_pkg.get("scorecard"),
+                    "market_share": _dataframe_to_records(airline_y_pkg.get("market_share")),
+                    "fleet_utilization": _dataframe_to_records(airline_y_pkg.get("fleet_utilization")),
                 },
             ],
             "competing_routes": _dataframe_to_records(competing_routes_df),

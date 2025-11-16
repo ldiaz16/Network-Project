@@ -149,6 +149,32 @@ def test_cost_analysis_computes_capacity_metrics(datastore):
         }
     }
     datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+    datastore.routes = pd.DataFrame(
+        [
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "JFK",
+                "Source airport ID": None,
+                "Destination airport": "LAX",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A320",
+            },
+            {
+                "Airline Code": "OA",
+                "IDK": None,
+                "Source airport": "JFK",
+                "Source airport ID": None,
+                "Destination airport": "LAX",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A320",
+            },
+        ]
+    )
 
     routes_df = pd.DataFrame(
         [
@@ -172,6 +198,13 @@ def test_cost_analysis_computes_capacity_metrics(datastore):
     assert analyzed.loc[0, "ASM"] == pytest.approx(total_seats * distance_miles, rel=1e-3)
     assert analyzed.loc[0, "Airline (Normalized)"] == normalize_name("Sample Airways")
     assert enriched.loc[0, "Seat Source"] == "airline_config"
+    assert "Route Strategy Baseline" in analyzed.columns
+    assert 0 <= analyzed.loc[0, "Route Strategy Baseline"] <= 1
+    assert analyzed.loc[0, "Competition Level"] == "Duopoly"
+    assert 0 <= analyzed.loc[0, "Competition Score"] <= 1
+    assert analyzed.loc[0, "Route Maturity Label"] in {"Stable", "Fluid", "Unknown"}
+    assert 0 <= analyzed.loc[0, "Route Maturity Score"] <= 1
+    assert 0 <= analyzed.loc[0, "Yield Proxy Score"] <= 1
 
 
 def test_process_routes_estimates_seats_when_config_missing(datastore):
@@ -198,6 +231,176 @@ def test_process_routes_estimates_seats_when_config_missing(datastore):
     enriched = datastore.process_routes(routes_df)
     assert enriched.loc[0, "Total"] == GENERIC_SEAT_GUESSES["738"]
     assert enriched.loc[0, "Seat Source"] == "equipment_estimate"
+
+
+def test_strategy_baseline_uses_global_asm_signal(datastore):
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "JFK", "Name": "John F. Kennedy", "Latitude": 40.6413, "Longitude": -73.7781},
+            {"IATA": "LAX", "Name": "Los Angeles", "Latitude": 33.9416, "Longitude": -118.4085},
+            {"IATA": "ORD", "Name": "O'Hare", "Latitude": 41.9742, "Longitude": -87.9073},
+        ]
+    )
+    config = {
+        "Sample Airways": {
+            "A320": {"Y": 150, "W": 10, "J": 12, "F": 4, "Total": 176},
+        }
+    }
+    datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+    route_columns = [
+        "Airline Code",
+        "IDK",
+        "Source airport",
+        "Source airport ID",
+        "Destination airport",
+        "Destination airport ID",
+        "Codeshare",
+        "Stops",
+        "Equipment",
+    ]
+    datastore.routes = pd.DataFrame(
+        [
+            {"Airline Code": "SA", "Source airport": "JFK", "Destination airport": "LAX", "Equipment": "A320"},
+            {"Airline Code": "SA", "Source airport": "JFK", "Destination airport": "ORD", "Equipment": "A320"},
+            {"Airline Code": "OA", "Source airport": "JFK", "Destination airport": "LAX", "Equipment": "A320"},
+        ],
+        columns=route_columns,
+    )
+
+    routes_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "JFK",
+                "Destination airport": "LAX",
+                "Airline (Normalized)": normalize_name("Sample Airways"),
+                "Equipment": "A320",
+            },
+            {
+                "Source airport": "JFK",
+                "Destination airport": "ORD",
+                "Airline (Normalized)": normalize_name("Sample Airways"),
+                "Equipment": "A320",
+            },
+        ]
+    )
+
+    enriched = datastore.process_routes(routes_df)
+
+    def fake_totals(self, route_pairs):
+        mapping = {
+            ("JFK", "LAX"): 500000.0,
+            ("JFK", "ORD"): 2000000.0,
+        }
+        return {pair: mapping.get(pair, 1000000.0) for pair in route_pairs}
+
+    datastore.get_route_total_asm = MethodType(fake_totals, datastore)
+
+    analyzed = datastore.cost_analysis(enriched)
+    baseline_lookup = analyzed.set_index(["Source airport", "Destination airport"])["Route Strategy Baseline"].to_dict()
+
+    assert baseline_lookup[("JFK", "LAX")] > baseline_lookup[("JFK", "ORD")]
+    assert all(0 <= value <= 1 for value in baseline_lookup.values())
+
+
+def test_build_route_scorecard_returns_profiles(datastore):
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "JFK", "Name": "John F. Kennedy", "Latitude": 40.6413, "Longitude": -73.7781},
+            {"IATA": "LAX", "Name": "Los Angeles", "Latitude": 33.9416, "Longitude": -118.4085},
+        ]
+    )
+    config = {
+        "Sample Airways": {
+            "A320": {"Y": 150, "W": 10, "J": 12, "F": 4, "Total": 176},
+        }
+    }
+    datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+    datastore.routes = pd.DataFrame(
+        [
+            {"Airline Code": "SA", "Source airport": "JFK", "Destination airport": "LAX", "Equipment": "A320"},
+        ]
+    )
+    routes_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "JFK",
+                "Destination airport": "LAX",
+                "Airline (Normalized)": normalize_name("Sample Airways"),
+                "Equipment": "A320",
+            }
+        ]
+    )
+    cost_df = datastore.cost_analysis(datastore.process_routes(routes_df))
+    scorecard = datastore.build_route_scorecard(cost_df)
+    assert "competition" in scorecard
+    assert "maturity" in scorecard
+    assert "yield" in scorecard
+    assert scorecard["competition"]
+
+
+def test_market_share_snapshot_uses_total_asm(datastore):
+    sample = pd.DataFrame(
+        [
+            {
+                "Source airport": "A",
+                "Destination airport": "B",
+                "ASM": 1000.0,
+                "Competition Level": "Monopoly",
+            },
+            {
+                "Source airport": "A",
+                "Destination airport": "C",
+                "ASM": 500.0,
+                "Competition Level": "Duopoly",
+            },
+        ]
+    )
+
+    def fake_totals(self, pairs):
+        mapping = {("A", "B"): 2000.0, ("A", "C"): 500.0}
+        return {pair: mapping.get(pair, 0.0) for pair in pairs}
+
+    datastore.get_route_total_asm = MethodType(fake_totals, datastore)
+    snapshot = datastore.compute_market_share_snapshot(sample, limit=2)
+    ab_share = snapshot.loc[snapshot["Destination"] == "B", "Market Share"].iloc[0]
+    ac_share = snapshot.loc[snapshot["Destination"] == "C", "Market Share"].iloc[0]
+    assert ab_share == pytest.approx(0.5)
+    assert ac_share == pytest.approx(1.0)
+
+
+def test_summarize_fleet_utilization_returns_scores(datastore):
+    sample = pd.DataFrame(
+        [
+            {
+                "Source airport": "A",
+                "Destination airport": "B",
+                "Equipment": "A320",
+                "Distance (miles)": 1000,
+            },
+            {
+                "Source airport": "A",
+                "Destination airport": "C",
+                "Equipment": "A320",
+                "Distance (miles)": 900,
+            },
+            {
+                "Source airport": "D",
+                "Destination airport": "E",
+                "Equipment": "737",
+                "Distance (miles)": 700,
+            },
+        ]
+    )
+    util = datastore.summarize_fleet_utilization(sample)
+    assert set(util.columns) == {
+        "Equipment",
+        "Route Count",
+        "Average Distance",
+        "Total Distance",
+        "Utilization Score",
+    }
+    assert util.iloc[0]["Equipment"] == "A320"
+    assert util.iloc[0]["Route Count"] == 2
 
 
 def test_cbsa_simulation_filters_international_and_rounds(datastore):

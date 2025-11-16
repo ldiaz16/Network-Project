@@ -1,0 +1,128 @@
+AvBenchGLOBAL BENCHMARK
+FOCUS: A321neo, 737 -8 MAX, A220 -300,      
+    787-9, A350 -900 & ATR72 
+June 2024NETWORK MATURITY
+
+AvBenchNETWORK MATURITY
+A321neo
+June 2024
+Source: Milanamos  & ch -aviationTurkish operates its 
+A321neo on 112 routes, 
+only 2 of which have 
+been in operation for 
+less than 3 years.
+While many routes have shifted 
+from W6 to W4, nearly 10% of 
+routes (25) currently operated by 
+W6’s A321neo are less than 12 
+months old, and nearly 100 routes 
+were not in operation 3 years ago.“Fluid” Network “Stable” Network
+“Stable” Network: a mature network, with the majority of  routes opened for more than 3 years.
+“Fluid” Network: a young and dynamic network, with a high proportion of routes opened within the last 3 years, 
+or even within the past 12 months.
+AvBenchNETWORK MATURITY
+737-8 MAX
+Of the 48 routes on which 
+Aeromexico  deploys its 737 -8 
+MAX, only one was launched in 
+the past twelve months. All the 
+others have been in operation 
+for more than 3 years.
+The vast majority of routes operated by Fiji's 
+737-8 are less than 3 years old, with nearly a 
+third launched within the past 12 months.
+June 2024
+Source: Milanamos  & ch -aviation“Fluid” Network “Stable” Network
+“Stable” Network: a mature network, with the majority of routes opened for more than 3 years.
+“Fluid” Network: a young and dynamic network, with a high proportion of routes opened within the last 3 years, 
+or even within the past 12 months.
+AvBenchNETWORK MATURITY
+A220 -300
+Bulgaria Air has not opened 
+any new routes with its A220 
+that it wasn't already 
+operating before.
+The 119 routes served by the A220 -300 
+today are less than 3 years old, and 53 of 
+them were opened in the past 12 months. 
+Only 2 have been canceled.
+June 2024
+Source: Milanamos  & ch -aviation“Fluid” Network “Stable” Network
+“Stable” Network: a mature network, with the majority of routes opened for more than 3 years.
+“Fluid” Network: a young and dynamic network, with a high proportion of routes opened within the last 3 years, 
+or even within the past 12 months.
+AvBenchNETWORK MATURITY
+787-9
+Qatar Airways operates 
+its 787 -9 on 39 routes, 
+only 2 of which have 
+been in operation for 
+less than 3 years.
+Of the 6 routes that Air Tahiti Nui 
+currently operates with its 787 -9s, 
+only one has been in operation for 
+more than 3 years, and 2 were 
+opened in the past 12 months.
+June 2024
+Source: Milanamos  & ch -aviation“Fluid” Network “Stable” Network
+“Stable” Network: a mature network, with the majority of routes opened for more than 3 years.
+“Fluid” Network: a young and dynamic network, with a high proportion of routes opened within the last 3 years, 
+or even within the past 12 months.
+AvBenchNETWORK MATURITY
+A350 -900
+Despite the international 
+context, JAL has not opened 
+any new routes with its A350 -
+900s in the past 3 years.“Fluid” Network “Stable” Network
+“Stable” Network: a mature network, with the majority of routes opened for more than 3 years.
+“Fluid” Network: a young and dynamic network, with a high proportion of routes opened within the last 3 years, 
+or even within the past 12 months.
+June 2024
+Source: Milanamos  & ch -aviationOf the 7 routes that ITA Airways 
+currently operates with its A350 -900s, 
+only one has been in operation for 
+more than 3 years, and one was 
+opened in the past 12 months.
+AvBenchNETWORK MATURITY
+ATR72“Fluid” Network “Stable” Network
+“Stable” Network: a mature network, with the majority of routes opened for more than 3 years.
+“Fluid” Network: a young and dynamic network, with a high proportion of routes opened within the last 3 years, 
+or even within the past 12 months.
+June 2024
+Source: Milanamos  & ch -aviationOf the 47 routes that VoePass  
+currently operates with its ATR72s, 
+only 14 have been in operation for 
+more than 3 years, and 21 were 
+opened in the past 12 months!All 20 routes operated by Air 
+New Zealand with its ATR72s 
+have been in operation for 
+more than 3 years.
+AvBenchNETWORK MATURITY
+LESSORS’ NARROWBODY PORTFOLIO
+Weighted average based on the number of aircraft
+June  2024
+Source: Milanamos  & ch -aviation
+
+AvBenchNETWORK MATURITY
+LESSORS’ WIDEBODY PORTFOLIO
+Weighted average based on the number of aircraft
+June  2024
+Source: Milanamos  & ch -aviation
+
+Understand why and how each aircraft contributes
+to the operational and commercial success of an airline
+30+ commercial and operational metrics 
+to explain ahead of time the airline’s financial performance 
+and the role of each asset.
+For more information, visit www.avbench.com or email us at info@avbench.com.AvBenchNetwork Maturity
+Airline  networks  are analyzed  to categorize  routes  into the 
+following  groups : routes  canceled  in the past  12 months,  routes  
+launched  within  the last 12 months,  routes  opened  less than  3 
+years  ago,  and routes  that have  been  operational  for more  than  
+3 years . For a route  to be classified  as new  or canceled,  it must  
+not be operated  by any other  aircraft  type  in the fleet . A 
+mathematical  function  then  converts  this classification  into a 
+score  ranging  from  0 to 10, based  on benchmark  data  from  over  
+1,500 airline/aircraft  combinations  worldwide .
+A score  of 5 signifies  an average  level  of network  maturity,  while  
+a higher  score  indicates  a more  mature  and stable  network .

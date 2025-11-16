@@ -1,0 +1,447 @@
+Airline Network StrategyAirline Network Strategy. How do you compare?
+While an airline has several elements to consider when 
+shaping its strategy, the network strategy remains a 
+fundamental component in enabling growth and for 
+maintaining its competitive stance. 
+While factors like ticket prices, cost structure, and schedule 
+optimization offer opportunities to enhance profitability, the 
+network strategy often reflects the airlines operating dynamics 
+and its capacity to adapt to evolving market conditions.
+October 2023
+Airline Network StrategyCapacity growth
+% of seats deployed on new routes
+OUR  DATA PROVIDERS :    &
+Our Network  Strategy  Matrix  offers four primary  categories  to segment  
+how  airlines  can be rated  among  their  comparative  peers :
+- Network  Freeze : These  carriers  maintain  relatively  stable  capacity  levels  
+or are returning  to pre-crisis  levels . Their  route  renewal  rate is below  
+10%, indicating  a cautious  approach  to new  opportunities . They  might  
+focus  on other  aspects  beyond  the network  to improve  profitability .
+- Network  Shift : These  airlines  may  not have  the ability  to increase  seat 
+offerings  but have  the ability  to adapt  their  network  and explore  new  
+routes  due to changing  market  conditions .
+- Network  Entrenchment : Carriers  in this category  maintain  their  existing  
+network  but increase  seat offerings,  aiming  to protect  and expand  their  
+passenger  and revenue  market  shares . Their  goal  is to establish  a 
+stronger  presence by entrenching  on the routes  they  serve .
+- Network  Expansion : These  airlines  believe  they  already have  a strong  
+enough position  on their  current  network  and possess  the capacity  to 
+increase  seat offerings  on new  routes . They  are strategically  well-placed  
+to influence  the game  they  are playing .
+This analysis  is dynamic,  and the current  situation  may  differ  from  that of 
+tomorrow . Benchmarking  various  airlines  strategies  can provide  highly  
+valuable  information  markers .
+This analysis  provides  insights  into various  markets through  our Network  
+Strategy  Matrix and the dynamic  changes  seen since  the onset  of the 
+COVID  crisis . This matrix  will simplify  how  airlines  are positioned to 
+manage  returning  traffic .
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Wizz Air = Wizz Air (W6) + Wizz Air UK (W9) + Wizz Air Malta (W4) + Wizz Air Abu Dhabi (5W)
+Is easyJet  approaching  the limits  of its network  potential?
+When  examining  the evolution  of capacity  deployed  by low-cost  carriers  in 
+Europe  since  2019  and their  utilization  of this additional  capacity,  several  
+key observations  emerge :
+- easyJet,  Vueling,  and Transavia  fall under  the 'Network  Freeze'  
+category . This is expected  for Vueling,  which  follows  a 'follower'  profile,  
+aligning  closely  with  the networks  of its parent  companies,  British  
+Airways  and Iberia . Its role is to repel  external  threats  from  other  low-
+cost carriers  within  the IAG network . Given  its stable  networks,  Vueling  
+maintains  a similar  dynamic . We could  have  thought  the same  thing  for 
+the two Transavias , but the facts  show  a radically  different  strategy  led 
+by the Air France  group . For easyJet,  questions  may  arise  considering  
+its size and comparison  with  Ryanair . Although  it couldn't  increase  its 
+seat offering  as much,  it will be interesting  to observe  how  this 'bubble'  
+evolves  over  time  as easyJet  grows  its capacity . Will it shift vertically  or 
+move  closer  to Ryanair?  Can it significantly  expand  its network?
+- Eurowings  and airBaltic  fall into the 'Network  Shift'  category . Their  
+reasons  vary. Eurowings  now  operates  from  the brand -new  Berlin  
+airport,  and airBaltic,  affected  by the conflict  in Ukraine,  altered  its 
+routes,  with  Riga -Moscow  being  its most  important  route  in 2019 .
+- Ryanair  remains  the primary  disruptor  in the European  market,  flanked  
+by three  'satellites'  challenging  this giant : Wizz  Air, Transavia  France  
+and Volotea . All have  clear  ambitions  to make  waves . Wizz  Air 
+represents  the main  threat . Initially  launched  to serve  the Eastern  
+European  markets,  Wizz  Air opened  three  subsidiaries  to directly  
+challenge  Ryanair  in Europe  but also grow  in the Middle  East . Transavia  
+France  not only  reclaimed  several  Air France  routes  but also 
+substantially  increased  capacity  on them  to counter  Ryanair,  and so far, 
+it seems  effective . Volotea , operating  more  independently,  leverages  its 
+flexibility  to experiment  with  new  strategies —successfully?
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Is Iberia  stronger  than  the European  Big 3 ?
+The European  aviation  market  is in full swing,  and the latest  results  from  
+the European  Majors  underscore  Iberia's  exceptional  performance . Not 
+only  does  Iberia  boast  the largest  operating  margins  among  the 
+network  carriers  in the three  major  groups  (AirFrance -KLM,  Lufthansa  
+Group,  IAG),  but it also leads  in punctuality  with  the best  'On-Time  
+Performance'  on the continent . Additionally,  Iberia  has managed  to 
+implement  the most  significant  price  increases  since  the onset  of 
+COVID,  as detailed  in my previous  posts  (refer  to the link in the 
+comments) .
+Currently,  Iberia  is actively  consolidating  its presence  on its existing  
+network . Not only  has it already  surpassed  its pre-COVID  level  of seat 
+supply,  but its strategic  positioning  suggests  a focus  on 'Network  
+Entrenchment,'  where  capacity  is directed  toward  strengthening  its 
+presence  on the current  network  rather  than  exploring  new  routes  – 
+explaining  its pricing  policy  as well.
+In contrast,  Air France  and Lufthansa  are utilizing  their  subsidiaries,  
+Transavia  and Eurowings , respectively,  to reimagine  parts  of their  
+networks . However,  the strategies  of the European  'Big 3' ultimately  
+share  significant  similarities . 
+ITA, amidst  ongoing  restructuring,  has a considerable  journey  ahead,  
+and the question  remains  whether  its 'bubble'  will move  vertically  or 
+diagonally  as its capacity  expands .
+As for KLM,  with  accumulating  constraints  at Schiphol  Airport,  there  
+may  be limited  room  to explore  new  routes,  suggesting  a more  vertical  
+movement  for its 'bubble' .
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Air Arabia (only G9 shown here) launched in 2003, flynas  launched in 2007, flydubai launched in 
+2009, flyadeal  and SalamAir  launched in 2016. Jazeera launched in 2004.
+Are airlines  becoming  wiser  with  time?
+With  the announcements  consistently  reaching  record  levels  during  the 
+Dubai  Airshow  in November,  the recurring  question  emerges : Is there  
+room  for everyone?
+While  we believe  our partner  Milanamos  is best  positioned  to answer  
+the question  of market  demand,  we can try to analyze  how  Gulf  carriers  
+evolve  as they  accumulate  experience . Observing  the positions  of 
+various  low-cost airlines  in the region  within  our Network  Strategy  
+matrix,  two noteworthy  patterns  emerge : the sizes  of their  'bubbles'  are 
+relatively  similar —these  airlines  possess  fleets  of comparable  sizes . 
+However,  the older  they  get, the more  they  tend  to shift  towards  the 
+'Network  Freeze'  category . It's as if over  time,  Gulf  airlines  find their  
+niche  and cease  actively  seeking  new  horizons .
+There  is an exception  to this trend : Jazeera  Airways . Launched  in 2004 , 
+it seems  to be undergoing  a mid-life crisis  and is actively  seeking  a new  
+direction!
+For others,  the chronological  order  of their  launch  is directly  linked  to 
+their  position  on this matrix . Air Arabia  was the first to launch  in 2003 , 
+followed  by flynas  in 2007 , flydubai  in 2009 , and then  flyadeal  and 
+SalamAir  in 2016 .
+Of course,  the introduction  of new  players  can always  alter  the 
+landscape,  and the example  of flyadeal  entering  the territory  of flynas  
+will be interesting  to follow . As discussed  in a previous  post  (link  in 
+comments),  flyadeal  and flynas  are the only  two low-cost airlines  in the 
+world  that have  reduced  ticket  prices  since  COVID . However,  despite  
+comparable  sizes,  flyadeal  continues  to explore  opportunities  in 
+various  directions,  while  Flynas  understands  the market  it aims  to serve .
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+If there's  a geographical  region  profoundly  affected  by the COVID  
+crisis,  it's the South -East  Asian  area . The lingering  impacts  are evident  
+when  examining  our Network  Strategy  matrix . Thai  and Garuda,  both  
+on the brink  of closure,  are far from  returning  to their  pre-crisis  capacity  
+and network . However,  Network  Carriers  weren't  the sole  victims ; the 
+situation  of AirAsia  is indicative . In a forthcoming  post,  we'll  delve  into 
+how  AirAsia,  today,  is the low-cost carrier  furthest  behind  in recovering  
+its network  and pre-COVID  capacity . Adding  Malaysia  Airlines  and 
+Philippine  Airlines,  we have  a group  of airlines  falling  into the 'Network  
+Freeze'  category  (see  the link to my previous  post  in the comments) .
+While  it might  be too early  to definitively  confirm  this trend,  Vietnam  
+Airlines  and Cebu  appear  more  inclined  to consolidate  their  presence  
+on existing  routes  with  the gradually  increasing  capacity,  rather  than  
+aggressively  seeking  new  routes . Notably,  Vietnam  Airlines  
+demonstrates  that the Vietnamese  market  is the most  dynamic,  being  
+the only  Network  Carrier  to have  already  regained  its pre-COVID  
+capacity .
+Singapore  Airlines  and Lion  Air seem  to have  finally  regained  a level  of 
+maturity  comparable  to their  pre-crisis  state . This is rather  
+disappointing  for Lion  Air, likely  affected  by delays  in MAX  deliveries . 
+For an airline  of this caliber,  the time  lost in resuming  its previous  
+growth  trajectory  is significant . 
+Finally,  in the 'Network  Expansion'  category,  we find Scoot,  but 
+especially  VietJet . VietJet  benefits  not only  from  robust  market  growth  
+in Vietnam  but also from  subsequent  deliveries,  positioning  it as the 
+primary  disruptor  in the region . As for Scoot,  it has thus  far functioned  
+as the bodyguard  for Singapore  Airlines,  similar  to Vueling  for the IAG 
+group,  protecting  against  external  threats  where  Singapore  Airlines  
+operates . With  a stated  ambition  to accelerate  Scoot's  development,  
+questions  may  arise  regarding  its ability  to 'break  away'  from  its parent  
+bubble!
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Picture before the merger of the four 'satellite' airlines of the TATA group (Air India, Air India Express, 
+AirAsia India and Vistara), and before the resurgence of Jet Airways.
+All against  IndiGo?
+We are not experts  on India,  but one must  admit  that it is not easy  to 
+follow . GoAir  changed  its name  to Go First  in 2021  before  
+disappearing  in 2024 . Jet Airways  vanished  in 2019  but is expected  to 
+restart  operations  in 2024 . In early  2022 , the TATA  group  officially  
+acquired  Air India  and announced  a merger  a year  ago between  Air 
+India  Express  and AirAsia  India  to create  AIX Connect . In the process,  
+the TATA  group  announced  that Air India  and Vistara  would  merge  in 
+March  2024 . We alter  names,  transform  identities,  and shift  dimensions . 
+Will SpiceJet  be able  to keep  up?
+However,  one thing  remains  constant : IndiGo . Launched  in 2006 , it has 
+become  the sun among  these  airlines —the largest  one,  with  all the 
+others  revolving  around  it. 
+To better  understand  future  dynamics,  we use our Airline  Network  
+Strategy  matrix  before  the merger  of the four 'satellite'  airlines  of the 
+TATA  group  and before  the resurgence  of Jet Airways . 
+There  are clearly  very  different  cultures  among  these  airlines,  with  four 
+distinct  strategies  for developing  their  capacity  and networks . We won't  
+speculate  on the future  of all these  bubbles,  but this picture  will surely  
+be very  different  by the end of next  year,  and the Indian  market  will 
+continue  to be difficult  to read!
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Although  Southwest  is more  than  four times  the size of its closest  
+competitors,  its network  development  appears  to be in defensive  
+mode,  falling  into the category  we termed  'Network  Entrenchment'  in 
+my previous  post . While  it has continued  to open  new  routes,  
+particularly  from  Chicago  (ORD  more  than  MDW),  Las Vegas,  Baltimore,  
+Denver,  and Hawaii,  the rate of these  openings  is relatively  low by 
+industry  standards,  especially  for low-cost carriers . Its 'bubble'  seems  
+to be expanding  more  vertically  than  horizontally .
+JetBlue,  on its end,  has noticeably  fallen  behind . Maybe  too 
+preoccupied  with  its future  and potential  merger  with  Spirit,  coupled  
+with  a fleet  undergoing  capability  changes  that require  time  to mature,  
+especially  with  the gradual  ramp -up of the A220. While  transatlantic  
+routes  have  garnered  media  attention,  the new  routes  often  lean  
+toward  the south  from  New  York,  extending  further  into Latin  and 
+Central  America,  as well as development  from  Los Angeles,  reaching  in 
+all directions .
+The twin  ULCCs,  Spirit  and Frontier,  mirror  each  other,  following  
+precisely  the same  approach . Similar  in size,  the expansion  of their  
+networks  shares  the same  trajectory  - quite  distinct  from  that of 
+JetBlue ... As Spirit  is withdrawing  from  Denver,  there  may  not be room  
+for both  everywhere . The question  arises : can these  two bubbles  
+sustain  this momentum  for an extended  period,  with  the hope  that Pratt  
+& Whitney  doesn't  act as an arbitrator  between  the two due to a 
+shortage  of available  engines!
+On a smaller  scale,  Allegiant  and Sun Country  continue  to expand  their  
+networks . Allegiant  primarily  focuses  on Nashville  and its presence  in 
+Florida,  while  Sun Country  keeps  opening  routes  from  Minneapolis  to 
+various  destinations  across  the United  States,  more  inland  than  in sunny  
+or coastal  locations!
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Ethiopian  Airlines,  a success  story  that nothing  can stop .
+Given  the size of this continent,  gauging  the growth  strategies  of African  
+airlines  requires  substantial  scales,  leading  us to create  two pictures  to 
+better  understand  the dynamics  of the different  operators .
+- In the "Network  Freeze"  category,  we have  North  African  airlines  
+Tunisair,  Air Algérie , and Royal  Air Maroc,  along  with  Kenya  Airways . The 
+COVID  crisis  is evidently  a contributing  factor,  especially  for the latter  
+undergoing  significant  restructuring  and aiming  to cut ties with  the 
+Kenyan  government  by the end of 2023 .
+- In the "Network  Entrenchment"  category,  Ethiopian  and FlySafair  stand  
+out. Ethiopian  is already  reaching  120% of its 2019  capacity . Being  the 
+largest  airline  on the continent  with  a mature  network,  Ethiopian  naturally  
+consolidates  its presence  in its market  without  an immediate  need  for 
+new  expansion . A remarkable  trajectory  for this airline,  which  was the first 
+affected  by the MAX  crisis . FlySafair's  position  in this category  is almost  
+accidental,  seizing  the opportunity  created  by the collapse  of Comair  
+and South  African  Airways,  filling  the capacity  gap left by the two defunct  
+carriers .
+- EgyptAir  is ready  for a new  chapter,  operating  at 100% capacity  with  a 
+healthy  10% increase  in new  routes,  a favorable  situation  for potential  
+growth .
+- In the "Network  Expansion"  category,  we find smaller  ambitious  airlines  
+like Air Côte  d'Ivoire,  Air Tanzania,  and notably  Air Peace,  based  in the 
+most  populous  country  in Africa,  where  the potential  for growth  is 
+strongest .
+- Finally,  Air Senegal  appears  to be leaning  towards  the "network  shift"  
+category,  rethinking  its network  through  changing  fleet  choices .
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Do Chinese  airlines  all follow  the same  growth  strategy?
+The intricacies  of partnerships  and legal  structures  among  these  airlines  
+make  understanding  Chinese  carriers'  strategies  a complex  task. 
+Analyzing  these  airlines  through  our Airline  Network  Strategy  Matrix  
+reveals  several  key insights :
+- Not a single  airline  falls into the "Network  Freeze"  category . Not a 
+surprise,  it is practically  impossible  given  the continuous  opening  of new  
+airports  nationwide,  resulting  in airlines  constantly  expanding  to new  
+destinations .
+- Among  the three  major  carriers,  Air China  has significantly  increased  its 
+capacity  post -crisis . Its focus  is primarily  on Chengdu,  capitalizing  on the 
+newly  inaugurated  Tianfu  airport  in 2021 . Meanwhile,  China  Eastern  and 
+China  Southern,  based  respectively  in Shanghai  and Guangzhou,  have  
+concentrated  on shifting  operations  partially  to the new  Daxing  airport  
+from  Beijing .
+- Among  the 'mid -size’  network  carriers  (Sichuan  Airlines,  Shandong  
+Airlines,  Shenzhen  Airlines,  Hainan  Airlines,  and Xiamen  Airlines),  
+Sichuan  Airlines  stands  out. The only  one that does  not have  the Boeing  
+737 in its fleet  or on order … Coupled  with  the launch  of the new  Tianfu  
+airport  in Chengdu,  this is a unique  opportunity  for Sichuan  Airlines  to 
+grow  rapidly .
+- With  strong  operating  margins,  Spring  Airlines,  China's  pioneering  low-
+cost carrier,  is almost  following  a 'network  shift’  strategy  with  nearly  45% 
+of its capacity  redeployed  onto  new  routes . Something  wrong  
+happening  there  ?
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Is it a good  idea  for SKY airline  to join GOL  and Avianca  
+within  the ABRA  group?
+If COPA  continues  to announce  very  good  financial  results,  its network  
+strategy  fits the category  of 'network  entrenchment .' It keeps  adding  
+capacity  on existing  routes  to divert  traffic  through  its hub in Panama .
+In the 'Network  Shift'  category,  we find Aerolineas , primarily  due to the 
+reintroduction  of Austral  within  its network .
+With  the exit of Viva  Air Colombia  and its subsidiary  Viva  Air Peru,  the 
+ABRA  group  now  relies  on GOL  and Avianca,  the only  two airlines  in 
+the 'Network  Freeze'  category . For GOL,  whether  we call it a low-cost  
+carrier  or a low-fare,  its position  on this matrix  is low. No wonder  these  
+two are seeking  a new  dynamic  with  an airline  like SKY.
+SKY falls into the 'Network  Expansion'  category . Also  present  is LATAM,  
+regaining  stability  after  bankruptcy,  along  with  Azul,  a dominant  force  
+in Brazil  steadily  capturing  market  share  in both  passengers  and 
+revenue  compared  to its Brazilian  rivals .
+Another  airline  worth  tracking,  despite  its current  small  scale,  is 
+JetSMART . Off the chart  for now,  JetSMART  poses  direct  competition  
+for SKY and could  significantly  disrupt  several  markets . SKY faces  the 
+challenge  of sustaining  its current  momentum  while  collaborating  with  
+two airlines  currently  in a weaker  position . Additionally,  it needs  to 
+maintain  competitiveness  against  a determined  new  entrant  with  
+explicit  ambitions  on other  continents  – just look  at Frontier,  Wizz  Air, 
+and Volaris .
+For GOL  and Avianca,  it's likely  a favorable  move,  but for SKY,  it might  
+raise  more  questions .
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Qatar  Airways,  the best  airline  among  all the Big 3s ?
+Not surprisingly,  there  aren't  many  new  routes  that the American  
+majors  haven't  opened  yet. The U.S. Big 3 can only  add capacity  and 
+continue  fortifying  each  of their  respective  fortresses .
+Similarly,  the European  Big 3 find themselves  in the same  category  - 
+operating  with  a capacity  still lower  than  pre-COVID  levels,  but their  
+network  strategies  are evolving . Adjustments  are being  made,  
+especially  with  the utilization  of their  low-cost subsidiaries  - Vueling,  
+Transavia,  and Eurowings . It's worth  noting  that their  respective  hubs,  
+Paris,  London,  and Frankfurt/Munich,  are much  closer  to each  other  
+than  the hubs  of the American  counterparts . This proximity  makes  it 
+easier  for the three  major  European  carriers  to divert  passengers  from  
+their  competitors  than  for the three  major  Americans,  whose  distances  
+leave  passengers  with  fewer  options .
+As presented  earlier,  China  is experiencing  significant  growth  with  new  
+airports  being  built  and new  routes  opening  every  month . Air China,  
+the smallest  of the three,  is catching  up, benefiting  from  the ramp -up of 
+two new  airports  in Beijing  and Chengdu,  its main  bases .
+The real surprise  comes  from  the Big 3 in the Middle  East . While  
+Emirates  and Etihad  made  grand  promises  during  the Dubai  Air Show,  
+they  have  lost some  dynamism,  particularly  when  compared  to Qatar  
+Airways . For an airline  of this scale,  we can only  applaud  the dynamism  
+of its network  and the work  carried  out by Qatar  Airways'  Network  & 
+Fleet  Planning  teams . Despite  the challenges  posed  by traffic  recovery,  
+they  are clearly  ahead  of Emirates  and Etihad .
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+Can AirAsia  come  back?
+Often  described  as the "pioneer"  of low-cost travel  in Asia,  AirAsia  
+changed  its corporate  name  to Capital  A last year  to reflect  the 
+expansion  of its business  portfolio  beyond  the core  budget  airline  : “a 
+world -class  brand,  a leading  Asean  airline,  and a digital  travel  and 
+lifestyle  platform  that leverages  data  and technology” … Unfortunately,  
+certain  elements  are vital to the success  of a low-cost  airline : volume  
+and growth  - areas  where  AirAsia  currently  faces  challenges .
+In an industry  where  space  is limited  and consolidation  has already  
+affected  numerous  network  carriers,  many  “Low -Cost”  carriers  have  
+already  disappeared  (Go First,  Viva  Air, Swoop,  kulula .com,  NokScoot , 
+Interjet , just to name  a few recent  examples …). AirAsia's  setback  due to 
+the COVID  crisis  becomes  a real challenge,  especially  in the very  
+dynamic  Asian  market .
+Some  low-cost carriers  are not shown  here  as their  exceptional  
+performances  would  make  the rest of the picture  difficult  to read!  
+VivaAerobus  is one of them,  same  “size”  as AirAsia  but with  over  200% 
+growth  since  2019 ... Another  example  is the Wizz  Air group . If we 
+combine  the four subsidiaries  (W4, W6, W9, and 5W) – which  would  
+create  a bubble  larger  than  JetBlue's  – the percentage  of seats  
+deployed  on new  routes  is close  to 50%.
+Others  are still too early  in their  development  to make  a definitive  
+assessment  : Breeze,  Avelo , JetSMART , PLAY,  Akasa  Air, Flair,  Lynx  Air, 
+Arajet , Bonza,  among  others . We monitor  all these  airlines  worldwide  
+on a monthly  basis , thanks  to ch-aviation  and Milanamos , and provide  a 
+competitive  assessment  using  more  than  30 benchmarks,  like this one.
+Airline Network Strategy since 2019
+New routes : routes that were not operated by the airline in 2019. 
+Size of the bubbles proportional to the capacity deployed by each airline.
+Q3 2023 vs Q3 2019
+Capacity growth since 2019
+% of seats deployed on new routes
+
+Lessees’ Average Profile
+Average Capacity Growth: weighted average growth in capacity since 2019 for all current lessees.
+Average % of seats deployed on new routes: weighted average percentage of seats deployed on routes 
+that were not operated by each airline in 2019, considering all current lessees.
+ The size of the bubbles is proportional to the number of operating leases with A320neo/A321neo and 
+737-8 MAX.
+Only lessors with more than 30 operating leases with NEO or MAX aircraft.
+Capacity Growth & New routes : Q3 2023 vs Q3 2019
+Average Capacity growth
+Average % of seats deployed on new routes 
+A320neo/A321neo & 737 -8 MAX Portfolios
+Are all lessors  pursuing  the same  customer  types  ? No.
+Since  COVID,  airlines  globally  have  redistributed  their  capacity  across  
+each  region . These  adjustments  don't  follow  uniform  dynamics ; some  
+airlines  are yet to regain  their  pre-crisis  capacity  levels,  while  others  
+have  not only  fully  recovered  but have  also significantly  expanded  their  
+networks .
+The role of aircraft  lessors  is crucial  in this process  of readjusting  the 
+newly  deployed  capacity . Taking  the A320/A321neo and 737-8 MAX  
+portfolios  as examples,  we can see that lessors  don't  target  the same  
+customer  types . Some  are more  focused  on high -growth  customers . 
+AerCap,  ACG,  and CALC  for instance,  are actively  supporting  the 
+growth  of airlines  that have  expanded  significantly  since  the crisis . In 
+contrast,  lessors  like BBAM,  ORIX,  or Castlelake  have  customers  whose  
+capacity  has evolved  more  moderately .
+Understand why and how each aircraft contributes
+to the operational and commercial success of an airline
+30+ commercial and operational metrics 
+to explain ahead of time the airline’s financial performance 
+and the role of each asset.
+For more information: info@avbench.com
+OUR  DATA PROVIDERS :    &

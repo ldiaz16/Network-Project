@@ -267,7 +267,7 @@ class DataStore:
         if processed.empty:
             return {pair: 0.0 for pair in pair_set}
 
-        cost = self.cost_analysis(processed)
+        cost = self.cost_analysis(processed, include_strategy_baseline=False)
         valid = cost[cost.get("ASM Valid", False).fillna(False)]
         if valid.empty:
             return {pair: 0.0 for pair in pair_set}
@@ -742,8 +742,268 @@ class DataStore:
     def find_best_aircraft_for_route(self, airline_name):
         aircraft_list_df = self.aircraft_config[self.aircraft_config["Airline"] == airline_name]
 
-    
-    def cost_analysis(self, airline_df):
+    def _calculate_route_strategy_baseline(self, cost_df):
+        """
+        Build a baseline score for each route using multiple signals.
+
+        The score blends:
+        - An ASM share component that compares the airline's ASM to total ASM for the same
+          route as observed in the global routes database.
+        - A seat-density component that rewards routes operating above the airline's typical
+          seats-per-mile performance.
+        - A distance-alignment component that measures how closely the route aligns with the
+          carrier's median stage length.
+        """
+        if cost_df is None or cost_df.empty:
+            return pd.Series(dtype="float64")
+
+        df = cost_df.copy()
+        df_index = df.index
+        asm_values = pd.to_numeric(df.get("ASM"), errors="coerce").fillna(0.0)
+        spm_values = pd.to_numeric(df.get("Seats per Mile"), errors="coerce").fillna(0.0)
+        distance_values = pd.to_numeric(df.get("Distance (miles)"), errors="coerce").fillna(0.0)
+
+        route_pairs = list(zip(df.get("Source airport"), df.get("Destination airport")))
+        totals_lookup = self.get_route_total_asm(route_pairs)
+        totals_series = pd.Series(
+            [
+                totals_lookup.get(pair) if isinstance(pair, tuple) else None
+                for pair in route_pairs
+            ],
+            index=df_index,
+            dtype="float64"
+        )
+        totals_series = pd.to_numeric(totals_series, errors="coerce")
+
+        asm_share = (asm_values / totals_series)
+        asm_share = asm_share.where(totals_series > 0).clip(lower=0.0, upper=1.0).fillna(0.0)
+
+        spm_reference = spm_values[spm_values > 0].median()
+        if pd.isna(spm_reference) or spm_reference <= 0:
+            seat_density = pd.Series(0.0, index=df_index, dtype="float64")
+        else:
+            seat_density = (spm_values / (spm_reference * 1.5)).clip(lower=0.0, upper=1.0)
+
+        distance_reference = distance_values[distance_values > 0].median()
+        if pd.isna(distance_reference) or distance_reference <= 0:
+            distance_alignment = pd.Series(0.5, index=df_index, dtype="float64")
+        else:
+            distance_alignment = 1 - (distance_values - distance_reference).abs() / distance_reference
+            distance_alignment = distance_alignment.clip(lower=0.0, upper=1.0)
+
+        baseline = (
+            0.5 * asm_share +
+            0.3 * seat_density +
+            0.2 * distance_alignment
+        ).clip(lower=0.0, upper=1.0)
+
+        return baseline.round(4)
+
+    def _compute_route_competition(self, cost_df):
+        """
+        Annotate each route with an estimated competition level using the full routes dataset.
+        Monopoly: only one airline flies the O&D, Duopoly: two airlines, Competitive: 3+ airlines.
+        """
+        if cost_df is None or cost_df.empty:
+            return pd.Series(dtype="float64"), pd.Series(dtype=object), pd.Series(dtype="float64")
+
+        if self.routes is not None and not self.routes.empty:
+            competition_counts = (
+                self.routes.groupby(["Source airport", "Destination airport"])["Airline Code"]
+                .nunique()
+                .to_dict()
+            )
+        else:
+            competition_counts = {}
+
+        counts = []
+        levels = []
+        scores = []
+
+        def _level_from_count(value):
+            if value <= 1:
+                return "Monopoly", 1.0
+            if value == 2:
+                return "Duopoly", 0.6
+            return "Competitive", 0.2
+
+        for _, row in cost_df.iterrows():
+            key = (row.get("Source airport"), row.get("Destination airport"))
+            count = competition_counts.get(key, 1)
+            level, score = _level_from_count(count)
+            counts.append(float(count))
+            levels.append(level)
+            scores.append(score)
+
+        return (
+            pd.Series(counts, index=cost_df.index, dtype="float64"),
+            pd.Series(levels, index=cost_df.index, dtype=object),
+            pd.Series(scores, index=cost_df.index, dtype="float64"),
+        )
+
+    def _compute_route_maturity_proxy(self, cost_df):
+        """
+        Approximate route maturity by normalizing ASM against the airline's network median.
+        High ASM routes are treated as established (stable); low ASM routes are more fluid.
+        """
+        if cost_df is None or cost_df.empty:
+            return pd.Series(dtype="float64"), pd.Series(dtype=object)
+
+        asm_values = pd.to_numeric(cost_df.get("ASM"), errors="coerce").fillna(0.0)
+        reference = asm_values[asm_values > 0].median()
+        if pd.isna(reference) or reference <= 0:
+            return (
+                pd.Series(0.5, index=cost_df.index, dtype="float64"),
+                pd.Series("Unknown", index=cost_df.index, dtype=object),
+            )
+
+        maturity_score = 1 - (asm_values - reference).abs() / reference
+        maturity_score = maturity_score.clip(lower=0.0, upper=1.0)
+        labels = maturity_score.apply(lambda value: "Stable" if value >= 0.6 else "Fluid")
+        return maturity_score.round(4), labels
+
+    def _compute_route_yield_proxy(self, cost_df):
+        """
+        Normalize seats-per-mile to approximate relative pricing/ticket-yield pressure.
+        Higher seats-per-mile typically correlates with denser cabins -> lower fares.
+        """
+        if cost_df is None or cost_df.empty:
+            return pd.Series(dtype="float64")
+
+        spm_values = pd.to_numeric(cost_df.get("Seats per Mile"), errors="coerce").fillna(0.0)
+        reference = spm_values[spm_values > 0].median()
+        if pd.isna(reference) or reference <= 0:
+            return pd.Series(0.5, index=cost_df.index, dtype="float64")
+
+        ratio = spm_values / reference
+        # Invert so low seat density (premium) yields higher score.
+        yield_score = (1 / (1 + ratio)).clip(lower=0.0, upper=1.0)
+        return yield_score.round(4)
+
+    def build_route_scorecard(self, cost_df):
+        """Create a summary of competition, maturity, and yield proxies for dashboards."""
+        if cost_df is None or cost_df.empty:
+            return {
+                "competition": {},
+                "maturity": {},
+                "yield": {},
+            }
+
+        df = cost_df.copy()
+        asm = pd.to_numeric(df.get("ASM"), errors="coerce").fillna(0.0)
+        total_asm = asm.sum() or 1.0
+
+        comp_profile = (
+            df.groupby("Competition Level")["ASM"]
+            .sum(min_count=1)
+            .div(total_asm)
+            .fillna(0.0)
+            .to_dict()
+        )
+        maturity_profile = (
+            df.groupby("Route Maturity Label")["ASM"]
+            .sum(min_count=1)
+            .div(total_asm)
+            .fillna(0.0)
+            .to_dict()
+        )
+        yield_percentiles = {
+            "p25": float(df["Yield Proxy Score"].quantile(0.25)) if "Yield Proxy Score" in df else None,
+            "p50": float(df["Yield Proxy Score"].median()) if "Yield Proxy Score" in df else None,
+            "p75": float(df["Yield Proxy Score"].quantile(0.75)) if "Yield Proxy Score" in df else None,
+        }
+
+        return {
+            "competition": comp_profile,
+            "maturity": maturity_profile,
+            "yield": yield_percentiles,
+        }
+
+    def compute_market_share_snapshot(self, cost_df, limit=20):
+        """
+        Produce a weighted market-share snapshot for the airline's largest O&D routes.
+        Uses the global ASM total for each airport pair as the denominator.
+        """
+        if cost_df is None or cost_df.empty:
+            return pd.DataFrame(columns=[
+                "Source",
+                "Destination",
+                "Airline ASM",
+                "Market ASM",
+                "Market Share",
+                "Competition Level",
+            ])
+
+        df = cost_df.copy()
+        df = df.sort_values("ASM", ascending=False).head(limit).reset_index(drop=True)
+        route_pairs = list(zip(df["Source airport"], df["Destination airport"]))
+        totals = self.get_route_total_asm(route_pairs)
+        df["Market ASM"] = [
+            totals.get(pair, row["ASM"]) if isinstance(pair, tuple) else row["ASM"]
+            for pair, row in zip(route_pairs, df.to_dict(orient="records"))
+        ]
+        df["Market Share"] = df.apply(
+            lambda row: (row["ASM"] / row["Market ASM"]) if row["Market ASM"] and row["Market ASM"] > 0 else None,
+            axis=1
+        )
+        snapshot = df[[
+            "Source airport",
+            "Destination airport",
+            "ASM",
+            "Market ASM",
+            "Market Share",
+            "Competition Level",
+        ]].copy()
+        snapshot.rename(
+            columns={
+                "Source airport": "Source",
+                "Destination airport": "Destination",
+                "ASM": "Airline ASM",
+            },
+            inplace=True,
+        )
+        return snapshot
+
+    def summarize_fleet_utilization(self, cost_df):
+        """
+        Approximate fleet utilization context using network coverage.
+        Calculates route counts, average distance, and a utilization score per aircraft type.
+        """
+        if cost_df is None or cost_df.empty:
+            return pd.DataFrame(
+                columns=["Equipment", "Route Count", "Average Distance", "Total Distance", "Utilization Score"]
+            )
+
+        df = cost_df.copy()
+        df["Equipment"] = df.get("Equipment").fillna("Unknown")
+        df["Distance (miles)"] = pd.to_numeric(df.get("Distance (miles)"), errors="coerce").fillna(0.0)
+        df["_route_key"] = df["Source airport"].astype(str) + "-" + df["Destination airport"].astype(str)
+        grouped = (
+            df.groupby("Equipment", dropna=False)
+            .agg(
+                Route_Count=("_route_key", "nunique"),
+                Average_Distance=("Distance (miles)", "mean"),
+                Total_Distance=("Distance (miles)", "sum"),
+            )
+            .reset_index()
+        )
+        max_routes = grouped["Route_Count"].max() or 1
+        grouped["Utilization Score"] = grouped["Route_Count"] / max_routes
+        grouped.rename(
+            columns={
+                "Equipment": "Equipment",
+                "Route_Count": "Route Count",
+                "Average_Distance": "Average Distance",
+                "Total_Distance": "Total Distance",
+            },
+            inplace=True,
+        )
+        grouped["Average Distance"] = grouped["Average Distance"].round(2)
+        grouped["Total Distance"] = grouped["Total Distance"].round(2)
+        grouped["Utilization Score"] = grouped["Utilization Score"].round(3)
+        return grouped.sort_values(["Utilization Score", "Route Count"], ascending=[False, False]).reset_index(drop=True)
+
+    def cost_analysis(self, airline_df, include_strategy_baseline=True):
         """Perform cost analysis on the airline DataFrame."""
         # Calculate total seats available for each route
         df = airline_df.copy()
@@ -758,6 +1018,25 @@ class DataStore:
 
         df["ASM"] = df["Total Seats"] * df["Distance (miles)"]
         df["ASM Valid"] = (df["Distance (miles)"] > 0) & (df["Total Seats"] > 0)
+        if include_strategy_baseline:
+            baseline_score = self._calculate_route_strategy_baseline(df)
+            if baseline_score.empty:
+                baseline_score = pd.Series(0.0, index=df.index, dtype="float64")
+            df["Route Strategy Baseline"] = baseline_score.reindex(df.index).fillna(0.0)
+        else:
+            df["Route Strategy Baseline"] = 0.0
+
+        competition_count, competition_level, competition_score = self._compute_route_competition(df)
+        df["Competitor Count"] = competition_count.reindex(df.index).fillna(1.0)
+        df["Competition Level"] = competition_level.reindex(df.index).fillna("Monopoly")
+        df["Competition Score"] = competition_score.reindex(df.index).fillna(1.0)
+
+        maturity_score, maturity_label = self._compute_route_maturity_proxy(df)
+        df["Route Maturity Score"] = maturity_score.reindex(df.index).fillna(0.5)
+        df["Route Maturity Label"] = maturity_label.reindex(df.index).fillna("Unknown")
+
+        yield_proxy = self._compute_route_yield_proxy(df)
+        df["Yield Proxy Score"] = yield_proxy.reindex(df.index).fillna(0.5)
 
         columns = [
             "Airline",
@@ -773,6 +1052,17 @@ class DataStore:
         ]
         if "Seat Source" in df.columns:
             columns.append("Seat Source")
+        columns.append("Route Strategy Baseline")
+        columns.extend(
+            [
+                "Competitor Count",
+                "Competition Level",
+                "Competition Score",
+                "Route Maturity Score",
+                "Route Maturity Label",
+                "Yield Proxy Score",
+            ]
+        )
 
         ## print(airline_df[["Airline", "Source airport", "Destination airport", "Distance (miles)", "Total Seats", "Seats per Mile"]].head())
         return df[columns]
@@ -950,6 +1240,11 @@ class DataStore:
             on="Destination airport",
             how="left"
         )
+        if "Route Strategy Baseline" not in routes_with_cbsa.columns:
+            routes_with_cbsa["Route Strategy Baseline"] = pd.NA
+        for column in ["Competition Score", "Route Maturity Score", "Yield Proxy Score"]:
+            if column not in routes_with_cbsa.columns:
+                routes_with_cbsa[column] = pd.NA
 
         group_cols = [
             "Source airport",
@@ -970,7 +1265,11 @@ class DataStore:
                 "ASM": "sum",
                 "Total Seats": "sum",
                 "Distance (miles)": "mean",
-                "Seats per Mile": "mean"
+                "Seats per Mile": "mean",
+                "Route Strategy Baseline": "mean",
+                "Competition Score": "mean",
+                "Route Maturity Score": "mean",
+                "Yield Proxy Score": "mean"
             })
         )
 
@@ -1099,6 +1398,11 @@ class DataStore:
                     rounded_similarity = round(similarity_score, 2) if similarity_score is not None else None
                     rounded_distance = round(distance, 2)
                     rounded_reference_score = round(reference_score, 2)
+                    baseline_reference = route.get("Route Strategy Baseline")
+                    rounded_baseline = round(baseline_reference, 2) if pd.notna(baseline_reference) else None
+                    rounded_competition = round(route.get("Competition Score", 0) or 0, 2)
+                    rounded_maturity = round(route.get("Route Maturity Score", 0) or 0, 2)
+                    rounded_yield = round(route.get("Yield Proxy Score", 0) or 0, 2)
 
                     suggestions.append({
                         "Proposed Source": source_candidate["IATA"],
@@ -1110,6 +1414,10 @@ class DataStore:
                         "Reference Route": route["Route"],
                         "Reference ASM": route["ASM"],
                         "Reference Performance Score": rounded_reference_score,
+                        "Reference Baseline Score": rounded_baseline,
+                        "Reference Competition Score": rounded_competition,
+                        "Reference Maturity Score": rounded_maturity,
+                        "Reference Yield Score": rounded_yield,
                         "Estimated Distance (miles)": rounded_distance,
                         "Distance Similarity": rounded_similarity,
                         "Opportunity Score": rounded_opportunity_score,
@@ -1138,6 +1446,10 @@ class DataStore:
             "Total Seats",
             "Distance (miles)",
             "Seats per Mile",
+            "Route Strategy Baseline",
+            "Competition Score",
+            "Route Maturity Score",
+            "Yield Proxy Score",
             "Performance Score",
         ]
 
@@ -1149,6 +1461,10 @@ class DataStore:
                     "Total Seats",
                     "Distance (miles)",
                     "Seats per Mile",
+                    "Route Strategy Baseline",
+                    "Competition Score",
+                    "Route Maturity Score",
+                    "Yield Proxy Score",
                     "ASM_norm",
                     "SPM_norm",
                     "Performance Score",
@@ -1178,6 +1494,10 @@ class DataStore:
                 [
                     "Reference ASM",
                     "Reference Performance Score",
+                    "Reference Baseline Score",
+                    "Reference Competition Score",
+                    "Reference Maturity Score",
+                    "Reference Yield Score",
                     "Estimated Distance (miles)",
                     "Distance Similarity",
                     "Opportunity Score",
