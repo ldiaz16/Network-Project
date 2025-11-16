@@ -992,6 +992,13 @@ class DataStore:
         ].copy()
         aggregated.drop(columns=["__source_cbsa_valid", "__dest_cbsa_valid"], inplace=True)
 
+        aggregated["__source_domestic"] = aggregated["Source Country"].astype(str).str.strip().str.lower() == "united states"
+        aggregated["__dest_domestic"] = aggregated["Destination Country"].astype(str).str.strip().str.lower() == "united states"
+        aggregated = aggregated[
+            aggregated["__source_domestic"] & aggregated["__dest_domestic"]
+        ].copy()
+        aggregated.drop(columns=["__source_domestic", "__dest_domestic"], inplace=True)
+
         if aggregated.empty:
             return {
                 "best_routes": pd.DataFrame(),
@@ -1063,6 +1070,8 @@ class DataStore:
                         continue
                     if proposed_pair == (route["Source airport"], route["Destination airport"]):
                         continue
+                    if source_candidate.get("Country") != "United States" or dest_candidate.get("Country") != "United States":
+                        continue
                     if pd.isna(source_candidate["Latitude"]) or pd.isna(dest_candidate["Latitude"]):
                         continue
                     if pd.isna(source_candidate["Longitude"]) or pd.isna(dest_candidate["Longitude"]):
@@ -1085,10 +1094,7 @@ class DataStore:
 
                     reference_score = route.get("Performance Score", 0) or 0
                     distance_factor = similarity_score if similarity_score is not None else 0.5
-                    domestic_bonus = 1.0
-                    if source_candidate.get("Country") != "United States" or dest_candidate.get("Country") != "United States":
-                        domestic_bonus = 0.85
-                    opportunity_score = reference_score * (0.5 + 0.5 * distance_factor) * domestic_bonus
+                    opportunity_score = reference_score * (0.5 + 0.5 * distance_factor)
                     rounded_opportunity_score = round(opportunity_score, 2)
                     rounded_similarity = round(similarity_score, 2) if similarity_score is not None else None
                     rounded_distance = round(distance, 2)
@@ -1124,16 +1130,46 @@ class DataStore:
                 .sort_values(["Opportunity Score", "Reference ASM"], ascending=[False, False])
                 .reset_index(drop=True)
             )
+        display_columns = [
+            "Route",
+            "Source CBSA Name",
+            "Destination CBSA Name",
+            "ASM",
+            "Total Seats",
+            "Distance (miles)",
+            "Seats per Mile",
+            "Performance Score",
+        ]
+
         if not best_routes.empty:
             _round_numeric_columns(
                 best_routes,
                 [
+                    "ASM",
+                    "Total Seats",
                     "Distance (miles)",
                     "Seats per Mile",
                     "ASM_norm",
                     "SPM_norm",
                     "Performance Score",
                 ],
+            )
+            best_routes_display = (
+                best_routes[display_columns]
+                .rename(
+                    columns={
+                        "Source CBSA Name": "Source CBSA",
+                        "Destination CBSA Name": "Destination CBSA",
+                    }
+                )
+                .copy()
+            )
+        else:
+            best_routes_display = best_routes.reindex(columns=display_columns).rename(
+                columns={
+                    "Source CBSA Name": "Source CBSA",
+                    "Destination CBSA Name": "Destination CBSA",
+                }
             )
 
         if not suggestions_df.empty:
@@ -1149,7 +1185,7 @@ class DataStore:
             )
 
         return {
-            "best_routes": best_routes,
+            "best_routes": best_routes_display,
             "suggested_routes": suggestions_df
         }
 

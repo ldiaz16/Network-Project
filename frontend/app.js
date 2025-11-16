@@ -145,6 +145,8 @@ const defaultFormState = {
 };
 
 const MAX_AIRLINE_SUGGESTIONS = 25;
+const integerNumberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+const decimalNumberFormatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function formatValue(value) {
     if (value === null || value === undefined || value === "") {
@@ -152,6 +154,14 @@ function formatValue(value) {
     }
     if (Array.isArray(value)) {
         return value.map((entry) => formatValue(entry)).join(", ");
+    }
+    if (typeof value === "number") {
+        if (!Number.isFinite(value)) {
+            return "—";
+        }
+        const hasFraction = Math.abs(value - Math.trunc(value)) > 1e-6;
+        const formatter = hasFraction ? decimalNumberFormatter : integerNumberFormatter;
+        return formatter.format(value);
     }
     if (typeof value === "object") {
         return JSON.stringify(value);

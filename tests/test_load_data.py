@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 from geopy.distance import geodesic
+from types import MethodType
 
 from data.airlines import normalize_name
 from src.load_data import DataStore, GENERIC_SEAT_GUESSES
@@ -197,6 +198,67 @@ def test_process_routes_estimates_seats_when_config_missing(datastore):
     enriched = datastore.process_routes(routes_df)
     assert enriched.loc[0, "Total"] == GENERIC_SEAT_GUESSES["738"]
     assert enriched.loc[0, "Seat Source"] == "equipment_estimate"
+
+
+def test_cbsa_simulation_filters_international_and_rounds(datastore):
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "AAA", "Name": "Airport A", "City": "Alpha", "Country": "United States", "Latitude": 35.0, "Longitude": -80.0},
+            {"IATA": "BBB", "Name": "Airport B", "City": "Beta", "Country": "United States", "Latitude": 36.0, "Longitude": -81.0},
+            {"IATA": "CCC", "Name": "Airport C", "City": "Gamma", "Country": "Canada", "Latitude": 45.0, "Longitude": -75.0},
+        ]
+    )
+
+    cbsa_meta = {
+        "AAA": {"CBSA Name": "Metro AAA", "CBSA Code": "1001", "County/County Equivalent": "Alpha County", "State Name": "State A"},
+        "BBB": {"CBSA Name": "Metro BBB", "CBSA Code": "1002", "County/County Equivalent": "Beta County", "State Name": "State B"},
+        "CCC": {"CBSA Name": "International", "CBSA Code": "9999", "County/County Equivalent": "Gamma County", "State Name": "Province C"},
+    }
+
+    def fake_annotate(self, airports_df):
+        metadata = []
+        for _, row in airports_df.iterrows():
+            meta = cbsa_meta.get(row["IATA"], {})
+            metadata.append(
+                {
+                    "County/County Equivalent": meta.get("County/County Equivalent"),
+                    "State Name": meta.get("State Name"),
+                    "CBSA Name": meta.get("CBSA Name", ""),
+                    "CBSA Code": meta.get("CBSA Code"),
+                }
+            )
+        return pd.concat([airports_df.reset_index(drop=True), pd.DataFrame(metadata)], axis=1)
+
+    datastore.annotate_airports_with_cbsa = MethodType(fake_annotate, datastore)
+
+    airline_cost_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "AAA",
+                "Destination airport": "BBB",
+                "ASM": 1234.56789,
+                "Total Seats": 150.0,
+                "Distance (miles)": 500.0,
+                "Seats per Mile": 0.3,
+            },
+            {
+                "Source airport": "AAA",
+                "Destination airport": "CCC",
+                "ASM": 9876.54321,
+                "Total Seats": 160.0,
+                "Distance (miles)": 600.0,
+                "Seats per Mile": 0.27,
+            },
+        ]
+    )
+
+    simulation = datastore.simulate_cbsa_route_opportunities(airline_cost_df, top_n=5, max_suggestions_per_route=1)
+    best_routes = simulation["best_routes"]
+    assert list(best_routes["Route"]) == ["AAA-BBB"]
+    assert list(best_routes["Source CBSA"]) == ["Metro AAA"]
+    assert list(best_routes["Destination CBSA"]) == ["Metro BBB"]
+    assert best_routes.loc[0, "ASM"] == pytest.approx(1234.57)
+    assert simulation["suggested_routes"].empty
 
 
 def test_process_routes_infers_seats_from_config_tokens(datastore):
