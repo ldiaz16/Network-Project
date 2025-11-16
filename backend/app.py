@@ -21,6 +21,8 @@ default_origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:4173",
     "http://127.0.0.1:5173",
+    # Allow any Vercel preview/production domain by default so hosted frontends can call the Render API.
+    r"https://(.+\.)?vercel\.app",
 ]
 
 raw_origins = os.environ.get("CORS_ALLOW_ORIGINS", ",".join(default_origins))

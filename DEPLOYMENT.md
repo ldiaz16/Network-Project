@@ -26,7 +26,7 @@ This project now ships with a Flask-powered backend (`backend/app.py`) and a sta
    - Start command: `gunicorn backend.app:app`.
    - Environment variables:  
      `PYTHON_VERSION=3.11.6` (optional but keeps parity with local runs).
-     `CORS_ALLOW_ORIGINS=https://<your-vercel-domain>` (comma-separated list; fallback allows localhost only).
+     `CORS_ALLOW_ORIGINS=https://<your-custom-domain>` (comma-separated list; only needed when you want stricter control, because the default now permits localhost plus any `*.vercel.app` domain).
    - Once live, note the service URL; the API surface is exposed at `<service-url>/api/...`.
 
 Any other WSGI-friendly host (Railway, Fly.io, traditional VPS) can use the same start command.
