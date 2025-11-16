@@ -101,6 +101,8 @@ const {
     TableBody,
     Autocomplete,
     CircularProgress,
+    Tabs,
+    Tab,
 } = MaterialUI;
 
 const darkTheme = createTheme({
@@ -351,6 +353,7 @@ function App() {
     const [cbsaResults, setCbsaResults] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [suggestions, setSuggestions] = React.useState([]);
+    const [resultsTab, setResultsTab] = React.useState("competing");
     const debounceRef = React.useRef(null);
     const lastQueryRef = React.useRef("");
 
@@ -413,6 +416,7 @@ function App() {
         setMessages([]);
         setComparison(null);
         setCbsaResults([]);
+        setResultsTab("competing");
     };
 
     const handleSubmit = async (event) => {
@@ -724,21 +728,49 @@ function App() {
                                 </Stack>
                             )}
 
-                            {comparison && (
-                                <Box sx={{ mb: 1 }}>
-                                    <Typography variant="h5" sx={{ mb: 1 }}>
-                                        Competing Routes
+                            <Tabs
+                                value={resultsTab}
+                                onChange={(_, value) => setResultsTab(value)}
+                                textColor="primary"
+                                indicatorColor="primary"
+                                variant="fullWidth"
+                                sx={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}
+                            >
+                                <Tab label="Competing Routes" value="competing" />
+                                <Tab label="CBSA Opportunities" value="cbsa" />
+                            </Tabs>
+
+                            {resultsTab === "competing" && (
+                                comparison ? (
+                                    <Box sx={{ mt: 2 }}>
+                                        <Typography variant="h5" sx={{ mb: 1 }}>
+                                            Competing Routes
+                                        </Typography>
+                                        <NetworkSummary airlines={comparison.airlines} />
+                                        <DataTable
+                                            rows={comparison.competing_routes}
+                                            title="Competing Routes"
+                                            maxHeight={420}
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Typography color="text.secondary" sx={{ mt: 2 }}>
+                                        Choose comparison airlines and rerun the analysis to view head-to-head routes.
                                     </Typography>
-                                    <NetworkSummary airlines={comparison.airlines} />
-                                    <DataTable
-                                        rows={comparison.competing_routes}
-                                        title="Competing Routes"
-                                        maxHeight={420}
-                                    />
-                                </Box>
+                                )
                             )}
 
-                            <CbsaOpportunities entries={cbsaResults} />
+                            {resultsTab === "cbsa" && (
+                                cbsaResults && cbsaResults.length ? (
+                                    <Box sx={{ mt: 2 }}>
+                                        <CbsaOpportunities entries={cbsaResults} />
+                                    </Box>
+                                ) : (
+                                    <Typography color="text.secondary" sx={{ mt: 2 }}>
+                                        Add CBSA airlines to the form to surface opportunity corridors.
+                                    </Typography>
+                                )
+                            )}
                         </Paper>
                     </Grid>
                 </Grid>
