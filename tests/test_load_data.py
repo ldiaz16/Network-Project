@@ -170,6 +170,7 @@ def test_cost_analysis_computes_capacity_metrics(datastore):
     assert analyzed.loc[0, "Seats per Mile"] == pytest.approx(total_seats / distance_miles, rel=1e-3)
     assert analyzed.loc[0, "ASM"] == pytest.approx(total_seats * distance_miles, rel=1e-3)
     assert analyzed.loc[0, "Airline (Normalized)"] == normalize_name("Sample Airways")
+    assert enriched.loc[0, "Seat Source"] == "airline_config"
 
 
 def test_process_routes_estimates_seats_when_config_missing(datastore):
@@ -195,6 +196,87 @@ def test_process_routes_estimates_seats_when_config_missing(datastore):
 
     enriched = datastore.process_routes(routes_df)
     assert enriched.loc[0, "Total"] == GENERIC_SEAT_GUESSES["738"]
+    assert enriched.loc[0, "Seat Source"] == "equipment_estimate"
+
+
+def test_process_routes_infers_seats_from_config_tokens(datastore):
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "ATL", "Name": "Atlanta", "Latitude": 33.6407, "Longitude": -84.4277},
+            {"IATA": "ORD", "Name": "Chicago", "Latitude": 41.9742, "Longitude": -87.9073},
+        ]
+    )
+    config = {
+        "Sample Airways": {
+            "CRJ": {"Y": 50, "W": 0, "J": 0, "F": 0, "Total": 50},
+            "CR7": {"Y": 65, "W": 0, "J": 0, "F": 0, "Total": 65},
+        }
+    }
+    datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+
+    routes_df = pd.DataFrame(
+        [
+            {
+                "Source airport": "ATL",
+                "Destination airport": "ORD",
+                "Airline (Normalized)": normalize_name("Sample Airways"),
+                "Equipment": "CRJ CR7",
+            }
+        ]
+    )
+
+    enriched = datastore.process_routes(routes_df)
+    assert enriched.loc[0, "Total"] == 50
+    assert enriched.loc[0, "Seat Source"] == "airline_config"
+
+
+def test_summarize_asm_sources_groups_by_source(datastore):
+    cost_df = pd.DataFrame(
+        [
+            {"Seat Source": "airline_config", "Total Seats": 200, "ASM": 1000, "ASM Valid": True},
+            {"Seat Source": "airline_config", "Total Seats": 220, "ASM": 900, "ASM Valid": False},
+            {"Seat Source": "equipment_estimate", "Total Seats": 150, "ASM": 500, "ASM Valid": True},
+        ]
+    )
+
+    summary = datastore.summarize_asm_sources(cost_df)
+    assert set(summary["Seat Source"]) == {"airline_config", "equipment_estimate"}
+    config_row = summary[summary["Seat Source"] == "airline_config"].iloc[0]
+    assert config_row["Routes"] == 2
+    assert config_row["Valid ASM Routes"] == 1
+    assert config_row["Total Seats"] == 420
+    assert config_row["Total ASM"] == 1900
+    assert config_row["ASM Share"] == "79.2%"
+    assert pytest.approx(config_row["ASM Share Value"], rel=1e-3) == 0.7917
+
+
+def test_detect_asm_alerts_flags_sources(datastore):
+    cost_df = pd.DataFrame(
+        [
+            {"Seat Source": "equipment_estimate", "Total Seats": 200, "ASM": 800, "ASM Valid": True},
+            {"Seat Source": "equipment_estimate", "Total Seats": 180, "ASM": 900, "ASM Valid": True},
+            {"Seat Source": "unknown", "Total Seats": 150, "ASM": 700, "ASM Valid": False},
+        ]
+    )
+
+    summary = datastore.summarize_asm_sources(cost_df)
+    alerts = datastore.detect_asm_alerts(summary, estimate_threshold=0.4, unknown_threshold=0.1)
+    assert any("equipment estimates" in alert for alert in alerts)
+    assert any("lacks seat data" in alert for alert in alerts)
+
+
+def test_detect_asm_alerts_combined_threshold(datastore):
+    cost_df = pd.DataFrame(
+        [
+            {"Seat Source": "equipment_estimate", "Total Seats": 200, "ASM": 300, "ASM Valid": True},
+            {"Seat Source": "unknown", "Total Seats": 180, "ASM": 220, "ASM Valid": True},
+            {"Seat Source": "airline_config", "Total Seats": 620, "ASM": 480, "ASM Valid": True},
+        ]
+    )
+
+    summary = datastore.summarize_asm_sources(cost_df)
+    alerts = datastore.detect_asm_alerts(summary, estimate_threshold=0.5, unknown_threshold=0.5)
+    assert alerts == ["52% of ASM is estimated or unknown; investigate data coverage."]
 
 
 def test_find_competing_routes_identifies_common_pairs(datastore):

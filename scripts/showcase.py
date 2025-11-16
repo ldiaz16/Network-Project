@@ -1,6 +1,8 @@
 import argparse
+from datetime import datetime, timezone
 import os
 import sys
+from pathlib import Path
 from textwrap import dedent
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,6 +50,24 @@ def parse_args():
         default=5,
         help="Number of rows to print for each highlighted table.",
     )
+    parser.add_argument(
+        "--asm-summary-log",
+        type=Path,
+        default=Path("reports/asm_summary_history.csv"),
+        help="CSV file to append ASM summary snapshots.",
+    )
+    parser.add_argument(
+        "--asm-estimate-threshold",
+        type=float,
+        default=0.4,
+        help="Alert threshold for equipment-estimated ASM share (0-1).",
+    )
+    parser.add_argument(
+        "--asm-unknown-threshold",
+        type=float,
+        default=0.1,
+        help="Alert threshold for unknown seat-source ASM share (0-1).",
+    )
     return parser.parse_args()
 
 
@@ -64,6 +84,20 @@ def format_table(df, columns=None, max_rows=5):
     subset = df[columns] if columns else df
     limited = subset.head(max_rows)
     return dedent(limited.to_string(index=False)) + "\n"
+
+
+def persist_asm_summary(summary_df, airline_name, log_path):
+    if log_path is None or summary_df is None or summary_df.empty:
+        return
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=timezone.utc).isoformat(timespec="seconds")
+    timestamp = timestamp.replace("+00:00", "Z")
+    snapshot = summary_df.copy()
+    snapshot.insert(0, "Generated At", timestamp)
+    snapshot.insert(0, "Airline", airline_name)
+    log_exists = log_path.exists()
+    mode = "a" if log_exists else "w"
+    snapshot.to_csv(log_path, mode=mode, index=False, header=not log_exists)
 
 
 def build_airline_package(ds, query, announce=True):
@@ -91,6 +125,19 @@ def show_network_stats(package):
         f"  Top hubs: {stats['Top 5 Hubs']}",
     ]
     return "\n".join(lines) + "\n"
+
+
+def show_asm_summary(ds, package, max_rows):
+    summary = ds.summarize_asm_sources(package["cost"])
+    columns = [
+        "Seat Source",
+        "Routes",
+        "Valid ASM Routes",
+        "Total Seats",
+        "Total ASM",
+        "ASM Share",
+    ]
+    return summary, format_table(summary, columns, max_rows)
 
 
 def showcase_cbsa(ds, package, args):
@@ -143,6 +190,20 @@ def main():
     for pkg in packages:
         print(f"{pkg['name']}:")
         print(show_network_stats(pkg))
+
+    print_section("ASM Accuracy Snapshot")
+    for pkg in packages:
+        print(f"{pkg['name']}:")
+        summary, table = show_asm_summary(ds, pkg, args.max_print)
+        print(table)
+        persist_asm_summary(summary, pkg["name"], args.asm_summary_log)
+        alerts = ds.detect_asm_alerts(summary, args.asm_estimate_threshold, args.asm_unknown_threshold)
+        if alerts:
+            print("  Alerts:")
+            for alert in alerts:
+                print(f"    - {alert}")
+        else:
+            print("  Alerts: none")
 
     if len(packages) == 2:
         print_section("Competing Route Overlap")

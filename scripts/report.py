@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime, timezone
 import os
 import shutil
 import subprocess
@@ -57,6 +58,24 @@ def parse_args():
         type=Path,
         help="Optional PDF path. Requires pandoc in PATH.",
     )
+    parser.add_argument(
+        "--asm-summary-log",
+        type=Path,
+        default=Path("reports/asm_summary_history.csv"),
+        help="CSV file to append ASM accuracy snapshots.",
+    )
+    parser.add_argument(
+        "--asm-estimate-threshold",
+        type=float,
+        default=0.4,
+        help="Alert threshold for equipment-estimated ASM share (0-1).",
+    )
+    parser.add_argument(
+        "--asm-unknown-threshold",
+        type=float,
+        default=0.1,
+        help="Alert threshold for unknown seat-source ASM share (0-1).",
+    )
     return parser.parse_args()
 
 
@@ -86,6 +105,20 @@ def df_to_markdown(df, columns=None, max_rows=10):
     table_lines = [f"| {headers} |", f"| {separator} |"]
     table_lines.extend(f"| {row} |" for row in rows)
     return "\n".join(table_lines) + "\n"
+
+
+def persist_asm_summary(summary_df, airline_name, log_path):
+    if log_path is None or summary_df is None or summary_df.empty:
+        return
+    ensure_parent_dir(log_path)
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=timezone.utc).isoformat(timespec="seconds")
+    timestamp = timestamp.replace("+00:00", "Z")
+    snapshot = summary_df.copy()
+    snapshot.insert(0, "Generated At", timestamp)
+    snapshot.insert(0, "Airline", airline_name)
+    log_exists = log_path.exists()
+    mode = "a" if log_exists else "w"
+    snapshot.to_csv(log_path, mode=mode, index=False, header=not log_exists)
 
 
 def build_airline_package(ds, query, announce=True):
@@ -133,6 +166,27 @@ def build_report(args, packages, cbsa_targets, ds):
     lines.append("## Network Snapshots")
     for pkg in packages:
         lines.append(format_network_section(pkg))
+
+    lines.append("## ASM Accuracy Snapshot")
+    asm_columns = [
+        "Seat Source",
+        "Routes",
+        "Valid ASM Routes",
+        "Total Seats",
+        "Total ASM",
+        "ASM Share",
+    ]
+    for pkg in packages:
+        summary = ds.summarize_asm_sources(pkg["cost"])
+        lines.append(f"### {pkg['name']}")
+        lines.append(df_to_markdown(summary, asm_columns, args.max_print))
+        persist_asm_summary(summary, pkg["name"], args.asm_summary_log)
+        alerts = ds.detect_asm_alerts(summary, args.asm_estimate_threshold, args.asm_unknown_threshold)
+        if alerts:
+            lines.append("**Data quality alerts**")
+            lines.extend(f"- {alert}" for alert in alerts)
+        else:
+            lines.append("_ASM data quality looks healthy._")
 
     if len(packages) == 2:
         lines.append("## Competing Route Overlap\n")

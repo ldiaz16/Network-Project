@@ -24,6 +24,12 @@ api:
 report: data
 	python3 scripts/report.py --output-markdown reports/demo_report.md --output-pdf reports/demo_report.pdf
 
+asm-dashboard:
+	python3 scripts/asm_dashboard.py --input reports/asm_summary_history.csv --output reports/asm_dashboard.md
+
+asm-check:
+	python3 scripts/check_asm_quality.py --input reports/asm_summary_history.csv --fail-on-alert
+
 # Optional: create a journal entry for today
 journal:
 	python3 scripts/create_journal.py

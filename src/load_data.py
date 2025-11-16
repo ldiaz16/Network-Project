@@ -235,16 +235,18 @@ class DataStore:
                 if not raw_code:
                     continue
                 seat_value = int(seats)
-                lookup.setdefault(raw_code, seat_value)
+                if raw_code not in lookup:
+                    lookup[raw_code] = {"seats": seat_value, "source": "airline_config"}
                 normalized = self._normalize_equipment_code(raw_code)
                 if normalized:
-                    lookup.setdefault(normalized, seat_value)
+                    if normalized not in lookup:
+                        lookup[normalized] = {"seats": seat_value, "source": "airline_config"}
 
         for code, seats in GENERIC_SEAT_GUESSES.items():
             normalized = self._normalize_equipment_code(code)
             if normalized:
-                lookup.setdefault(normalized, seats)
-            lookup.setdefault(code.upper(), seats)
+                lookup.setdefault(normalized, {"seats": seats, "source": "generic_guess"})
+            lookup.setdefault(code.upper(), {"seats": seats, "source": "generic_guess"})
 
         self._equipment_lookup_keys = sorted(set(lookup.keys()))
         return lookup
@@ -258,9 +260,9 @@ class DataStore:
         for token in tokens:
             normalized = self._normalize_equipment_code(token)
             for candidate in filter(None, (token, normalized)):
-                seats = self.equipment_capacity_lookup.get(candidate)
-                if seats:
-                    return seats
+                record = self.equipment_capacity_lookup.get(candidate)
+                if record:
+                    return record
 
         if tokens and self._equipment_lookup_keys:
             for token in tokens:
@@ -272,9 +274,9 @@ class DataStore:
                     score_cutoff=88
                 )
                 if match:
-                    seats = self.equipment_capacity_lookup.get(match[0])
-                    if seats:
-                        return seats
+                    record = self.equipment_capacity_lookup.get(match[0])
+                    if record:
+                        return record
 
         return None
 
@@ -575,7 +577,7 @@ class DataStore:
             seats_on_route = self.aircraft_config.copy()
         else:
             seats_on_route = pd.DataFrame(columns=["Airline", "Aircraft", "Total"])
-        
+
         # Merge the routes_df with the aircraft configuration
         routes_df = routes_df.merge(
             seats_on_route,
@@ -584,13 +586,33 @@ class DataStore:
             how="left"
         )
 
-        seat_estimates = routes_df["Equipment"].apply(self._estimate_seat_capacity)
+        seat_metadata = routes_df["Equipment"].apply(self._estimate_seat_capacity)
+        seat_estimates = seat_metadata.apply(
+            lambda record: record.get("seats") if isinstance(record, dict) else None
+        )
+        seat_estimate_sources = seat_metadata.apply(
+            lambda record: record.get("source") if isinstance(record, dict) else None
+        )
         seat_estimates = pd.to_numeric(seat_estimates, errors="coerce")
+
+        routes_df["Seat Source"] = "unknown"
         if "Total" in routes_df.columns:
             routes_df["Total"] = pd.to_numeric(routes_df["Total"], errors="coerce")
-            routes_df["Total"] = routes_df["Total"].fillna(seat_estimates)
+            config_mask = routes_df["Total"].notna()
+            routes_df.loc[config_mask, "Seat Source"] = "airline_config"
         else:
-            routes_df["Total"] = seat_estimates
+            routes_df["Total"] = pd.NA
+
+        estimate_mask = routes_df["Total"].isna() & seat_estimates.notna()
+        routes_df.loc[estimate_mask, "Total"] = seat_estimates[estimate_mask]
+        if not seat_estimate_sources.empty:
+            mapped_sources = seat_estimate_sources.replace({"generic_guess": "equipment_estimate"})
+            routes_df.loc[estimate_mask, "Seat Source"] = mapped_sources[estimate_mask].fillna("equipment_estimate")
+        else:
+            routes_df.loc[estimate_mask, "Seat Source"] = "equipment_estimate"
+
+        routes_df["Total"] = routes_df["Total"].fillna(0).astype(float)
+        routes_df["Seat Source"] = routes_df["Seat Source"].fillna("unknown")
         
         # Merge both into the routes_df
         enriched_df = routes_df.merge(source_airports, on="Source airport", how="left")
@@ -628,7 +650,8 @@ class DataStore:
         """Perform cost analysis on the airline DataFrame."""
         # Calculate total seats available for each route
         df = airline_df.copy()
-        df["Total Seats"] = df["Total"].fillna(0)
+        df["Total Seats"] = pd.to_numeric(df.get("Total"), errors="coerce").fillna(0.0)
+        df["Distance (miles)"] = pd.to_numeric(df.get("Distance (miles)"), errors="coerce").fillna(0.0)
 
         """Calculate seats per mile for each route."""
         df["Seats per Mile"] = df.apply(
@@ -637,9 +660,114 @@ class DataStore:
         )
 
         df["ASM"] = df["Total Seats"] * df["Distance (miles)"]
+        df["ASM Valid"] = (df["Distance (miles)"] > 0) & (df["Total Seats"] > 0)
+
+        columns = [
+            "Airline",
+            "Airline (Normalized)",
+            "Source airport",
+            "Destination airport",
+            "Distance (miles)",
+            "Total Seats",
+            "Seats per Mile",
+            "ASM",
+            "ASM Valid",
+            "Equipment",
+        ]
+        if "Seat Source" in df.columns:
+            columns.append("Seat Source")
 
         ## print(airline_df[["Airline", "Source airport", "Destination airport", "Distance (miles)", "Total Seats", "Seats per Mile"]].head())
-        return df[["Airline", "Airline (Normalized)", "Source airport", "Destination airport", "Distance (miles)", "Total Seats", "Seats per Mile", "ASM", "Equipment"]]
+        return df[columns]
+
+    def summarize_asm_sources(self, cost_df):
+        """Provide an accuracy snapshot for ASM calculations by seat source."""
+        if cost_df is None or cost_df.empty:
+            return pd.DataFrame(
+                columns=[
+                    "Seat Source",
+                    "Routes",
+                    "Valid ASM Routes",
+                    "Total Seats",
+                    "Total ASM",
+                    "ASM Share",
+                ]
+            )
+
+        df = cost_df.copy()
+        df["Seat Source"] = df.get("Seat Source", "unknown").fillna("unknown")
+        df["Total Seats"] = pd.to_numeric(df.get("Total Seats"), errors="coerce").fillna(0.0)
+        df["ASM"] = pd.to_numeric(df.get("ASM"), errors="coerce").fillna(0.0)
+        df["ASM Valid"] = df.get("ASM Valid", False).fillna(False)
+
+        grouped = (
+            df.groupby("Seat Source", dropna=False)
+            .agg(
+                Routes=("Seat Source", "count"),
+                Valid_ASM_Routes=("ASM Valid", lambda values: int(pd.Series(values).fillna(False).sum())),
+                Total_Seats=("Total Seats", "sum"),
+                Total_ASM=("ASM", "sum"),
+            )
+            .reset_index()
+        )
+        grouped = grouped.rename(
+            columns={
+                "Valid_ASM_Routes": "Valid ASM Routes",
+                "Total_Seats": "Total Seats",
+                "Total_ASM": "Total ASM",
+            }
+        )
+
+        asm_total = grouped["Total ASM"].sum()
+        grouped["ASM Share Value"] = grouped["Total ASM"] / asm_total if asm_total > 0 else 0.0
+
+        grouped["Total Seats"] = grouped["Total Seats"].round(0).astype(int)
+        grouped["Total ASM"] = grouped["Total ASM"].round(0).astype(int)
+        grouped["ASM Share"] = grouped["ASM Share Value"].apply(lambda value: f"{value * 100:.1f}%")
+
+        ordered_columns = [
+            "Seat Source",
+            "Routes",
+            "Valid ASM Routes",
+            "Total Seats",
+            "Total ASM",
+            "ASM Share",
+            "ASM Share Value",
+        ]
+
+        return grouped[ordered_columns].sort_values("Total ASM", ascending=False).reset_index(drop=True)
+
+    def detect_asm_alerts(self, summary_df, estimate_threshold=0.4, unknown_threshold=0.1):
+        """Highlight when estimated or unknown seat sources dominate ASM."""
+        alerts = []
+        if summary_df is None or summary_df.empty:
+            return alerts
+
+        share_lookup = {
+            row["Seat Source"]: float(row.get("ASM Share Value", 0) or 0)
+            for _, row in summary_df.iterrows()
+        }
+
+        estimate_share = share_lookup.get("equipment_estimate", 0.0)
+        unknown_share = share_lookup.get("unknown", 0.0)
+
+        if estimate_share >= estimate_threshold:
+            alerts.append(
+                f"{estimate_share:.0%} of ASM relies on equipment estimates; refresh aircraft configs."
+            )
+        if unknown_share >= unknown_threshold:
+            alerts.append(
+                f"{unknown_share:.0%} of ASM lacks seat data (unknown source)."
+            )
+
+        combined = estimate_share + unknown_share
+        dominant_threshold = max(estimate_threshold, unknown_threshold)
+        if combined >= dominant_threshold and not alerts:
+            alerts.append(
+                f"{combined:.0%} of ASM is estimated or unknown; investigate data coverage."
+            )
+
+        return alerts
 
     def simulate_cbsa_route_opportunities(self, airline_cost_df, top_n=10, max_suggestions_per_route=3):
         """

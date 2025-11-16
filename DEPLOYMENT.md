@@ -62,4 +62,18 @@ FLASK_APP=backend/app.py FLASK_ENV=development flask run --port 8000
 python3 scripts/set_frontend_api_base.py --api-base "http://localhost:8000/api"
 ```
 
+## ASM Data Quality Workflow
+
+The shareholder-facing ASM summaries written by `scripts/report.py` and `scripts/showcase.py` now append every snapshot to `reports/asm_summary_history.csv`. Use the helpers below to keep that history actionable:
+
+```bash
+# Render a Markdown dashboard (reports/asm_dashboard.md) from the history log
+make asm-dashboard
+
+# Enforce alert thresholds (fails when estimates/unknown data dominate)
+make asm-check
+```
+
+`scripts/check_asm_quality.py` is CI-friendly: it prints alerts for each airline and exits with status 1 when `--fail-on-alert` is present. Run the command after generating fresh ASM summaries in your pipeline to stop regressions before they ship.
+
 With both services online, the frontend will call `GET /api/airlines` for autocomplete and `POST /api/run` for the full analysis pipeline.
