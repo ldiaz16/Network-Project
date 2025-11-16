@@ -1,4 +1,3 @@
-import os
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Query
@@ -12,7 +11,7 @@ from src.backend_service import (
     run_analysis as run_analysis_logic,
 )
 from src.load_data import DataStore
-
+from src.cors_config import combine_regex_patterns, get_cors_settings
 
 app = FastAPI(
     title="Airline Route Optimizer API",
@@ -20,22 +19,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
-default_origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:4173",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:4173",
-    "http://127.0.0.1:5173",
-]
-
-raw_origins = os.environ.get("CORS_ALLOW_ORIGINS", ",".join(default_origins))
-origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()] or ["*"]
+explicit_origins, regex_origins = get_cors_settings()
+allow_origin_regex = combine_regex_patterns(regex_origins)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=explicit_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

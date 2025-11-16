@@ -11,27 +11,31 @@ from src.backend_service import (
     list_airlines as list_airlines_logic,
     run_analysis as run_analysis_logic,
 )
+from src.cors_config import get_cors_settings
 from src.load_data import DataStore
-
-default_origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:4173",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:4173",
-    "http://127.0.0.1:5173",
-    # Allow any Vercel preview/production domain by default so hosted frontends can call the Render API.
-    r"https://(.+\.)?vercel\.app",
-]
-
-raw_origins = os.environ.get("CORS_ALLOW_ORIGINS", ",".join(default_origins))
-allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()] or ["*"]
 
 FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
 
+explicit_origins, regex_origins = get_cors_settings()
+
+
+def _dedupe(items):
+    seen = set()
+    ordered = []
+    for entry in items:
+        if entry not in seen:
+            ordered.append(entry)
+            seen.add(entry)
+    return ordered
+
+
+if explicit_origins == ["*"]:
+    cors_origins = ["*"]
+else:
+    cors_origins = _dedupe([*explicit_origins, *regex_origins])
+
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
-CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
 
 data_store = DataStore()
 data_store.load_data()
