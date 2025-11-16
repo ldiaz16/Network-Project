@@ -980,6 +980,24 @@ class DataStore:
                 "suggested_routes": pd.DataFrame()
             }
 
+        # CBSA metadata only exists for U.S. airports, so keep routes where both ends retain CBSA info.
+        aggregated["__source_cbsa_valid"] = aggregated["Source CBSA Name"].apply(
+            lambda value: isinstance(value, str) and value.strip() != ""
+        )
+        aggregated["__dest_cbsa_valid"] = aggregated["Destination CBSA Name"].apply(
+            lambda value: isinstance(value, str) and value.strip() != ""
+        )
+        aggregated = aggregated[
+            aggregated["__source_cbsa_valid"] & aggregated["__dest_cbsa_valid"]
+        ].copy()
+        aggregated.drop(columns=["__source_cbsa_valid", "__dest_cbsa_valid"], inplace=True)
+
+        if aggregated.empty:
+            return {
+                "best_routes": pd.DataFrame(),
+                "suggested_routes": pd.DataFrame()
+            }
+
         asm_max = aggregated["ASM"].max()
         spm_max = aggregated["Seats per Mile"].max()
         aggregated["ASM_norm"] = aggregated["ASM"] / asm_max if asm_max and asm_max > 0 else 0
@@ -1005,6 +1023,11 @@ class DataStore:
             if not isinstance(value, str):
                 return ""
             return value.strip().lower()
+
+        def _round_numeric_columns(df, columns, digits=2):
+            for col in columns:
+                if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
+                    df[col] = df[col].round(digits)
 
         def get_airports_for_cbsa(cbsa_name):
             normalized = _normalize_cbsa(cbsa_name)
@@ -1065,7 +1088,11 @@ class DataStore:
                     domestic_bonus = 1.0
                     if source_candidate.get("Country") != "United States" or dest_candidate.get("Country") != "United States":
                         domestic_bonus = 0.85
-                    opportunity_score = round(reference_score * (0.5 + 0.5 * distance_factor) * domestic_bonus, 3)
+                    opportunity_score = reference_score * (0.5 + 0.5 * distance_factor) * domestic_bonus
+                    rounded_opportunity_score = round(opportunity_score, 2)
+                    rounded_similarity = round(similarity_score, 2) if similarity_score is not None else None
+                    rounded_distance = round(distance, 2)
+                    rounded_reference_score = round(reference_score, 2)
 
                     suggestions.append({
                         "Proposed Source": source_candidate["IATA"],
@@ -1076,10 +1103,10 @@ class DataStore:
                         "Destination CBSA": dest_cbsa_name,
                         "Reference Route": route["Route"],
                         "Reference ASM": route["ASM"],
-                        "Reference Performance Score": reference_score,
-                        "Estimated Distance (miles)": round(distance, 1),
-                        "Distance Similarity": round(similarity_score, 3) if similarity_score is not None else None,
-                        "Opportunity Score": opportunity_score,
+                        "Reference Performance Score": rounded_reference_score,
+                        "Estimated Distance (miles)": rounded_distance,
+                        "Distance Similarity": rounded_similarity,
+                        "Opportunity Score": rounded_opportunity_score,
                         "Rationale": f"Shares CBSA pair {source_cbsa_name} ↔ {dest_cbsa_name} with top route {route['Route']}"
                     })
 
@@ -1097,6 +1124,30 @@ class DataStore:
                 .sort_values(["Opportunity Score", "Reference ASM"], ascending=[False, False])
                 .reset_index(drop=True)
             )
+        if not best_routes.empty:
+            _round_numeric_columns(
+                best_routes,
+                [
+                    "Distance (miles)",
+                    "Seats per Mile",
+                    "ASM_norm",
+                    "SPM_norm",
+                    "Performance Score",
+                ],
+            )
+
+        if not suggestions_df.empty:
+            _round_numeric_columns(
+                suggestions_df,
+                [
+                    "Reference ASM",
+                    "Reference Performance Score",
+                    "Estimated Distance (miles)",
+                    "Distance Similarity",
+                    "Opportunity Score",
+                ],
+            )
+
         return {
             "best_routes": best_routes,
             "suggested_routes": suggestions_df
@@ -1161,24 +1212,17 @@ class DataStore:
             route_total_lookup.get(pair) for pair in route_pairs
         ]
         pivoted["_share_denominator"] = pivoted["_route_total_asm"]
-        pivoted["_share_denominator"] = pivoted["_share_denominator"].where(
-            pivoted["_share_denominator"].notna() & (pivoted["_share_denominator"] > 0),
-            pivoted["_combined_asm"]
-        )
-        pivoted["_share_denominator"] = pivoted["_share_denominator"].where(
-            pivoted["_share_denominator"] >= pivoted["_combined_asm"].fillna(0),
-            pivoted["_combined_asm"]
-        )
-        pivoted["_share_denominator"] = pivoted["_share_denominator"].where(
-            pivoted["_share_denominator"] != 0,
-            pd.NA
-        )
+        pivoted.loc[
+            pivoted["_share_denominator"].isna() | (pivoted["_share_denominator"] <= 0),
+            "_share_denominator"
+        ] = pd.NA
 
         share_columns = []
         for col in asm_columns:
             share_col = f"{col}_Share"
             share_columns.append(share_col)
             pivoted[share_col] = pivoted[col] / pivoted["_share_denominator"]
+            pivoted[share_col] = pivoted[share_col].clip(upper=1.0)
 
         pivoted.drop(columns=["_combined_asm", "_route_total_asm", "_share_denominator"], inplace=True)
 
