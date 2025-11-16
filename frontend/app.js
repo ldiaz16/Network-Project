@@ -1,13 +1,55 @@
-const metaApiBase = document.querySelector('meta[name="api-base"]');
+const metaApiBase = typeof document !== "undefined" ? document.querySelector('meta[name="api-base"]') : null;
+const LOCAL_API_BASE = "http://localhost:8000/api";
+
+const isBrowser = typeof window !== "undefined";
+const isLocalhost = isBrowser && window.location && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+const sanitizeBase = (value) => (value || "").replace(/\/+$/, "");
+
+const resolveCandidateBase = () => {
+    if (!isBrowser) {
+        return null;
+    }
+    const candidate = window.API_BASE || (metaApiBase && metaApiBase.content);
+    if (!candidate) {
+        return null;
+    }
+    if (/^https?:\/\//i.test(candidate)) {
+        return sanitizeBase(candidate);
+    }
+    if (candidate.startsWith("//")) {
+        const protocol = window.location && window.location.protocol ? window.location.protocol : "http:";
+        return sanitizeBase(`${protocol}${candidate}`);
+    }
+    if (candidate.startsWith("/")) {
+        if (isLocalhost) {
+            return sanitizeBase(LOCAL_API_BASE);
+        }
+        if (window.location && window.location.origin && window.location.origin !== "null") {
+            return sanitizeBase(`${window.location.origin}${candidate}`);
+        }
+        return null;
+    }
+    if (window.location && window.location.origin && window.location.origin !== "null") {
+        const trimmed = candidate.replace(/^\/+/, "");
+        return sanitizeBase(`${window.location.origin}/${trimmed}`);
+    }
+    return null;
+};
+
 const DEFAULT_API_BASE = (() => {
-    if (typeof window !== "undefined" && window.location && window.location.origin && window.location.origin !== "null") {
+    if (isLocalhost) {
+        return LOCAL_API_BASE;
+    }
+    if (isBrowser && window.location && window.location.origin && window.location.origin !== "null") {
         return `${window.location.origin}/api`;
     }
-    return "http://localhost:8000/api";
+    return LOCAL_API_BASE;
 })();
+
 const API_BASE = (() => {
-    const candidate = window.API_BASE || (metaApiBase && metaApiBase.content) || DEFAULT_API_BASE;
-    return candidate.replace(/\/+$/, "");
+    const resolved = resolveCandidateBase();
+    return sanitizeBase(resolved || DEFAULT_API_BASE);
 })();
 
 const {
