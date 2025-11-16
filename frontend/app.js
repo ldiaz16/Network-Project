@@ -2,7 +2,25 @@ const metaApiBase = typeof document !== "undefined" ? document.querySelector('me
 const LOCAL_API_BASE = "http://localhost:8000/api";
 
 const isBrowser = typeof window !== "undefined";
-const isLocalhost = isBrowser && window.location && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const isLocalhost = (() => {
+    if (!isBrowser || !window.location) {
+        return false;
+    }
+    const hostname = (window.location.hostname || "").toLowerCase();
+    if (!hostname) {
+        return true;
+    }
+    if (hostname === "localhost" || hostname === "0.0.0.0") {
+        return true;
+    }
+    if (hostname === "::1" || hostname === "[::1]") {
+        return true;
+    }
+    if (hostname.startsWith("127.")) {
+        return true;
+    }
+    return false;
+})();
 
 const sanitizeBase = (value) => (value || "").replace(/\/+$/, "");
 

@@ -1,47 +1,18 @@
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:43] "GET / HTTP/1.1" 200 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:43] "GET /styles.css HTTP/1.1" 200 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:43] "GET /app.js HTTP/1.1" 200 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:43] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:43] "GET /favicon.ico HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:44] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:44] "GET /api/airlines HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:46] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:46] "GET /api/airlines?query=Del HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:47] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:47] "GET /api/airlines?query=Delt HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:48] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:48] "GET /api/airlines?query=Delta HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:49] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:49] "GET /api/airlines?query=Delta%20Airlin HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:49] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:49] "GET /api/airlines?query=Delta%20Airline HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:50] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:50] "GET /api/airlines?query=Delta%20Airlines HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:51] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:51] "GET /api/airlines?query=Americ HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:53] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:53] "GET /api/airlines?query=American%20Airlines HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:54] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:37:54] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:00] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:00] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:05] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:05] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:05] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:05] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:09] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:09] "GET /api/airlines?query=Delta HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] code 404, message File not found
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] "GET /api/airlines?query=American HTTP/1.1" 404 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:11] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:12] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:12] "POST /api/run HTTP/1.1" 501 -
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:12] code 501, message Unsupported method ('POST')
-::ffff:127.0.0.1 - - [07/Nov/2025 12:38:12] "POST /api/run HTTP/1.1" 501 -
+127.0.0.1 - - [16/Nov/2025 17:02:18] "GET / HTTP/1.1" 200 -
+line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 1314, in <module>
+    test(
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 1261, in test
+    with ServerClass(addr, HandlerClass) as httpd:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 1308, in server_bind
+    return super().server_bind()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 473, in server_bind
+    self.socket.bind(self.server_address)
+OSError: [Errno 48] Address already in use
