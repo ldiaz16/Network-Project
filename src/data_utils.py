@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pandas as pd
 from geopy.distance import geodesic
-from .airlines import normalize_name
-from .aircraft_config import AIRLINE_SEAT_CONFIG
+from data.airlines import normalize_name
+from data.aircraft_config import AIRLINE_SEAT_CONFIG
 
 DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
 
@@ -26,7 +26,29 @@ def load_routes(path: str = None) -> pd.DataFrame:
     df = pd.read_csv(data_path, header=None)
     df.columns = ["Airline Code","IDK","Source airport","Source airport ID",
                   "Destination airport","Destination airport ID","Codeshare","Stops","Equipment"]
-    return df
+    return filter_codeshare_routes(df)
+
+def filter_codeshare_routes(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove codeshare-only rows from a routes dataframe.
+    OpenFlights marks codeshares with a literal ``Y`` in the ``Codeshare`` column.
+    """
+    if df is None or df.empty or "Codeshare" not in df.columns:
+        return df
+    normalized = (
+        df["Codeshare"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .replace({"\\N": ""})
+    )
+    mask = normalized == "Y"
+    if not mask.any():
+        return df
+    filtered = df.loc[~mask].copy()
+    filtered.reset_index(drop=True, inplace=True)
+    return filtered
 
 def load_cbsa(path: str = None) -> pd.DataFrame:
     data_path = Path(path) if path else DATA_DIR_ROOT / "cbsa.csv"

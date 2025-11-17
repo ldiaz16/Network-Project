@@ -142,7 +142,7 @@ def _format_cbsa_pair(source, destination):
     left = str(source).strip() if isinstance(source, str) else ""
     right = str(destination).strip() if isinstance(destination, str) else ""
     if left and right:
-        return f"{left} ↔ {right}"
+        return f"{left} <-> {right}"
     return left or right or "—"
 
 

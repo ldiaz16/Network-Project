@@ -9,6 +9,7 @@ from rapidfuzz import process, fuzz # type: ignore
 from geopy.distance import geodesic
 from data.aircraft_config import AIRLINE_SEAT_CONFIG
 from collections import defaultdict
+from .data_utils import filter_codeshare_routes
 
 DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
 RESOURCES_DIR = Path(__file__).resolve().parents[1] / "resources"
@@ -117,6 +118,7 @@ class DataStore:
             "Airline Code", "IDK", "Source airport", "Source airport ID",
             "Destination airport", "Destination airport ID", "Codeshare", "Stops", "Equipment"
         ]
+        self.routes = filter_codeshare_routes(self.routes)
         self.airlines.columns = [
             "Airline", "Alias", "IATA", "ICAO", "Callsign", "Country", "Active"
         ]
@@ -1609,7 +1611,7 @@ class DataStore:
                         "Estimated Distance (miles)": rounded_distance,
                         "Distance Similarity": rounded_similarity,
                         "Opportunity Score": rounded_opportunity_score,
-                        "Rationale": f"Shares CBSA pair {source_cbsa_name} ↔ {dest_cbsa_name} with top route {route['Route']}"
+                        "Rationale": f"Shares CBSA pair {source_cbsa_name} <-> {dest_cbsa_name} with top route {route['Route']}"
                     })
 
                     suggestions_added += 1
