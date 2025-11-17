@@ -739,8 +739,136 @@ class DataStore:
         ## print(enriched_df[["Airline (Normalized)", "Source airport", "Destination airport", "Distance (miles)", "Equipment", "Total"]].head())
         return enriched_df
     
-    def find_best_aircraft_for_route(self, airline_name):
-        aircraft_list_df = self.aircraft_config[self.aircraft_config["Airline"] == airline_name]
+    def find_best_aircraft_for_route(self, airline_name, route_distance, seat_demand=None, top_n=3, cost_df=None):
+        """
+        Recommend the best-fitting aircraft type for a target stage length and seat demand.
+
+        The ranking blends three signals:
+        - Fleet utilization (how broadly the type is already used in the network)
+        - Distance fit (how closely the type's typical stage length matches the request)
+        - Seat fit (optional, only when seat_demand is provided)
+        """
+        if route_distance is None:
+            raise ValueError("route_distance is required.")
+        try:
+            route_distance = float(route_distance)
+        except (TypeError, ValueError):
+            raise ValueError("route_distance must be numeric.")
+        if route_distance <= 0:
+            raise ValueError("route_distance must be positive.")
+
+        normalized_name = normalize_name(airline_name) if airline_name else None
+        airline_label = airline_name
+        computed_cost_df = None
+        if cost_df is None:
+            if self.routes is None or self.airports is None:
+                raise ValueError("Routes and airports must be loaded before analyzing aircraft choices.")
+            routes_df, airline_meta = self.select_airline_routes(airline_name)
+            airline_label = airline_meta.get("Airline", airline_label)
+            normalized_name = airline_meta.get("Airline (Normalized)", normalized_name)
+            processed = self.process_routes(routes_df)
+            computed_cost_df = self.cost_analysis(processed)
+        else:
+            computed_cost_df = cost_df.copy()
+            if normalized_name is None and "Airline (Normalized)" in computed_cost_df.columns:
+                non_null = computed_cost_df["Airline (Normalized)"].dropna()
+                if not non_null.empty:
+                    normalized_name = non_null.mode().iloc[0]
+
+        fleet_summary = self.summarize_fleet_utilization(computed_cost_df)
+        if fleet_summary.empty:
+            return pd.DataFrame(
+                columns=[
+                    "Airline",
+                    "Equipment",
+                    "Route Count",
+                    "Average Distance",
+                    "Total Distance",
+                    "Utilization Score",
+                    "Seat Capacity",
+                    "Distance Fit",
+                    "Seat Fit",
+                    "Optimal Score",
+                ]
+            )
+
+        if not self.equipment_capacity_lookup and self.aircraft_config is not None and not self.aircraft_config.empty:
+            self.equipment_capacity_lookup = self._build_equipment_capacity_lookup(self.aircraft_config)
+
+        seat_lookup = {}
+        if normalized_name and self.aircraft_config is not None and not self.aircraft_config.empty:
+            seat_rows = self.aircraft_config[self.aircraft_config["Airline"] == normalized_name]
+            if not seat_rows.empty:
+                seat_lookup = seat_rows.set_index("Aircraft")["Total"].to_dict()
+
+        def _seat_capacity(equipment):
+            seats = seat_lookup.get(equipment)
+            if seats:
+                return int(seats)
+            record = self._estimate_seat_capacity(equipment)
+            if isinstance(record, dict):
+                value = record.get("seats")
+                if value:
+                    return int(value)
+            return 0
+
+        def _distance_fit(avg_distance):
+            avg = float(avg_distance) if pd.notna(avg_distance) else 0.0
+            if avg <= 0 or route_distance <= 0:
+                return 0.0
+            return max(0.0, 1 - abs(avg - route_distance) / (avg + route_distance))
+
+        route_seat_demand = float(seat_demand) if seat_demand not in (None, "") else None
+        if route_seat_demand is not None and route_seat_demand <= 0:
+            route_seat_demand = None
+
+        def _seat_fit(seat_count):
+            if route_seat_demand is None:
+                return 1.0
+            seats = float(seat_count) if pd.notna(seat_count) else 0.0
+            if seats <= 0:
+                return 0.0
+            return max(0.0, 1 - abs(seats - route_seat_demand) / (seats + route_seat_demand))
+
+        summary = fleet_summary.copy()
+        summary["Airline"] = airline_label
+        summary["Seat Capacity"] = summary["Equipment"].apply(_seat_capacity)
+        summary["Distance Fit"] = summary["Average Distance"].apply(_distance_fit)
+        summary["Seat Fit"] = summary["Seat Capacity"].apply(_seat_fit)
+
+        if route_seat_demand is None:
+            utilization_weight = 0.65
+            distance_weight = 0.35
+            seat_weight = 0.0
+        else:
+            utilization_weight = 0.45
+            distance_weight = 0.35
+            seat_weight = 0.20
+
+        base_score = (
+            utilization_weight * summary["Utilization Score"] +
+            distance_weight * summary["Distance Fit"] +
+            seat_weight * summary["Seat Fit"]
+        )
+        if route_seat_demand is None:
+            summary["Optimal Score"] = (base_score * summary["Distance Fit"]).round(3)
+        else:
+            summary["Optimal Score"] = (base_score * summary["Distance Fit"] * summary["Seat Fit"]).round(3)
+
+        columns = [
+            "Airline",
+            "Equipment",
+            "Route Count",
+            "Average Distance",
+            "Total Distance",
+            "Utilization Score",
+            "Seat Capacity",
+            "Distance Fit",
+            "Seat Fit",
+            "Optimal Score",
+        ]
+        summary = summary[columns]
+        return summary.sort_values("Optimal Score", ascending=False).head(int(top_n)).reset_index(drop=True)
 
     def _calculate_route_strategy_baseline(self, cost_df):
         """

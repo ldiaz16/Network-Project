@@ -8,7 +8,9 @@ from pydantic import ValidationError
 from src.backend_service import (
     AnalysisError,
     AnalysisRequest,
+    OptimalAircraftRequest,
     list_airlines as list_airlines_logic,
+    recommend_optimal_aircraft,
     run_analysis as run_analysis_logic,
 )
 from src.cors_config import get_cors_settings
@@ -77,6 +79,22 @@ def run_analysis():
 
     try:
         result = run_analysis_logic(data_store, request_model)
+    except AnalysisError as exc:
+        return jsonify({"detail": str(exc)}), exc.status_code
+
+    return jsonify(result)
+
+
+@app.post("/api/optimal-aircraft")
+def optimal_aircraft():
+    payload = request.get_json(force=True, silent=True) or {}
+    try:
+        request_model = OptimalAircraftRequest(**payload)
+    except ValidationError as exc:
+        return jsonify({"detail": exc.errors()}), 422
+
+    try:
+        result = recommend_optimal_aircraft(data_store, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 

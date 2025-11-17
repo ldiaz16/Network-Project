@@ -61,6 +61,30 @@ class AnalysisRequest(BaseModel):
         return [item for item in value if item]
 
 
+class OptimalAircraftRequest(BaseModel):
+    airline: str
+    route_distance: float = Field(..., gt=0)
+    seat_demand: Optional[int] = None
+    top_n: int = Field(default=3, ge=1)
+
+    @validator("airline", pre=True, always=True)
+    def _require_airline(cls, value: Any) -> str:
+        if value is None:
+            raise ValueError("Airline name is required.")
+        normalized = str(value).strip()
+        if not normalized:
+            raise ValueError("Airline name is required.")
+        return normalized
+
+    @validator("seat_demand")
+    def _validate_seat_demand(cls, value: Optional[int]) -> Optional[int]:
+        if value is None:
+            return None
+        if value <= 0:
+            raise ValueError("Seat demand must be a positive number.")
+        return value
+
+
 class AirlineSearchResponse(BaseModel):
     airline: str
     alias: Optional[str]
@@ -93,6 +117,23 @@ def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
         "scorecard": scorecard,
         "market_share": market_share,
         "fleet_utilization": fleet_utilization,
+    }
+
+
+def recommend_optimal_aircraft(data_store, payload: OptimalAircraftRequest) -> Dict[str, Any]:
+    try:
+        recommendations = data_store.find_best_aircraft_for_route(
+            payload.airline,
+            route_distance=payload.route_distance,
+            seat_demand=payload.seat_demand,
+            top_n=payload.top_n,
+        )
+    except ValueError as exc:
+        raise AnalysisError(400, str(exc)) from exc
+
+    return {
+        "airline": payload.airline,
+        "optimal_aircraft": _dataframe_to_records(recommendations),
     }
 
 

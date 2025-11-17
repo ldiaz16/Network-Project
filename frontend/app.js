@@ -505,6 +505,15 @@ function App() {
     const [resultsTab, setResultsTab] = React.useState("competing");
     const debounceRef = React.useRef(null);
     const lastQueryRef = React.useRef("");
+    const [optimalConfig, setOptimalConfig] = React.useState({
+        airline: "",
+        route_distance: "",
+        seat_demand: "",
+        top_n: "3",
+    });
+    const [optimalResults, setOptimalResults] = React.useState([]);
+    const [optimalStatus, setOptimalStatus] = React.useState({ message: "", kind: "" });
+    const [optimalLoading, setOptimalLoading] = React.useState(false);
 
     const fetchSuggestions = React.useCallback(async (query = "") => {
         try {
@@ -559,6 +568,11 @@ function App() {
 
     const handleCheckboxChange = (field) => (_, checked) => {
         setFormState((prev) => ({ ...prev, [field]: checked }));
+    };
+
+    const handleOptimalFieldChange = (field) => (event) => {
+        const value = event.target.value;
+        setOptimalConfig((prev) => ({ ...prev, [field]: value }));
     };
 
     const resetResults = () => {
@@ -633,6 +647,55 @@ function App() {
         }
     };
 
+    const handleOptimalSubmit = React.useCallback(
+        async (event) => {
+            event.preventDefault();
+            const airline = (optimalConfig.airline || "").trim();
+            if (!airline) {
+                setOptimalStatus({ message: "Airline name is required.", kind: "error" });
+                return;
+            }
+            const routeDistance = Number(optimalConfig.route_distance);
+            if (!Number.isFinite(routeDistance) || routeDistance <= 0) {
+                setOptimalStatus({ message: "Enter a valid route distance above zero.", kind: "error" });
+                return;
+            }
+            const payload = {
+                airline,
+                route_distance: routeDistance,
+                top_n: Number.isFinite(Number(optimalConfig.top_n)) ? Math.max(1, Math.floor(Number(optimalConfig.top_n))) : 3,
+            };
+            const seatDemandRaw = optimalConfig.seat_demand;
+            if (seatDemandRaw) {
+                const seatDemand = Number(seatDemandRaw);
+                if (Number.isFinite(seatDemand) && seatDemand > 0) {
+                    payload.seat_demand = Math.floor(seatDemand);
+                }
+            }
+            setOptimalLoading(true);
+            setOptimalStatus({ message: "Finding optimal equipment…", kind: "info" });
+            setOptimalResults([]);
+            try {
+                const response = await fetch(`${API_BASE}/optimal-aircraft`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.detail || "Unable to fetch optimal equipment.");
+                }
+                setOptimalResults(result.optimal_aircraft || []);
+                setOptimalStatus({ message: "Recommendations ready.", kind: "success" });
+            } catch (error) {
+                setOptimalStatus({ message: error.message || "Unable to fetch recommendations.", kind: "error" });
+            } finally {
+                setOptimalLoading(false);
+            }
+        },
+        [optimalConfig]
+    );
+
     const renderAirlineField = (label, field) => (
         <Autocomplete
             freeSolo
@@ -699,10 +762,11 @@ function App() {
             <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
                 <Grid container spacing={3} alignItems="stretch">
                     <Grid item xs={12} md={5} lg={4}>
-                        <Paper
-                            component="form"
-                            onSubmit={handleSubmit}
-                            sx={{
+                        <Stack spacing={3}>
+                            <Paper
+                                component="form"
+                                onSubmit={handleSubmit}
+                                sx={{
                                 p: { xs: 2.5, md: 3 },
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
@@ -837,6 +901,109 @@ function App() {
                                 )}
                             </Button>
                         </Paper>
+                        <Paper
+                            component="form"
+                            onSubmit={handleOptimalSubmit}
+                            sx={{
+                                p: { xs: 2.5, md: 3 },
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="h6">Optimal Aircraft</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Rank in-fleet equipment by utilization and distance-fit for a single stage.
+                                </Typography>
+                            </Box>
+                            <StatusAlert status={optimalStatus} />
+                            <Stack spacing={2}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Target Flight
+                                </Typography>
+                                <Autocomplete
+                                    freeSolo
+                                    options={suggestions}
+                                    filterOptions={(options, { inputValue }) => {
+                                        const normalizedSearch = (inputValue || "").trim().toLowerCase();
+                                        const filtered = normalizedSearch
+                                            ? options.filter((option) => option.toLowerCase().includes(normalizedSearch))
+                                            : options;
+                                        return filtered.slice(0, MAX_AIRLINE_SUGGESTIONS);
+                                    }}
+                                    openOnFocus
+                                    autoHighlight
+                                    noOptionsText="No matching airlines"
+                                    value={optimalConfig.airline}
+                                    inputValue={optimalConfig.airline}
+                                    onChange={(_, value) => {
+                                        setOptimalConfig((prev) => ({ ...prev, airline: value || "" }));
+                                    }}
+                                    onInputChange={(_, value) => {
+                                        const nextValue = value || "";
+                                        setOptimalConfig((prev) => ({ ...prev, airline: nextValue }));
+                                        handleSuggestionQuery(nextValue);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Airline"
+                                            variant="outlined"
+                                            helperText="Start typing to trigger suggestions"
+                                            fullWidth
+                                        />
+                                    )}
+                                />
+                                <TextField
+                                    label="Route Distance (miles)"
+                                    type="number"
+                                    value={optimalConfig.route_distance}
+                                    onChange={handleOptimalFieldChange("route_distance")}
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Seat Demand (optional)"
+                                    type="number"
+                                    value={optimalConfig.seat_demand}
+                                    onChange={handleOptimalFieldChange("seat_demand")}
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Results (top N)"
+                                    type="number"
+                                    inputProps={{ min: 1, max: 10 }}
+                                    value={optimalConfig.top_n}
+                                    onChange={handleOptimalFieldChange("top_n")}
+                                    fullWidth
+                                />
+                            </Stack>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                size="large"
+                                disabled={optimalLoading}
+                                sx={{ alignSelf: "flex-start" }}
+                            >
+                                {optimalLoading ? (
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <CircularProgress size={20} color="inherit" />
+                                        <span>Finding...</span>
+                                    </Stack>
+                                ) : (
+                                    "Find optimal aircraft"
+                                )}
+                            </Button>
+                            <DataTable
+                                rows={optimalResults}
+                                title="Recommended Equipment"
+                                maxHeight={260}
+                                enableWrapping
+                            />
+                        </Paper>
+                    </Stack>
                     </Grid>
 
                     <Grid item xs={12} md={7} lg={8}>
