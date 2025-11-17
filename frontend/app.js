@@ -191,7 +191,7 @@ function formatPercent(value) {
     return percentFormatter.format(value);
 }
 
-const airlineLogoMap = {
+const localAirlineLogoMap = {
     AA: "logos/AA.png",
     DL: "logos/Delta.png",
     B6: "logos/Jetblue.png",
@@ -208,52 +208,221 @@ const airlineLogoMap = {
 
 const normalizeLogoKey = (value) => (value || "").trim().toLowerCase();
 
+const collectAirlineIdentifierCandidates = (airline) => {
+    const candidates = [];
+    const pushCandidate = (value) => {
+        if (typeof value === "string" && value.trim()) {
+            candidates.push(value.trim());
+        }
+    };
+    if (!airline) {
+        return candidates;
+    }
+    if (typeof airline === "string") {
+        pushCandidate(airline);
+        return candidates;
+    }
+    if (typeof airline === "object") {
+        pushCandidate(airline.iata);
+        pushCandidate(airline.icao);
+        pushCandidate(airline.name);
+        pushCandidate(airline.airline);
+        pushCandidate(airline.normalized);
+        pushCandidate(airline.slug);
+        if (Array.isArray(airline.aliases)) {
+            airline.aliases.forEach(pushCandidate);
+        }
+        if (Array.isArray(airline.alternate_names)) {
+            airline.alternate_names.forEach(pushCandidate);
+        }
+    }
+    const seen = new Set();
+    return candidates.filter((candidate) => {
+        const normalized = normalizeLogoKey(candidate);
+        if (seen.has(normalized)) {
+            return false;
+        }
+        seen.add(normalized);
+        return true;
+    });
+};
+
+const SOARING_SYMBOLS_BASE_URL = "https://raw.githubusercontent.com/anhthang/soaring-symbols/main";
+const SOARING_SYMBOLS_ASSET_BASE = `${SOARING_SYMBOLS_BASE_URL}/assets`;
+const SOARING_SYMBOLS_AIRLINES_URL = `${SOARING_SYMBOLS_BASE_URL}/airlines.json`;
+
+const SoaringSymbolsLogoResolver = (() => {
+    let lookupPromise = null;
+    let lookupTable = null;
+
+    const buildLookup = (entries) => {
+        const table = new Map();
+        entries.forEach((entry) => {
+            const slug = entry.slug;
+            if (!slug) {
+                return;
+            }
+            const register = (value) => {
+                if (typeof value === "string" && value.trim()) {
+                    table.set(normalizeLogoKey(value), slug);
+                }
+            };
+            register(slug);
+            register(entry.name);
+            register(entry.iata);
+            register(entry.icao);
+            if (Array.isArray(entry.aliases)) {
+                entry.aliases.forEach(register);
+            }
+            if (Array.isArray(entry.subsidiaries)) {
+                entry.subsidiaries.forEach((subsidiary) => {
+                    register(subsidiary.name);
+                    register(subsidiary.iata);
+                    register(subsidiary.icao);
+                });
+            }
+        });
+        return table;
+    };
+
+    const ensureLookup = async () => {
+        if (lookupTable) {
+            return lookupTable;
+        }
+        if (!lookupPromise) {
+            lookupPromise = fetch(SOARING_SYMBOLS_AIRLINES_URL)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load Soaring Symbols data (${response.status})`);
+                    }
+                    return response.json();
+                })
+                .then((entries) => {
+                    lookupTable = buildLookup(entries);
+                    return lookupTable;
+                })
+                .catch((error) => {
+                    console.error("Unable to build Soaring Symbols lookup", error);
+                    lookupPromise = null;
+                    throw error;
+                });
+        }
+        return lookupPromise;
+    };
+
+    const resolveSlug = async (airline) => {
+        const candidates = collectAirlineIdentifierCandidates(airline);
+        if (!candidates.length) {
+            return null;
+        }
+        try {
+            const lookup = await ensureLookup();
+            for (const candidate of candidates) {
+                const normalized = normalizeLogoKey(candidate);
+                if (lookup.has(normalized)) {
+                    return lookup.get(normalized);
+                }
+            }
+        } catch (error) {
+            // Already logged inside ensureLookup
+        }
+        return null;
+    };
+
+    const resolveCandidates = async (airline) => {
+        const slug = await resolveSlug(airline);
+        if (!slug) {
+            return [];
+        }
+        const assetBase = `${SOARING_SYMBOLS_ASSET_BASE}/${slug}`;
+        return [`${assetBase}/logo.svg`, `${assetBase}/icon.svg`];
+    };
+
+    return { resolveCandidates };
+})();
+
 const getAirlineLogoSrc = (airline) => {
     if (!airline) {
         return null;
     }
-    const candidates = [];
-    const pushCandidate = (value) => {
-        if (typeof value === "string" && value.trim()) {
-            candidates.push(value);
-        }
-    };
-
-    if (typeof airline === "string") {
-        pushCandidate(airline);
-    } else if (typeof airline === "object") {
-        pushCandidate(airline.iata);
-        pushCandidate(airline.name);
-        pushCandidate(airline.normalized);
-        pushCandidate(airline.airline);
-    }
+    const candidates = collectAirlineIdentifierCandidates(airline);
 
     for (const candidate of candidates) {
-        const exactMatch = airlineLogoMap[candidate];
+        const exactMatch = localAirlineLogoMap[candidate];
         if (exactMatch) {
             return exactMatch;
         }
         const normalized = normalizeLogoKey(candidate);
-        if (airlineLogoMap[normalized]) {
-            return airlineLogoMap[normalized];
+        if (localAirlineLogoMap[normalized]) {
+            return localAirlineLogoMap[normalized];
         }
         const upper = candidate.toUpperCase();
-        if (airlineLogoMap[upper]) {
-            return airlineLogoMap[upper];
+        if (localAirlineLogoMap[upper]) {
+            return localAirlineLogoMap[upper];
         }
     }
     return null;
 };
 
-const AirlineLogo = ({ src, name, size = 48 }) => {
-    if (!src) {
+const AirlineLogo = ({ airline, src: explicitSrc, name, size = 48 }) => {
+    const fallbackSrc = React.useMemo(() => explicitSrc || getAirlineLogoSrc(airline), [explicitSrc, airline]);
+    const [logoSrc, setLogoSrc] = React.useState(fallbackSrc);
+    const candidateQueueRef = React.useRef([]);
+    const fallbackRef = React.useRef(fallbackSrc);
+    const displayName =
+        name || (typeof airline === "string" ? airline : airline && (airline.name || airline.airline)) || "Airline";
+
+    React.useEffect(() => {
+        fallbackRef.current = fallbackSrc;
+        setLogoSrc(fallbackSrc);
+    }, [fallbackSrc]);
+
+    React.useEffect(() => {
+        let cancelled = false;
+        candidateQueueRef.current = [];
+        if (!airline) {
+            return () => {
+                cancelled = true;
+            };
+        }
+        (async () => {
+            const candidates = await SoaringSymbolsLogoResolver.resolveCandidates(airline);
+            if (cancelled || !candidates.length) {
+                return;
+            }
+            candidateQueueRef.current = candidates.slice(1);
+            setLogoSrc(candidates[0]);
+        })().catch(() => {
+            // Errors are already logged inside resolver
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [airline]);
+
+    const handleError = React.useCallback(() => {
+        if (candidateQueueRef.current.length) {
+            const next = candidateQueueRef.current.shift();
+            setLogoSrc(next);
+            return;
+        }
+        if (fallbackRef.current && fallbackRef.current !== logoSrc) {
+            setLogoSrc(fallbackRef.current);
+            return;
+        }
+        if (!fallbackRef.current) {
+            setLogoSrc(null);
+        }
+    }, [logoSrc]);
+
+    if (!logoSrc) {
         return null;
     }
     return (
         <Box
             component="img"
-            src={src}
-            alt={`${name || "Airline"} logo`}
+            src={logoSrc}
+            alt={`${displayName} logo`}
             sx={{
                 width: size,
                 height: size,
@@ -263,6 +432,10 @@ const AirlineLogo = ({ src, name, size = 48 }) => {
                 objectFit: "contain",
                 p: 0.5,
             }}
+            onError={handleError}
+        />
+    );
+};
         />
     );
 };
@@ -470,7 +643,6 @@ const NetworkSummary = ({ airlines }) => {
             <Typography variant="h5">Network Summary</Typography>
             <Grid container spacing={2}>
                 {airlines.map((airline, index) => {
-                    const logoSrc = getAirlineLogoSrc(airline);
                     const displayName = airline.name || airline.airline || "Airline";
                     return (
                         <Grid item xs={12} md={6} key={airline.name || airline.iata || String(index)}>
@@ -483,7 +655,7 @@ const NetworkSummary = ({ airlines }) => {
                                 }}
                             >
                                 <CardHeader
-                                    avatar={<AirlineLogo src={logoSrc} name={displayName} />}
+                                    avatar={<AirlineLogo airline={airline} name={displayName} />}
                                     title={displayName}
                                     subheader={airline.iata ? `IATA: ${airline.iata}` : null}
                                 />
@@ -528,7 +700,6 @@ const CbsaOpportunities = ({ entries }) => {
             {entries.map((entry, index) => {
                 const bestRoutes = entry.best_routes || [];
                 const potentialRoutes = entry.suggestions || [];
-                const entryLogoSrc = getAirlineLogoSrc(entry);
                 const entryName = entry.airline || "Airline";
                 return (
                     <Paper
@@ -544,7 +715,7 @@ const CbsaOpportunities = ({ entries }) => {
                         <Stack spacing={2.5}>
                             <Box>
                                 <Stack direction="row" spacing={2} alignItems="center">
-                                    <AirlineLogo src={entryLogoSrc} name={entryName} size={56} />
+                                    <AirlineLogo airline={entry} name={entryName} size={56} />
                                     <Box>
                                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                                             {entryName}
