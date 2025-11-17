@@ -11,6 +11,7 @@ from data.aircraft_config import AIRLINE_SEAT_CONFIG
 from collections import defaultdict
 
 DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
+RESOURCES_DIR = Path(__file__).resolve().parents[1] / "resources"
 
 GENERIC_SEAT_GUESSES = {
     "100": 100,  # Fokker 100 / similar regional jets
@@ -75,6 +76,7 @@ class DataStore:
     def __init__(self, data_dir=None):
         base_dir = Path(data_dir) if data_dir else DATA_DIR_ROOT
         self.data_dir = base_dir
+        self.resources_dir = RESOURCES_DIR
         self.routes = None
         self.airlines = None
         self.airports = None
@@ -88,6 +90,7 @@ class DataStore:
         self.cbsa_cache_path = self.data_dir / "cbsa_cache.json"
         self._load_cbsa_cache()
         self._route_total_asm_cache = {}
+        self.operational_metrics = self._load_operational_metrics()
 
     def load_data(self):
         """Load data from CSV files into DataFrames and preprocess them."""
@@ -188,6 +191,39 @@ class DataStore:
             # Silently skip persistence issues; cache is an optimization only
             pass
 
+    def _load_operational_metrics(self):
+        """Load airline-level operational metrics (e.g., load factor averages)."""
+        metrics_path = self.resources_dir / "airline_operational_metrics.json"
+        if not metrics_path.exists():
+            return {}
+        try:
+            with metrics_path.open("r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+        except Exception:
+            return {}
+
+        normalized = {}
+        for airline_label, payload in raw.items():
+            if not isinstance(payload, dict):
+                continue
+            normalized_name = normalize_name(airline_label)
+            entry = payload.copy()
+            entry["airline_label"] = airline_label
+            normalized[normalized_name] = entry
+        return normalized
+
+    def _normalize_load_factor(self, value, midpoint=0.82, spread=0.14):
+        """Convert an absolute load factor into a 0-1 pressure scale."""
+        try:
+            load_factor = float(value)
+        except (TypeError, ValueError):
+            return None
+        lower_bound = midpoint - (spread / 2)
+        upper_bound = midpoint + (spread / 2)
+        if upper_bound <= lower_bound:
+            return None
+        scaled = (load_factor - lower_bound) / (upper_bound - lower_bound)
+        return max(0.0, min(1.0, scaled))
 
     def get_route_total_asm(self, route_pairs):
         """
@@ -788,6 +824,8 @@ class DataStore:
                     "Seat Capacity",
                     "Distance Fit",
                     "Seat Fit",
+                    "Airline Load Factor",
+                    "Load Factor Pressure",
                     "Optimal Score",
                 ]
             )
@@ -836,6 +874,18 @@ class DataStore:
         summary["Distance Fit"] = summary["Average Distance"].apply(_distance_fit)
         summary["Seat Fit"] = summary["Seat Capacity"].apply(_seat_fit)
 
+        load_factor_meta = self.operational_metrics.get(normalized_name or "", {})
+        load_factor_value = load_factor_meta.get("load_factor") if isinstance(load_factor_meta, dict) else None
+        load_factor_pressure = self._normalize_load_factor(load_factor_value) if load_factor_value is not None else None
+        load_factor_multiplier = 1.0
+        if load_factor_pressure is not None:
+            load_factor_multiplier = round(0.9 + (0.2 * load_factor_pressure), 4)
+            summary["Airline Load Factor"] = load_factor_value
+            summary["Load Factor Pressure"] = load_factor_pressure
+        else:
+            summary["Airline Load Factor"] = pd.NA
+            summary["Load Factor Pressure"] = pd.NA
+
         if route_seat_demand is None:
             utilization_weight = 0.65
             distance_weight = 0.35
@@ -845,15 +895,23 @@ class DataStore:
             distance_weight = 0.35
             seat_weight = 0.20
 
+        if load_factor_pressure is not None and route_seat_demand is not None:
+            seat_weight += 0.10 * load_factor_pressure
+            total_weight = utilization_weight + distance_weight + seat_weight
+            if total_weight > 0:
+                utilization_weight /= total_weight
+                distance_weight /= total_weight
+                seat_weight /= total_weight
+
         base_score = (
             utilization_weight * summary["Utilization Score"] +
             distance_weight * summary["Distance Fit"] +
             seat_weight * summary["Seat Fit"]
         )
         if route_seat_demand is None:
-            summary["Optimal Score"] = (base_score * summary["Distance Fit"]).round(3)
+            summary["Optimal Score"] = (base_score * summary["Distance Fit"] * load_factor_multiplier).round(3)
         else:
-            summary["Optimal Score"] = (base_score * summary["Distance Fit"] * summary["Seat Fit"]).round(3)
+            summary["Optimal Score"] = (base_score * summary["Distance Fit"] * summary["Seat Fit"] * load_factor_multiplier).round(3)
 
         columns = [
             "Airline",
@@ -865,6 +923,8 @@ class DataStore:
             "Seat Capacity",
             "Distance Fit",
             "Seat Fit",
+            "Airline Load Factor",
+            "Load Factor Pressure",
             "Optimal Score",
         ]
         summary = summary[columns]

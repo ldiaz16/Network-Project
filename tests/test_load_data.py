@@ -12,6 +12,98 @@ def datastore():
     return DataStore()
 
 
+def _seed_sample_airline(datastore):
+    datastore.airlines = pd.DataFrame(
+        [
+            {
+                "Airline": "Sample Airways",
+                "Alias": "",
+                "IATA": "SA",
+                "ICAO": "SMP",
+                "Callsign": "SAMPLE",
+                "Country": "United States",
+                "Active": "Y",
+                "Airline (Normalized)": normalize_name("Sample Airways"),
+            }
+        ]
+    )
+    datastore.routes = pd.DataFrame(
+        [
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "AAA",
+                "Source airport ID": None,
+                "Destination airport": "BBB",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A320",
+            },
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "AAA",
+                "Source airport ID": None,
+                "Destination airport": "CCC",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A320",
+            },
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "BBB",
+                "Source airport ID": None,
+                "Destination airport": "DDD",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A321",
+            },
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "AAA",
+                "Source airport ID": None,
+                "Destination airport": "DDD",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A321",
+            },
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "BBB",
+                "Source airport ID": None,
+                "Destination airport": "CCC",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "CR9",
+            },
+        ]
+    )
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "AAA", "Name": "Airport A", "Latitude": 0.0, "Longitude": 0.0},
+            {"IATA": "BBB", "Name": "Airport B", "Latitude": 0.0, "Longitude": 10.0},
+            {"IATA": "CCC", "Name": "Airport C", "Latitude": 5.0, "Longitude": 15.0},
+            {"IATA": "DDD", "Name": "Airport D", "Latitude": 15.0, "Longitude": 30.0},
+        ]
+    )
+    config = {
+        "Sample Airways": {
+            "A320": {"Y": 150, "W": 0, "J": 20, "F": 0, "Total": 170},
+            "A321": {"Y": 180, "W": 0, "J": 20, "F": 0, "Total": 200},
+            "CR9": {"Y": 70, "W": 0, "J": 6, "F": 0, "Total": 76},
+        }
+    }
+    datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+
+
 def test_convert_aircraft_config_to_df_returns_expected_structure(datastore):
     config = {
         "Sample Airways": {
@@ -404,95 +496,7 @@ def test_summarize_fleet_utilization_returns_scores(datastore):
 
 
 def test_find_best_aircraft_for_route_ranks_by_distance_and_seats(datastore):
-    datastore.airlines = pd.DataFrame(
-        [
-            {
-                "Airline": "Sample Airways",
-                "Alias": "",
-                "IATA": "SA",
-                "ICAO": "SMP",
-                "Callsign": "SAMPLE",
-                "Country": "United States",
-                "Active": "Y",
-                "Airline (Normalized)": normalize_name("Sample Airways"),
-            }
-        ]
-    )
-    datastore.routes = pd.DataFrame(
-        [
-            {
-                "Airline Code": "SA",
-                "IDK": None,
-                "Source airport": "AAA",
-                "Source airport ID": None,
-                "Destination airport": "BBB",
-                "Destination airport ID": None,
-                "Codeshare": None,
-                "Stops": 0,
-                "Equipment": "A320",
-            },
-            {
-                "Airline Code": "SA",
-                "IDK": None,
-                "Source airport": "AAA",
-                "Source airport ID": None,
-                "Destination airport": "CCC",
-                "Destination airport ID": None,
-                "Codeshare": None,
-                "Stops": 0,
-                "Equipment": "A320",
-            },
-            {
-                "Airline Code": "SA",
-                "IDK": None,
-                "Source airport": "BBB",
-                "Source airport ID": None,
-                "Destination airport": "DDD",
-                "Destination airport ID": None,
-                "Codeshare": None,
-                "Stops": 0,
-                "Equipment": "A321",
-            },
-            {
-                "Airline Code": "SA",
-                "IDK": None,
-                "Source airport": "AAA",
-                "Source airport ID": None,
-                "Destination airport": "DDD",
-                "Destination airport ID": None,
-                "Codeshare": None,
-                "Stops": 0,
-                "Equipment": "A321",
-            },
-            {
-                "Airline Code": "SA",
-                "IDK": None,
-                "Source airport": "BBB",
-                "Source airport ID": None,
-                "Destination airport": "CCC",
-                "Destination airport ID": None,
-                "Codeshare": None,
-                "Stops": 0,
-                "Equipment": "CR9",
-            },
-        ]
-    )
-    datastore.airports = pd.DataFrame(
-        [
-            {"IATA": "AAA", "Name": "Airport A", "Latitude": 0.0, "Longitude": 0.0},
-            {"IATA": "BBB", "Name": "Airport B", "Latitude": 0.0, "Longitude": 10.0},
-            {"IATA": "CCC", "Name": "Airport C", "Latitude": 5.0, "Longitude": 15.0},
-            {"IATA": "DDD", "Name": "Airport D", "Latitude": 15.0, "Longitude": 30.0},
-        ]
-    )
-    config = {
-        "Sample Airways": {
-            "A320": {"Y": 150, "W": 0, "J": 20, "F": 0, "Total": 170},
-            "A321": {"Y": 180, "W": 0, "J": 20, "F": 0, "Total": 200},
-            "CR9": {"Y": 70, "W": 0, "J": 6, "F": 0, "Total": 76},
-        }
-    }
-    datastore.aircraft_config = datastore.convert_aircraft_config_to_df(config)
+    _seed_sample_airline(datastore)
 
     recommendations = datastore.find_best_aircraft_for_route(
         "Sample Airways",
@@ -503,6 +507,32 @@ def test_find_best_aircraft_for_route_ranks_by_distance_and_seats(datastore):
 
     assert list(recommendations["Equipment"]) == ["A320", "A321"]
     assert recommendations.iloc[0]["Seat Capacity"] == 170
+
+
+def test_load_factor_metrics_adjust_scoring(datastore):
+    _seed_sample_airline(datastore)
+    normalized = normalize_name("Sample Airways")
+
+    datastore.operational_metrics = {normalized: {"load_factor": 0.9}}
+    high_pressure = datastore.find_best_aircraft_for_route(
+        "Sample Airways",
+        route_distance=650,
+        seat_demand=170,
+        top_n=2,
+    ).set_index("Equipment")
+
+    datastore.operational_metrics = {normalized: {"load_factor": 0.78}}
+    low_pressure = datastore.find_best_aircraft_for_route(
+        "Sample Airways",
+        route_distance=650,
+        seat_demand=170,
+        top_n=2,
+    ).set_index("Equipment")
+
+    assert high_pressure.loc["A320", "Airline Load Factor"] == pytest.approx(0.9)
+    assert low_pressure.loc["A320", "Airline Load Factor"] == pytest.approx(0.78)
+    assert high_pressure.loc["A320", "Load Factor Pressure"] > low_pressure.loc["A320", "Load Factor Pressure"]
+    assert high_pressure.loc["A320", "Optimal Score"] > low_pressure.loc["A320", "Optimal Score"]
 
 
 def test_cbsa_simulation_filters_international_and_rounds(datastore):

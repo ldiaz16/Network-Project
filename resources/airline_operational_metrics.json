@@ -1,0 +1,24 @@
+{
+  "Delta Air Lines": {
+    "period": "Q3 2025",
+    "source": "Delta-Air-Lines-Announces-Third-Quarter-2025.pdf",
+    "load_factor": 0.86,
+    "load_factor_prior_year": 0.87,
+    "ytd_load_factor": 0.84,
+    "ytd_load_factor_prior_year": 0.86
+  },
+  "United Airlines": {
+    "period": "Q3 2025",
+    "source": "United Airlines Continues to Win Brand-Loyal Customers as Q3 Profit and Q4 Outlook Both Exceed Wall Street Expectations.pdf",
+    "load_factor": 0.844,
+    "load_factor_prior_year": 0.853,
+    "ytd_load_factor": 0.824,
+    "ytd_load_factor_prior_year": 0.833
+  },
+  "JetBlue Airways Corporation": {
+    "period": "Q3 2025",
+    "source": "b8b196e0-dfb0-4b85-903c-7b5008785a35.pdf",
+    "load_factor": 0.851,
+    "load_factor_prior_year": 0.866
+  }
+}
