@@ -21,7 +21,9 @@ DEFAULT_EXPLICIT_ORIGINS: Sequence[str] = [
 DEFAULT_REGEX_ORIGINS: Sequence[str] = [r"https://(.+\.)?vercel\.app"]
 
 
-def _split_env_list(raw_value: str) -> List[str]:
+def _split_env_list(raw_value: str | None) -> List[str]:
+    if raw_value is None:
+        return []
     return [entry.strip() for entry in raw_value.split(",") if entry.strip()]
 
 
@@ -34,16 +36,24 @@ def get_cors_settings() -> Tuple[List[str], List[str]]:
     * CORS_ALLOW_ORIGIN_REGEXES controls regex patterns (comma-separated).
     """
     raw_explicit = os.environ.get("CORS_ALLOW_ORIGINS")
+    explicit_candidates = _split_env_list(raw_explicit)
     if raw_explicit is None:
         explicit = list(DEFAULT_EXPLICIT_ORIGINS)
+    elif explicit_candidates:
+        explicit = explicit_candidates
     else:
-        explicit = _split_env_list(raw_explicit) or ["*"]
+        # Treat blank/whitespace-only env vars as "use defaults" to avoid
+        # accidentally stripping the safe local/Vercel origins.
+        explicit = list(DEFAULT_EXPLICIT_ORIGINS)
 
     raw_regexes = os.environ.get("CORS_ALLOW_ORIGIN_REGEXES")
+    regex_candidates = _split_env_list(raw_regexes)
     if raw_regexes is None:
         regexes = list(DEFAULT_REGEX_ORIGINS)
+    elif regex_candidates:
+        regexes = regex_candidates
     else:
-        regexes = _split_env_list(raw_regexes)
+        regexes = list(DEFAULT_REGEX_ORIGINS)
 
     # Drop obvious wildcards; explicit '*' entries should live in the explicit list.
     regexes = [pattern for pattern in regexes if pattern and pattern != "*"]
