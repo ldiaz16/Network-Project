@@ -191,6 +191,82 @@ function formatPercent(value) {
     return percentFormatter.format(value);
 }
 
+const airlineLogoMap = {
+    AA: "logos/AA.png",
+    DL: "logos/Delta.png",
+    B6: "logos/Jetblue.png",
+    UA: "logos/United.png",
+    "american airlines": "logos/AA.png",
+    "delta air lines": "logos/Delta.png",
+    "delta airlines": "logos/Delta.png",
+    delta: "logos/Delta.png",
+    "jetblue airways": "logos/Jetblue.png",
+    jetblue: "logos/Jetblue.png",
+    "united airlines": "logos/United.png",
+    united: "logos/United.png",
+};
+
+const normalizeLogoKey = (value) => (value || "").trim().toLowerCase();
+
+const getAirlineLogoSrc = (airline) => {
+    if (!airline) {
+        return null;
+    }
+    const candidates = [];
+    const pushCandidate = (value) => {
+        if (typeof value === "string" && value.trim()) {
+            candidates.push(value);
+        }
+    };
+
+    if (typeof airline === "string") {
+        pushCandidate(airline);
+    } else if (typeof airline === "object") {
+        pushCandidate(airline.iata);
+        pushCandidate(airline.name);
+        pushCandidate(airline.normalized);
+        pushCandidate(airline.airline);
+    }
+
+    for (const candidate of candidates) {
+        const exactMatch = airlineLogoMap[candidate];
+        if (exactMatch) {
+            return exactMatch;
+        }
+        const normalized = normalizeLogoKey(candidate);
+        if (airlineLogoMap[normalized]) {
+            return airlineLogoMap[normalized];
+        }
+        const upper = candidate.toUpperCase();
+        if (airlineLogoMap[upper]) {
+            return airlineLogoMap[upper];
+        }
+    }
+    return null;
+};
+
+const AirlineLogo = ({ src, name, size = 48 }) => {
+    if (!src) {
+        return null;
+    }
+    return (
+        <Box
+            component="img"
+            src={src}
+            alt={`${name || "Airline"} logo`}
+            sx={{
+                width: size,
+                height: size,
+                borderRadius: 1,
+                backgroundColor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                objectFit: "contain",
+                p: 0.5,
+            }}
+        />
+    );
+};
+
 const ScorecardView = ({ data }) => {
     if (!data) {
         return null;
@@ -393,39 +469,44 @@ const NetworkSummary = ({ airlines }) => {
         <Stack spacing={2} sx={{ mb: 2 }}>
             <Typography variant="h5">Network Summary</Typography>
             <Grid container spacing={2}>
-                {airlines.map((airline, index) => (
-                    <Grid item xs={12} md={6} key={airline.name || airline.iata || String(index)}>
-                        <Card
-                            variant="outlined"
-                            sx={{
-                                height: "100%",
-                                borderColor: "rgba(255,255,255,0.08)",
-                                backgroundColor: "rgba(255,255,255,0.03)",
-                            }}
-                        >
-                            <CardHeader
-                                title={airline.name || "Unknown Airline"}
-                                subheader={airline.iata ? `IATA: ${airline.iata}` : null}
-                            />
-                            <CardContent>
-                                <Stack component="ul" spacing={1} sx={{ listStyle: "none", p: 0, m: 0 }}>
-                                    {Object.entries(airline.network_stats || {}).map(([key, value]) => (
-                                        <Box
-                                            key={`${airline.name}-${key}`}
-                                            component="li"
-                                            sx={{ color: "text.secondary", fontSize: "0.95rem" }}
-                                        >
-                                            <strong>{key}:</strong> {formatNetworkStat(key, value)}
-                                        </Box>
-                                    ))}
-                                </Stack>
-                                <ScorecardView data={airline.scorecard} />
-                                <MarketShareList rows={airline.market_share} />
-                                <FleetUtilizationList rows={airline.fleet_utilization} />
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                ))}
+                {airlines.map((airline, index) => {
+                    const logoSrc = getAirlineLogoSrc(airline);
+                    const displayName = airline.name || airline.airline || "Airline";
+                    return (
+                        <Grid item xs={12} md={6} key={airline.name || airline.iata || String(index)}>
+                            <Card
+                                variant="outlined"
+                                sx={{
+                                    height: "100%",
+                                    borderColor: "rgba(255,255,255,0.08)",
+                                    backgroundColor: "rgba(255,255,255,0.03)",
+                                }}
+                            >
+                                <CardHeader
+                                    avatar={<AirlineLogo src={logoSrc} name={displayName} />}
+                                    title={displayName}
+                                    subheader={airline.iata ? `IATA: ${airline.iata}` : null}
+                                />
+                                <CardContent>
+                                    <Stack component="ul" spacing={1} sx={{ listStyle: "none", p: 0, m: 0 }}>
+                                        {Object.entries(airline.network_stats || {}).map(([key, value]) => (
+                                            <Box
+                                                key={`${displayName}-${key}`}
+                                                component="li"
+                                                sx={{ color: "text.secondary", fontSize: "0.95rem" }}
+                                            >
+                                                <strong>{key}:</strong> {formatNetworkStat(key, value)}
+                                            </Box>
+                                        ))}
+                                    </Stack>
+                                    <ScorecardView data={airline.scorecard} />
+                                    <MarketShareList rows={airline.market_share} />
+                                    <FleetUtilizationList rows={airline.fleet_utilization} />
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    );
+                })}
             </Grid>
         </Stack>
     );
@@ -447,6 +528,8 @@ const CbsaOpportunities = ({ entries }) => {
             {entries.map((entry, index) => {
                 const bestRoutes = entry.best_routes || [];
                 const potentialRoutes = entry.suggestions || [];
+                const entryLogoSrc = getAirlineLogoSrc(entry);
+                const entryName = entry.airline || "Airline";
                 return (
                     <Paper
                         key={`${entry.airline}-${index}`}
@@ -460,12 +543,17 @@ const CbsaOpportunities = ({ entries }) => {
                     >
                         <Stack spacing={2.5}>
                             <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                    {entry.airline || "Airline"}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Based on the airline&apos;s active U.S. network and CBSA coverage.
-                                </Typography>
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <AirlineLogo src={entryLogoSrc} name={entryName} size={56} />
+                                    <Box>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                            {entryName}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Based on the airline&apos;s active U.S. network and CBSA coverage.
+                                        </Typography>
+                                    </Box>
+                                </Stack>
                             </Box>
                             <Grid container spacing={2.5}>
                                 <Grid item xs={12}>
