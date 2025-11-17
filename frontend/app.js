@@ -247,7 +247,7 @@ const collectAirlineIdentifierCandidates = (airline) => {
     });
 };
 
-const SOARING_SYMBOLS_BASE_URL = "https://raw.githubusercontent.com/anhthang/soaring-symbols/main";
+const SOARING_SYMBOLS_BASE_URL = "./soaring-symbols";
 const SOARING_SYMBOLS_ASSET_BASE = `${SOARING_SYMBOLS_BASE_URL}/assets`;
 const SOARING_SYMBOLS_AIRLINES_URL = `${SOARING_SYMBOLS_BASE_URL}/airlines.json`;
 
