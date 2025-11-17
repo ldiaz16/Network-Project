@@ -247,100 +247,6 @@ const collectAirlineIdentifierCandidates = (airline) => {
     });
 };
 
-const SOARING_SYMBOLS_BASE_URL = "./soaring-symbols";
-const SOARING_SYMBOLS_ASSET_BASE = `${SOARING_SYMBOLS_BASE_URL}/assets`;
-const SOARING_SYMBOLS_AIRLINES_URL = `${SOARING_SYMBOLS_BASE_URL}/airlines.json`;
-
-const SoaringSymbolsLogoResolver = (() => {
-    let lookupPromise = null;
-    let lookupTable = null;
-
-    const buildLookup = (entries) => {
-        const table = new Map();
-        entries.forEach((entry) => {
-            const slug = entry.slug;
-            if (!slug) {
-                return;
-            }
-            const register = (value) => {
-                if (typeof value === "string" && value.trim()) {
-                    table.set(normalizeLogoKey(value), slug);
-                }
-            };
-            register(slug);
-            register(entry.name);
-            register(entry.iata);
-            register(entry.icao);
-            if (Array.isArray(entry.aliases)) {
-                entry.aliases.forEach(register);
-            }
-            if (Array.isArray(entry.subsidiaries)) {
-                entry.subsidiaries.forEach((subsidiary) => {
-                    register(subsidiary.name);
-                    register(subsidiary.iata);
-                    register(subsidiary.icao);
-                });
-            }
-        });
-        return table;
-    };
-
-    const ensureLookup = async () => {
-        if (lookupTable) {
-            return lookupTable;
-        }
-        if (!lookupPromise) {
-            lookupPromise = fetch(SOARING_SYMBOLS_AIRLINES_URL)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to load Soaring Symbols data (${response.status})`);
-                    }
-                    return response.json();
-                })
-                .then((entries) => {
-                    lookupTable = buildLookup(entries);
-                    return lookupTable;
-                })
-                .catch((error) => {
-                    console.error("Unable to build Soaring Symbols lookup", error);
-                    lookupPromise = null;
-                    throw error;
-                });
-        }
-        return lookupPromise;
-    };
-
-    const resolveSlug = async (airline) => {
-        const candidates = collectAirlineIdentifierCandidates(airline);
-        if (!candidates.length) {
-            return null;
-        }
-        try {
-            const lookup = await ensureLookup();
-            for (const candidate of candidates) {
-                const normalized = normalizeLogoKey(candidate);
-                if (lookup.has(normalized)) {
-                    return lookup.get(normalized);
-                }
-            }
-        } catch (error) {
-            // Already logged inside ensureLookup
-        }
-        return null;
-    };
-
-    const resolveCandidates = async (airline) => {
-        const slug = await resolveSlug(airline);
-        if (!slug) {
-            return [];
-        }
-        const assetBase = `${SOARING_SYMBOLS_ASSET_BASE}/${slug}`;
-        return [`${assetBase}/logo.svg`, `${assetBase}/icon.svg`];
-    };
-
-    return { resolveCandidates };
-})();
-
 const getAirlineLogoSrc = (airline) => {
     if (!airline) {
         return null;
@@ -367,53 +273,21 @@ const getAirlineLogoSrc = (airline) => {
 const AirlineLogo = ({ airline, src: explicitSrc, name, size = 48 }) => {
     const fallbackSrc = React.useMemo(() => explicitSrc || getAirlineLogoSrc(airline), [explicitSrc, airline]);
     const [logoSrc, setLogoSrc] = React.useState(fallbackSrc);
-    const candidateQueueRef = React.useRef([]);
-    const fallbackRef = React.useRef(fallbackSrc);
     const displayName =
         name || (typeof airline === "string" ? airline : airline && (airline.name || airline.airline)) || "Airline";
 
     React.useEffect(() => {
-        fallbackRef.current = fallbackSrc;
         setLogoSrc(fallbackSrc);
     }, [fallbackSrc]);
 
-    React.useEffect(() => {
-        let cancelled = false;
-        candidateQueueRef.current = [];
-        if (!airline) {
-            return () => {
-                cancelled = true;
-            };
-        }
-        (async () => {
-            const candidates = await SoaringSymbolsLogoResolver.resolveCandidates(airline);
-            if (cancelled || !candidates.length) {
-                return;
-            }
-            candidateQueueRef.current = candidates.slice(1);
-            setLogoSrc(candidates[0]);
-        })().catch(() => {
-            // Errors are already logged inside resolver
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, [airline]);
-
     const handleError = React.useCallback(() => {
-        if (candidateQueueRef.current.length) {
-            const next = candidateQueueRef.current.shift();
-            setLogoSrc(next);
+        // Hide the image if both the requested and fallback logos fail
+        if (logoSrc && fallbackSrc && logoSrc !== fallbackSrc) {
+            setLogoSrc(fallbackSrc);
             return;
         }
-        if (fallbackRef.current && fallbackRef.current !== logoSrc) {
-            setLogoSrc(fallbackRef.current);
-            return;
-        }
-        if (!fallbackRef.current) {
-            setLogoSrc(null);
-        }
-    }, [logoSrc]);
+        setLogoSrc(null);
+    }, [logoSrc, fallbackSrc]);
 
     if (!logoSrc) {
         return null;
@@ -433,9 +307,6 @@ const AirlineLogo = ({ airline, src: explicitSrc, name, size = 48 }) => {
                 p: 0.5,
             }}
             onError={handleError}
-        />
-    );
-};
         />
     );
 };
