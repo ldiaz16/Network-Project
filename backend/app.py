@@ -10,6 +10,8 @@ from src.backend_service import (
     AnalysisRequest,
     FleetAssignmentRequest,
     OptimalAircraftRequest,
+    RouteShareRequest,
+    analyze_route_market_share,
     get_airline_fleet_profile,
     list_airlines as list_airlines_logic,
     recommend_optimal_aircraft,
@@ -124,6 +126,22 @@ def fleet_assignment():
 
     try:
         result = simulate_live_assignment(data_store, request_model)
+    except AnalysisError as exc:
+        return jsonify({"detail": str(exc)}), exc.status_code
+
+    return jsonify(result)
+
+
+@app.post("/api/route-share")
+def route_share():
+    payload = request.get_json(force=True, silent=True) or {}
+    try:
+        request_model = RouteShareRequest(**payload)
+    except ValidationError as exc:
+        return jsonify({"detail": exc.errors()}), 422
+
+    try:
+        result = analyze_route_market_share(data_store, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 

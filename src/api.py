@@ -8,6 +8,8 @@ from src.backend_service import (
     AnalysisRequest,
     AirlineSearchResponse,
     FleetAssignmentRequest,
+    RouteShareRequest,
+    analyze_route_market_share,
     get_airline_fleet_profile,
     list_airlines as list_airlines_logic,
     run_analysis as run_analysis_logic,
@@ -63,5 +65,13 @@ def get_fleet_profile(airline: str = Query(..., description="Airline name, alias
 def run_fleet_assignment(payload: FleetAssignmentRequest) -> Dict[str, Any]:
     try:
         return simulate_live_assignment(data_store, payload)
+    except AnalysisError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+@app.post("/api/route-share")
+def get_route_market_share(payload: RouteShareRequest) -> Dict[str, Any]:
+    try:
+        return analyze_route_market_share(data_store, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

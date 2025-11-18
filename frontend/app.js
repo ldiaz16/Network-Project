@@ -843,6 +843,105 @@ const CbsaOpportunities = ({ entries }) => {
     );
 };
 
+const RouteShareResults = ({ routes }) => {
+    if (!routes || !routes.length) {
+        return (
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: { xs: 2.5, md: 3 },
+                    border: "1px solid rgba(255,255,255,0.08)",
+                }}
+            >
+                <Typography color="text.secondary">
+                    Add routes on the left, then run the analysis to view airline share across each city pair.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    return (
+        <Stack spacing={3}>
+            {routes.map((route, index) => {
+                const key = `${route.source || "?"}-${route.destination || "?"}-${index}`;
+                const title = `${route.source || "?"} → ${route.destination || "?"}`;
+                const summaryChips = [
+                    {
+                        label: "Distance",
+                        value: route.distance_miles ? `${integerNumberFormatter.format(route.distance_miles)} mi` : "—",
+                    },
+                    {
+                        label: "Market ASM",
+                        value: route.market_asm ? `${integerNumberFormatter.format(route.market_asm)} ASM` : "—",
+                    },
+                    {
+                        label: "Competitors",
+                        value: route.competitor_count != null ? integerNumberFormatter.format(route.competitor_count) : "—",
+                    },
+                    { label: "Competition", value: route.competition_level || "—" },
+                    { label: "Maturity", value: route.route_maturity_label || "—" },
+                    {
+                        label: "Yield Proxy",
+                        value:
+                            route.yield_proxy_score != null
+                                ? decimalNumberFormatter.format(route.yield_proxy_score)
+                                : "—",
+                    },
+                ];
+                const tableRows = (route.airlines || []).map((entry) => ({
+                    Airline: entry.airline || entry.airline_normalized || "Airline",
+                    ASM: entry.asm,
+                    "Market Share":
+                        typeof entry.market_share === "number" ? formatPercent(entry.market_share) : "—",
+                    Seats: entry.seats,
+                    "Seats / Mile": entry.seats_per_mile,
+                    Equipment: entry.equipment && entry.equipment.length ? entry.equipment.join(", ") : "—",
+                    "Strategy Score": entry.route_strategy_baseline,
+                    "Yield Proxy": entry.yield_proxy_score,
+                    "Route Maturity": entry.route_maturity_label || route.route_maturity_label || "—",
+                }));
+
+                return (
+                    <Paper
+                        key={key}
+                        variant="outlined"
+                        sx={{
+                            p: { xs: 2.5, md: 3 },
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            boxShadow: "0 30px 60px rgba(0,0,0,0.35)",
+                        }}
+                    >
+                        <Stack spacing={2.5}>
+                            <Box>
+                                <Typography variant="h6">{title}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {route.status === "ok"
+                                        ? "Top airlines ordered by ASM contribution."
+                                        : "No published schedules found for this city pair."}
+                                </Typography>
+                            </Box>
+                            <Stack direction="row" flexWrap="wrap" gap={1}>
+                                {summaryChips.map((chip) => (
+                                    <Chip
+                                        key={`${title}-${chip.label}`}
+                                        label={`${chip.label}: ${chip.value}`}
+                                        color="primary"
+                                        variant="outlined"
+                                    />
+                                ))}
+                            </Stack>
+                            {route.status !== "ok" && (
+                                <Alert severity="warning">No schedules found for this route pair.</Alert>
+                            )}
+                            <DataTable rows={tableRows} title="Airline Share" enableWrapping />
+                        </Stack>
+                    </Paper>
+                );
+            })}
+        </Stack>
+    );
+};
+
 function App() {
     const [formState, setFormState] = React.useState(defaultFormState);
     const [status, setStatus] = React.useState({ message: "", kind: "" });
@@ -879,6 +978,11 @@ function App() {
     const [fleetAssignmentStatus, setFleetAssignmentStatus] = React.useState({ message: "", kind: "" });
     const [fleetAssignmentLoading, setFleetAssignmentLoading] = React.useState(false);
     const [fleetAssignmentResults, setFleetAssignmentResults] = React.useState(null);
+    const [routeShareRows, setRouteShareRows] = React.useState([{ source: "", destination: "" }]);
+    const [routeShareTopN, setRouteShareTopN] = React.useState("5");
+    const [routeShareStatus, setRouteShareStatus] = React.useState({ message: "", kind: "" });
+    const [routeShareLoading, setRouteShareLoading] = React.useState(false);
+    const [routeShareResults, setRouteShareResults] = React.useState([]);
 
     const fetchSuggestions = React.useCallback(async (query = "") => {
         try {
@@ -1125,6 +1229,72 @@ function App() {
         });
     };
 
+    const handleRouteShareRowChange = (index, field) => (event) => {
+        const value = (event.target.value || "").toUpperCase();
+        setRouteShareRows((prev) =>
+            prev.map((row, rowIndex) => (rowIndex === index ? { ...row, [field]: value } : row))
+        );
+    };
+
+    const handleAddRouteRow = () => {
+        setRouteShareRows((prev) => [...prev, { source: "", destination: "" }]);
+    };
+
+    const handleRemoveRouteRow = (index) => {
+        setRouteShareRows((prev) => {
+            if (prev.length <= 1) {
+                return prev;
+            }
+            return prev.filter((_, rowIndex) => rowIndex !== index);
+        });
+    };
+
+    const handleRouteShareSubmit = async (event) => {
+        event.preventDefault();
+        const normalizedRoutes = routeShareRows
+            .map((row) => ({
+                source: (row.source || "").trim().toUpperCase(),
+                destination: (row.destination || "").trim().toUpperCase(),
+            }))
+            .filter((entry) => entry.source && entry.destination);
+        if (!normalizedRoutes.length) {
+            setRouteShareStatus({ message: "Add at least one valid route pair.", kind: "error" });
+            setRouteShareResults([]);
+            return;
+        }
+        const parsedTop = Number(routeShareTopN);
+        const topAirlines = Number.isFinite(parsedTop) && parsedTop > 0 ? Math.min(parsedTop, 20) : 5;
+        setRouteShareLoading(true);
+        setRouteShareStatus({ message: "Fetching route market share…", kind: "info" });
+        setRouteShareResults([]);
+        try {
+            const response = await fetch(`${API_BASE}/route-share`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ routes: normalizedRoutes, top_airlines: topAirlines }),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.detail || "Unable to compute market share for the provided routes.");
+            }
+            setRouteShareResults(result.routes || []);
+            setRouteShareStatus({
+                message: `Showing market share for ${normalizedRoutes.length} route${
+                    normalizedRoutes.length > 1 ? "s" : ""
+                }.`,
+                kind: "success",
+            });
+        } catch (error) {
+            setRouteShareStatus({
+                message: error.message || "Unable to compute route market share.",
+                kind: "error",
+            });
+            setRouteShareResults([]);
+        } finally {
+            setRouteShareLoading(false);
+        }
+    };
+
     const handleAssignmentSubmit = React.useCallback(
         async (event) => {
             event.preventDefault();
@@ -1242,7 +1412,7 @@ function App() {
                             Airline Route Optimizer
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
-                            Compare airline networks, surface CBSA-aligned opportunities, or inspect a single fleet.
+                            Compare airline networks, benchmark specific routes, or inspect a single fleet.
                         </Typography>
                     </Box>
                     <Tabs
@@ -1253,13 +1423,14 @@ function App() {
                         sx={{ minHeight: 48 }}
                     >
                         <Tab label="Route Analysis" value="analysis" />
+                        <Tab label="Route Share" value="routes" />
                         <Tab label="Fleet Explorer" value="fleet" />
                     </Tabs>
                 </Toolbar>
             </AppBar>
 
             <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
-                {activePage === "analysis" ? (
+                {activePage === "analysis" && (
                     <Grid container spacing={3} alignItems="stretch">
                     <Grid item xs={12} md={5} lg={4}>
                         <Stack spacing={3}>
@@ -1590,7 +1761,129 @@ function App() {
                         </Paper>
                     </Grid>
                     </Grid>
-                ) : (
+                )}
+
+                {activePage === "routes" && (
+                    <Grid container spacing={3} alignItems="stretch">
+                        <Grid item xs={12} md={4}>
+                            <Paper
+                                component="form"
+                                onSubmit={handleRouteShareSubmit}
+                                sx={{
+                                    p: { xs: 2.5, md: 3 },
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2.5,
+                                }}
+                            >
+                                <Box>
+                                    <Typography variant="h6">Route Market Share</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Input airport pairs to benchmark carrier share, maturity, and seat deployment.
+                                    </Typography>
+                                </Box>
+                                <Stack spacing={2}>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        Routes
+                                    </Typography>
+                                    {routeShareRows.map((row, index) => (
+                                        <Stack
+                                            key={`route-row-${index}`}
+                                            direction={{ xs: "column", md: "row" }}
+                                            spacing={1}
+                                            alignItems={{ xs: "stretch", md: "flex-end" }}
+                                        >
+                                            <TextField
+                                                label="Source"
+                                                placeholder="e.g. JFK"
+                                                inputProps={{ maxLength: 4 }}
+                                                value={row.source}
+                                                onChange={handleRouteShareRowChange(index, "source")}
+                                                sx={{ flex: 1 }}
+                                            />
+                                            <TextField
+                                                label="Destination"
+                                                placeholder="e.g. LAX"
+                                                inputProps={{ maxLength: 4 }}
+                                                value={row.destination}
+                                                onChange={handleRouteShareRowChange(index, "destination")}
+                                                sx={{ flex: 1 }}
+                                            />
+                                            {routeShareRows.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    color="secondary"
+                                                    onClick={() => handleRemoveRouteRow(index)}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            )}
+                                        </Stack>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outlined"
+                                        color="secondary"
+                                        onClick={handleAddRouteRow}
+                                        sx={{ alignSelf: "flex-start" }}
+                                    >
+                                        Add route
+                                    </Button>
+                                </Stack>
+                                <TextField
+                                    label="Airlines to surface"
+                                    type="number"
+                                    inputProps={{ min: 1, max: 20 }}
+                                    value={routeShareTopN}
+                                    onChange={(event) => setRouteShareTopN(event.target.value)}
+                                />
+                                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                                    <Button type="submit" variant="contained" size="large" disabled={routeShareLoading}>
+                                        {routeShareLoading ? (
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <CircularProgress size={20} color="inherit" />
+                                                <span>Analyzing…</span>
+                                            </Stack>
+                                        ) : (
+                                            "Analyze routes"
+                                        )}
+                                    </Button>
+                                    <Typography variant="caption" color="text.secondary" sx={{ alignSelf: "center" }}>
+                                        We map IATA pairs to published schedules, ASM, and proxy maturity metrics.
+                                    </Typography>
+                                </Stack>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} md={8}>
+                            <Stack spacing={3}>
+                                <StatusAlert status={routeShareStatus} />
+                                {routeShareLoading ? (
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: { xs: 2.5, md: 3 },
+                                            minHeight: 240,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <Stack direction="row" spacing={1.5} alignItems="center">
+                                            <CircularProgress size={24} />
+                                            <Typography color="text.secondary">Crunching route stats…</Typography>
+                                        </Stack>
+                                    </Paper>
+                                ) : (
+                                    <RouteShareResults routes={routeShareResults} />
+                                )}
+                            </Stack>
+                        </Grid>
+                    </Grid>
+                )}
+
+                {activePage === "fleet" && (
                     <Stack spacing={3}>
                         <Grid container spacing={3} alignItems="stretch">
                             <Grid item xs={12} md={4}>
@@ -1853,7 +2146,7 @@ function App() {
                     Configure a fleet above to generate a duty-day schedule with block utilization and hours per tail.
                 </Typography>
             </Paper>
-        )}
+                        )}
                     </Stack>
                 )}
             </Container>

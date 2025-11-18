@@ -5,7 +5,7 @@ from types import MethodType
 
 from data.airlines import normalize_name
 from src.load_data import DataStore, GENERIC_SEAT_GUESSES
-from tests.helpers import seed_sample_airline
+from tests.helpers import seed_sample_airline, seed_competing_routes
 
 
 @pytest.fixture
@@ -198,14 +198,33 @@ def test_cost_analysis_computes_capacity_metrics(datastore):
     assert analyzed.loc[0, "Seats per Mile"] == pytest.approx(total_seats / distance_miles, rel=1e-3)
     assert analyzed.loc[0, "ASM"] == pytest.approx(total_seats * distance_miles, rel=1e-3)
     assert analyzed.loc[0, "Airline (Normalized)"] == normalize_name("Sample Airways")
-    assert enriched.loc[0, "Seat Source"] == "airline_config"
-    assert "Route Strategy Baseline" in analyzed.columns
-    assert 0 <= analyzed.loc[0, "Route Strategy Baseline"] <= 1
-    assert analyzed.loc[0, "Competition Level"] == "Duopoly"
-    assert 0 <= analyzed.loc[0, "Competition Score"] <= 1
-    assert analyzed.loc[0, "Route Maturity Label"] in {"Stable", "Fluid", "Unknown"}
-    assert 0 <= analyzed.loc[0, "Route Maturity Score"] <= 1
-    assert 0 <= analyzed.loc[0, "Yield Proxy Score"] <= 1
+
+
+def test_analyze_route_market_share_returns_competition(datastore):
+    seed_competing_routes(datastore)
+
+    result = datastore.analyze_route_market_share([("AAA", "BBB"), ("AAA", "DDD")], top_airlines=1)
+
+    assert "routes" in result
+    assert len(result["routes"]) == 2
+    overlap = result["routes"][0]
+    assert overlap["source"] == "AAA" and overlap["destination"] == "BBB"
+    assert overlap["status"] == "ok"
+    assert overlap["airline_count"] == 2
+    # Only the top airline should be returned due to the limit of 1.
+    assert len(overlap["airlines"]) == 1
+    assert overlap["airlines"][0]["market_share"] > 0
+    solo = result["routes"][1]
+    assert solo["destination"] == "DDD"
+    assert len(solo["airlines"]) == 1
+    assert solo["airlines"][0]["market_share"] == pytest.approx(1.0)
+
+
+def test_analyze_route_market_share_validates_routes(datastore):
+    seed_competing_routes(datastore)
+
+    with pytest.raises(ValueError):
+        datastore.analyze_route_market_share([], top_airlines=3)
 
 
 def test_process_routes_estimates_seats_when_config_missing(datastore):

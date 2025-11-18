@@ -139,6 +139,31 @@ class AirlineSearchResponse(BaseModel):
     country: Optional[str]
 
 
+class RouteShareEntry(BaseModel):
+    source: str
+    destination: str
+
+    @validator("source", "destination", pre=True, always=True)
+    def _require_airport_code(cls, value: Any) -> str:
+        if value is None:
+            raise ValueError("Airport code is required.")
+        normalized = str(value).strip().upper()
+        if not normalized:
+            raise ValueError("Airport code is required.")
+        return normalized
+
+
+class RouteShareRequest(BaseModel):
+    routes: List[RouteShareEntry]
+    top_airlines: int = Field(default=5, ge=1, le=20)
+
+    @validator("routes")
+    def _require_routes(cls, value: List[RouteShareEntry]) -> List[RouteShareEntry]:
+        if not value:
+            raise ValueError("At least one route is required.")
+        return value
+
+
 def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
     """Create a reusable package containing core dataframes for an airline."""
     routes_df, metadata = data_store.select_airline_routes(query, verbose=False)
@@ -295,6 +320,14 @@ def simulate_live_assignment(data_store, payload: FleetAssignmentRequest) -> Dic
         raise AnalysisError(400, str(exc)) from exc
 
     return result
+
+
+def analyze_route_market_share(data_store, payload: RouteShareRequest) -> Dict[str, Any]:
+    try:
+        route_pairs = [(entry.source, entry.destination) for entry in payload.routes]
+        return data_store.analyze_route_market_share(route_pairs, top_airlines=payload.top_airlines)
+    except ValueError as exc:
+        raise AnalysisError(400, str(exc)) from exc
 
 
 def _run_cbsa_simulation(data_store, package: Dict[str, Any], args: AnalysisRequest) -> Dict[str, Any]:

@@ -1252,6 +1252,201 @@ class DataStore:
         )
         return snapshot
 
+    def analyze_route_market_share(self, route_pairs, top_airlines=5):
+        """
+        Analyze market share and competitive stats for the provided city pairs.
+        Returns the top airlines per route ordered by ASM contribution.
+        """
+        if not route_pairs:
+            raise ValueError("At least one route is required.")
+        if any(dataset is None for dataset in (self.routes, self.airlines, self.airports, self.aircraft_config)):
+            raise ValueError("Route, airline, airport, and equipment data must be loaded.")
+
+        normalized_pairs = []
+        seen = set()
+        for pair in route_pairs:
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                continue
+            source, destination = pair
+            src_code = str(source or "").strip().upper()
+            dest_code = str(destination or "").strip().upper()
+            if not src_code or not dest_code:
+                continue
+            key = (src_code, dest_code)
+            if key not in seen:
+                seen.add(key)
+                normalized_pairs.append(key)
+
+        if not normalized_pairs:
+            raise ValueError("No valid routes were provided.")
+
+        top_limit = max(1, min(int(top_airlines or 1), 20))
+        route_set = set(normalized_pairs)
+        source_filter = {src for src, _ in normalized_pairs}
+        dest_filter = {dest for _, dest in normalized_pairs}
+
+        routes_df = self.routes.copy()
+        routes_df["_source"] = routes_df["Source airport"].astype(str).str.upper()
+        routes_df["_dest"] = routes_df["Destination airport"].astype(str).str.upper()
+        mask = routes_df["_source"].isin(source_filter) & routes_df["_dest"].isin(dest_filter)
+        subset = routes_df.loc[mask].copy()
+        subset["Source airport"] = subset["_source"]
+        subset["Destination airport"] = subset["_dest"]
+        subset["__pair_key"] = list(zip(subset["Source airport"], subset["Destination airport"]))
+        subset = subset[subset["__pair_key"].isin(route_set)].copy()
+        subset.drop(columns=["_source", "_dest", "__pair_key"], inplace=True, errors="ignore")
+
+        airline_columns = {"IATA", "Airline", "Airline (Normalized)"}
+        if self.airlines is not None and airline_columns.issubset(set(self.airlines.columns)):
+            lookup = self.airlines.loc[:, ["IATA", "Airline", "Airline (Normalized)"]]
+            subset = subset.merge(lookup, left_on="Airline Code", right_on="IATA", how="left")
+            subset["Airline"] = subset["Airline"].where(subset["Airline"].notna(), subset["Airline Code"])
+            subset["Airline (Normalized)"] = subset["Airline (Normalized)"].where(
+                subset["Airline (Normalized)"].notna(),
+                subset["Airline"].astype(str).str.lower(),
+            )
+            subset.drop(columns=["IATA"], inplace=True, errors="ignore")
+        else:
+            subset["Airline"] = subset["Airline Code"]
+            subset["Airline (Normalized)"] = subset["Airline Code"].astype(str).str.lower()
+
+        processed = self.process_routes(subset) if not subset.empty else pd.DataFrame(columns=self.routes.columns)
+        cost_df = self.cost_analysis(processed) if not processed.empty else pd.DataFrame()
+        if not cost_df.empty and "ASM Valid" in cost_df.columns:
+            valid = cost_df[cost_df["ASM Valid"]].copy()
+        else:
+            valid = pd.DataFrame()
+        if not valid.empty:
+            valid["Route Pair"] = list(zip(valid["Source airport"], valid["Destination airport"]))
+            valid = valid[valid["Route Pair"].isin(route_set)].copy()
+
+        totals_lookup = self.get_route_total_asm(normalized_pairs)
+
+        def _pick_mode(series: pd.Series):
+            if series is None or series.empty:
+                return None
+            mode_values = series.mode(dropna=True)
+            if not mode_values.empty:
+                return mode_values.iloc[0]
+            filtered = series.dropna()
+            if filtered.empty:
+                return None
+            return filtered.iloc[0]
+
+        def _mean(series: pd.Series):
+            if series is None or series.empty:
+                return None
+            filtered = series.dropna()
+            if filtered.empty:
+                return None
+            return float(filtered.mean())
+
+        def _to_float(value):
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        route_payload = {}
+        for pair in normalized_pairs:
+            market_total = _to_float(totals_lookup.get(pair))
+            route_payload[pair] = {
+                "source": pair[0],
+                "destination": pair[1],
+                "distance_miles": None,
+                "market_asm": market_total,
+                "competitor_count": None,
+                "competition_level": None,
+                "route_maturity_label": None,
+                "yield_proxy_score": None,
+                "status": "not_found",
+                "airlines": [],
+            }
+
+        if not valid.empty:
+            for route_pair, route_group in valid.groupby("Route Pair"):
+                summary = route_payload.get(route_pair)
+                if summary is None:
+                    continue
+                summary["distance_miles"] = _mean(route_group["Distance (miles)"]) or summary["distance_miles"]
+                competitor_counts = route_group.get("Competitor Count")
+                if competitor_counts is not None:
+                    competitor_counts = competitor_counts.dropna()
+                    if not competitor_counts.empty:
+                        summary["competitor_count"] = int(max(summary.get("competitor_count") or 0, competitor_counts.max()))
+                if "Competition Level" in route_group:
+                    summary["competition_level"] = summary["competition_level"] or _pick_mode(route_group["Competition Level"])
+                if "Route Maturity Label" in route_group:
+                    summary["route_maturity_label"] = summary["route_maturity_label"] or _pick_mode(
+                        route_group["Route Maturity Label"]
+                    )
+                if "Yield Proxy Score" in route_group:
+                    summary["yield_proxy_score"] = _mean(route_group["Yield Proxy Score"])
+
+                if summary.get("market_asm") is None:
+                    summary["market_asm"] = float(route_group["ASM"].sum()) if "ASM" in route_group else None
+
+                airline_grouped = route_group.groupby("Airline", dropna=False)
+                for airline_name, airline_slice in airline_grouped:
+                    normalized_label = airline_slice["Airline (Normalized)"].iloc[0] if "Airline (Normalized)" in airline_slice else None
+                    asm_value = float(airline_slice["ASM"].sum()) if "ASM" in airline_slice else 0.0
+                    seats_total = None
+                    if "Total Seats" in airline_slice and airline_slice["Total Seats"].notna().any():
+                        seats_total = float(airline_slice["Total Seats"].sum())
+                    seats_per_mile = _mean(airline_slice["Seats per Mile"]) if "Seats per Mile" in airline_slice else None
+                    strategy_score = _mean(airline_slice["Route Strategy Baseline"]) if "Route Strategy Baseline" in airline_slice else None
+                    yield_score = _mean(airline_slice["Yield Proxy Score"]) if "Yield Proxy Score" in airline_slice else None
+                    maturity = (
+                        _pick_mode(airline_slice["Route Maturity Label"])
+                        if "Route Maturity Label" in airline_slice
+                        else None
+                    )
+                    equipment_values = []
+                    if "Equipment" in airline_slice:
+                        equipment_values = sorted(
+                            {
+                                str(value).strip().upper()
+                                for value in airline_slice["Equipment"].dropna()
+                                if isinstance(value, str) and value.strip()
+                            }
+                        )
+                    market_asm = summary.get("market_asm") or asm_value or None
+                    share = None
+                    if market_asm:
+                        share = asm_value / market_asm if market_asm > 0 else None
+
+                    summary["airlines"].append(
+                        {
+                            "airline": airline_name or normalized_label,
+                            "airline_normalized": normalized_label,
+                            "asm": asm_value,
+                            "market_share": share,
+                            "seats": seats_total,
+                            "seats_per_mile": seats_per_mile,
+                            "equipment": equipment_values,
+                            "route_strategy_baseline": strategy_score,
+                            "yield_proxy_score": yield_score,
+                            "route_maturity_label": maturity,
+                        }
+                    )
+                if summary["airlines"]:
+                    summary["status"] = "ok"
+
+        ordered_results = []
+        for pair in normalized_pairs:
+            summary = route_payload.get(pair)
+            if summary is None:
+                continue
+            airlines = summary.get("airlines", [])
+            airlines.sort(key=lambda entry: entry.get("asm") or 0.0, reverse=True)
+            summary["airline_count"] = len(airlines)
+            summary["airlines"] = airlines[:top_limit]
+            if summary["status"] != "ok" and not summary["airlines"]:
+                summary["status"] = "not_found"
+            ordered_results.append(summary)
+
+        return {"routes": ordered_results}
+
     def summarize_fleet_utilization(self, cost_df):
         """
         Approximate fleet utilization context using network coverage.
