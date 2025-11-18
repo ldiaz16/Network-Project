@@ -1167,31 +1167,57 @@ class DataStore:
         df = cost_df.copy()
         df["Equipment"] = df.get("Equipment").fillna("Unknown")
         df["Distance (miles)"] = pd.to_numeric(df.get("Distance (miles)"), errors="coerce").fillna(0.0)
+        df["Total Seats"] = pd.to_numeric(df.get("Total Seats"), errors="coerce").fillna(0.0)
+        if "ASM" in df.columns:
+            asm = pd.to_numeric(df["ASM"], errors="coerce")
+        else:
+            asm = pd.Series([float("nan")] * len(df), index=df.index, dtype="float64")
+        fallback_asm = df["Total Seats"] * df["Distance (miles)"]
+        df["ASM"] = asm.where(asm.notna(), fallback_asm)
         df["_route_key"] = df["Source airport"].astype(str) + "-" + df["Destination airport"].astype(str)
+
+        def _equipment_tokens(value):
+            tokens = self._split_equipment_tokens(value)
+            return tokens if tokens else ["UNKNOWN"]
+
+        df["_equipment_tokens"] = df["Equipment"].apply(_equipment_tokens)
+        df["_token_count"] = df["_equipment_tokens"].apply(len).clip(lower=1)
+        exploded = df.explode("_equipment_tokens").copy()
+        exploded["Equipment"] = exploded["_equipment_tokens"].fillna("UNKNOWN")
+        exploded["_asm_share"] = exploded["ASM"] / exploded["_token_count"]
+
         grouped = (
-            df.groupby("Equipment", dropna=False)
+            exploded.groupby("Equipment", dropna=False)
             .agg(
                 Route_Count=("_route_key", "nunique"),
                 Average_Distance=("Distance (miles)", "mean"),
                 Total_Distance=("Distance (miles)", "sum"),
+                ASM_Total=("_asm_share", "sum"),
             )
             .reset_index()
         )
-        max_routes = grouped["Route_Count"].max() or 1
-        grouped["Utilization Score"] = grouped["Route_Count"] / max_routes
+        asm_total = grouped["ASM_Total"].sum()
         grouped.rename(
             columns={
-                "Equipment": "Equipment",
                 "Route_Count": "Route Count",
                 "Average_Distance": "Average Distance",
                 "Total_Distance": "Total Distance",
             },
             inplace=True,
         )
+        if asm_total <= 0:
+            grouped["ASM_Total"] = grouped["Route Count"]
+            asm_total = grouped["ASM_Total"].sum()
+        asm_total = asm_total or 1.0
+        grouped["Utilization Score"] = grouped["ASM_Total"] / asm_total
+
         grouped["Average Distance"] = grouped["Average Distance"].round(2)
         grouped["Total Distance"] = grouped["Total Distance"].round(2)
         grouped["Utilization Score"] = grouped["Utilization Score"].round(3)
-        return grouped.sort_values(["Utilization Score", "Route Count"], ascending=[False, False]).reset_index(drop=True)
+        grouped = grouped.drop(columns=["ASM_Total"]).sort_values(
+            ["Utilization Score", "Route Count"], ascending=[False, False]
+        )
+        return grouped.reset_index(drop=True)
 
     def cost_analysis(self, airline_df, include_strategy_baseline=True):
         """Perform cost analysis on the airline DataFrame."""

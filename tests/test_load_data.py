@@ -377,18 +377,21 @@ def test_summarize_fleet_utilization_returns_scores(datastore):
                 "Destination airport": "B",
                 "Equipment": "A320",
                 "Distance (miles)": 1000,
+                "Total Seats": 150,
             },
             {
                 "Source airport": "A",
                 "Destination airport": "C",
                 "Equipment": "A320",
                 "Distance (miles)": 900,
+                "Total Seats": 160,
             },
             {
                 "Source airport": "D",
                 "Destination airport": "E",
                 "Equipment": "737",
                 "Distance (miles)": 700,
+                "Total Seats": 140,
             },
         ]
     )
@@ -402,6 +405,38 @@ def test_summarize_fleet_utilization_returns_scores(datastore):
     }
     assert util.iloc[0]["Equipment"] == "A320"
     assert util.iloc[0]["Route Count"] == 2
+    assert util.iloc[0]["Utilization Score"] == pytest.approx((150000 + 144000) / (150000 + 144000 + 98000), rel=1e-6)
+
+
+def test_summarize_fleet_utilization_splits_multi_equipment_entries(datastore):
+    sample = pd.DataFrame(
+        [
+            {
+                "Source airport": "A",
+                "Destination airport": "B",
+                "Equipment": "738 M88",
+                "Distance (miles)": 1000,
+                "Total Seats": 150,
+            },
+            {
+                "Source airport": "A",
+                "Destination airport": "C",
+                "Equipment": "738",
+                "Distance (miles)": 500,
+                "Total Seats": 160,
+            },
+        ]
+    )
+    util = datastore.summarize_fleet_utilization(sample)
+    records = {row["Equipment"]: row for _, row in util.iterrows()}
+    assert "738" in records and "M88" in records
+    assert records["738"]["Route Count"] == 2
+    assert records["M88"]["Route Count"] == 1
+    asm_route1 = 150 * 1000
+    asm_route2 = 160 * 500
+    expected_m88_share = (asm_route1 / 2) / (asm_route1 + asm_route2)
+    assert records["738"]["Utilization Score"] > records["M88"]["Utilization Score"]
+    assert records["M88"]["Utilization Score"] == pytest.approx(round(expected_m88_share, 3), rel=1e-6)
 
 
 def test_find_best_aircraft_for_route_ranks_by_distance_and_seats(datastore):
