@@ -594,9 +594,9 @@ class DataStore:
             limit=20
         )
 
-        best_score = 0
+        best_score = -1
         best_match = None
-        highest_num_routes = 0
+        highest_num_routes = -1
 
         for name, score, index in matched_airlines:
             row = self.airlines[self.airlines["Airline (Normalized)"] == name].iloc[0]
@@ -605,13 +605,14 @@ class DataStore:
             row = row.copy()
             row["Total Routes"] = airline_routes
 
-            if pd.notna(row['IATA']) and score == 100 and airline_routes > highest_num_routes:
-                highest_num_routes = airline_routes
-                best_match = row
-                best_score = score
-            elif pd.notna(row['IATA']) and score >= best_score:
-                best_score = score
-                best_match = row
+            if pd.notna(row['IATA']):
+                if score > best_score:
+                    best_score = score
+                    highest_num_routes = airline_routes
+                    best_match = row
+                elif score == best_score and airline_routes > highest_num_routes:
+                    highest_num_routes = airline_routes
+                    best_match = row
 
         if best_match is None:
             raise ValueError(f"No airline match found for query '{airline_query}'.")
