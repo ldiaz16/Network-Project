@@ -212,8 +212,10 @@ def get_airline_fleet_profile(data_store, query: str) -> Dict[str, Any]:
     except ValueError as exc:
         raise AnalysisError(404, str(exc)) from exc
 
-    metadata = package.get("metadata") or {}
-    if hasattr(metadata, "to_dict"):
+    metadata = package.get("metadata")
+    if metadata is None:
+        metadata = {}
+    elif hasattr(metadata, "to_dict"):
         metadata = metadata.to_dict()
 
     def _clean(value):
