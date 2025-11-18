@@ -1913,6 +1913,7 @@ class DataStore:
 
         asm_max = aggregated["ASM"].max()
         spm_max = aggregated["Seats per Mile"].max()
+        asm_total = aggregated["ASM"].sum()
         aggregated["ASM_norm"] = aggregated["ASM"] / asm_max if asm_max and asm_max > 0 else 0
         aggregated["SPM_norm"] = aggregated["Seats per Mile"] / spm_max if spm_max and spm_max > 0 else 0
         aggregated["Performance Score"] = (
@@ -1922,6 +1923,10 @@ class DataStore:
 
         best_routes = aggregated.sort_values("Performance Score", ascending=False).head(top_n).reset_index(drop=True)
         best_routes["Route"] = best_routes["Source airport"] + "->" + best_routes["Destination airport"]
+        if asm_total and asm_total > 0:
+            best_routes["ASM Share"] = best_routes["ASM"] / asm_total
+        else:
+            best_routes["ASM Share"] = 0.0
 
         existing_pairs = set(
             zip(
@@ -1952,47 +1957,44 @@ class DataStore:
             return watch_label
 
         def _route_rationale(row):
-            parts = []
+            snippets = []
             perf = row.get("Performance Score")
             if pd.notna(perf):
-                parts.append(f"Performance score {perf:.2f}")
+                snippets.append(f"Score {perf:.2f}")
 
             yield_score = row.get("Yield Proxy Score")
-            yield_phrase = _score_descriptor(yield_score, "premium yields", "stable yields", "developing yields")
+            yield_phrase = _score_descriptor(yield_score, "Premium yields", "Steady yields", "Developing yields")
             if yield_phrase:
-                parts.append(f"{yield_phrase} ({yield_score:.2f})")
+                snippets.append(f"{yield_phrase} ({yield_score:.2f})")
 
             competition_score = row.get("Competition Score")
             competition_phrase = _score_descriptor(
                 competition_score,
-                "limited competition",
-                "balanced competition",
-                "heavy competition",
+                "Light competition",
+                "Balanced competition",
+                "Crowded field",
             )
             if competition_phrase:
-                parts.append(f"{competition_phrase} ({competition_score:.2f})")
+                snippets.append(f"{competition_phrase} ({competition_score:.2f})")
 
             maturity_score = row.get("Route Maturity Score")
             maturity_phrase = _score_descriptor(
                 maturity_score,
-                "well-established corridor",
-                "maturing demand",
-                "early-stage demand",
+                "Established demand",
+                "Maturing demand",
+                "Emerging demand",
             )
             if maturity_phrase:
-                parts.append(f"{maturity_phrase} ({maturity_score:.2f})")
+                snippets.append(f"{maturity_phrase} ({maturity_score:.2f})")
 
-            asm = row.get("ASM")
-            if pd.notna(asm) and asm > 0:
-                parts.append(f"{asm:,.0f} ASM deployed")
+            asm_share = row.get("ASM Share")
+            if pd.notna(asm_share) and asm_share > 0:
+                snippets.append(f"{asm_share * 100:.1f}% of ASM")
 
-            seats = row.get("Total Seats")
-            if pd.notna(seats) and seats > 0:
-                parts.append(f"{seats:,.0f} seats scheduled")
-
-            if not parts:
-                return "Consistently strong CBSA performer."
-            return "; ".join(parts)
+            trimmed = [snippet for snippet in snippets if snippet][:4]
+            if not trimmed:
+                return "Reliable CBSA performer."
+            return " • ".join(trimmed)
 
         best_routes["Route Rationale"] = best_routes.apply(_route_rationale, axis=1)
 
@@ -2101,12 +2103,12 @@ class DataStore:
             )
         display_columns = [
             "Route",
+            "ASM Share",
             "Performance Score",
             "Route Strategy Baseline",
             "Competition Score",
             "Route Maturity Score",
             "Yield Proxy Score",
-            "ASM",
             "Total Seats",
             "Distance (miles)",
             "Seats per Mile",
@@ -2139,6 +2141,10 @@ class DataStore:
                 columns=["Source CBSA Name", "Destination CBSA Name"],
                 errors="ignore",
             )
+            if "ASM Share" in best_routes_display.columns:
+                best_routes_display["ASM Share"] = best_routes_display["ASM Share"].apply(
+                    lambda value: f"{value * 100:.1f}%" if pd.notna(value) else None
+                )
 
         if not suggestions_df.empty:
             _round_numeric_columns(
@@ -2227,16 +2233,18 @@ class DataStore:
         ] = pd.NA
 
         share_columns = []
+        share_column_map = {}
+        share_label_lookup = {}
         for col in asm_columns:
             share_col = f"{col}_Share"
             share_columns.append(share_col)
             pivoted[share_col] = pivoted[col] / pivoted["_share_denominator"]
             pivoted[share_col] = pivoted[share_col].clip(upper=1.0)
+            share_column_map[share_col] = f"{col} ASM Share"
+            share_label_lookup[col] = share_column_map[share_col]
 
-        pivoted.drop(columns=["_combined_asm", "_route_total_asm", "_share_denominator"], inplace=True)
+        pivoted.drop(columns=asm_columns + ["_combined_asm", "_route_total_asm", "_share_denominator"], inplace=True)
 
-        rename_map = {col: f"{col} ASM" for col in asm_columns}
-        rename_map.update({share_col: f"{col} ASM Share" for col, share_col in zip(asm_columns, share_columns)})
         aircraft_suffix = "_Aircraft"
 
         def _aircraft_label(column_name: str) -> str:
@@ -2246,49 +2254,30 @@ class DataStore:
                 base = column_name
             return f"{base} Aircraft"
 
-        rename_map.update({
+        aircraft_label_map = {
             col: _aircraft_label(col)
             for col in pivoted.columns if col.endswith(aircraft_suffix)
-        })
-        formatted = pivoted.rename(columns=rename_map)
+        }
 
-        def _format_asm(value):
-            if pd.isna(value):
-                return None
-            if not isinstance(value, (int, float)):
-                return value
-            abs_value = abs(value)
-            if abs_value >= 1_000_000_000:
-                return f"{value / 1_000_000_000:.2f}B"
-            if abs_value >= 1_000_000:
-                return f"{value / 1_000_000:.2f}M"
-            if abs_value >= 1_000:
-                return f"{value / 1_000:.0f}K"
-            return f"{value:,.0f}"
+        rename_map = {**share_column_map, **aircraft_label_map}
+        formatted = pivoted.rename(columns=rename_map)
 
         def _format_share(value):
             if pd.isna(value):
                 return None
             return f"{value * 100:.1f}%"
 
-        for col in (rename_map[col] for col in asm_columns):
-            formatted[col] = formatted[col].apply(_format_asm)
-        for col in (rename_map[col] for col in share_columns):
+        for col in (share_column_map[share_col] for share_col in share_columns if share_col in share_column_map):
             if col in formatted.columns:
                 formatted[col] = formatted[col].apply(_format_share)
 
-        asm_label_columns = [rename_map[col] for col in asm_columns if rename_map.get(col) in formatted.columns]
-        if asm_label_columns:
-            formatted = formatted.drop(columns=asm_label_columns)
-
         ordered_columns = ["Source", "Dest"]
         for original in asm_columns:
-            share_original = f"{original}_Share"
-            share_col = rename_map.get(share_original)
-            if share_col and share_col in formatted.columns:
-                ordered_columns.append(share_col)
+            share_label = share_label_lookup.get(original)
+            if share_label and share_label in formatted.columns:
+                ordered_columns.append(share_label)
             aircraft_original = f"{original}_Aircraft"
-            aircraft_col = rename_map.get(aircraft_original)
+            aircraft_col = aircraft_label_map.get(aircraft_original)
             if aircraft_col and aircraft_col in formatted.columns:
                 ordered_columns.append(aircraft_col)
 

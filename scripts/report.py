@@ -154,10 +154,8 @@ def format_cbsa_corridor_table(best_routes, max_rows):
 
     table = best_routes.copy()
     table.insert(0, "Rank", range(1, len(table) + 1))
-    if "ASM" in table.columns:
-        table["ASM"] = table["ASM"].apply(_format_large_number)
-    else:
-        table["ASM"] = "—"
+    if "ASM Share" not in table.columns:
+        table["ASM Share"] = "—"
     if "Total Seats" in table.columns:
         table["Total Seats"] = table["Total Seats"].apply(_format_large_number)
     else:
@@ -174,7 +172,7 @@ def format_cbsa_corridor_table(best_routes, max_rows):
     columns = [
         "Rank",
         "Route",
-        "ASM",
+        "ASM Share",
         "Total Seats",
         "Performance Score",
         "Route Rationale",
@@ -226,10 +224,10 @@ def format_cbsa_summary(best_routes, suggestions):
         lines.append("- No historical CBSA corridors found for this carrier.")
     else:
         top = best_routes.iloc[0]
-        asm = _format_large_number(top.get("ASM"))
         score = _format_score(top.get("Performance Score"))
+        share = top.get("ASM Share") or "—"
         rationale = top.get("Route Rationale") or "Consistently strong CBSA performer."
-        lines.append(f"- Top corridor **{top.get('Route', '—')}** (ASM {asm}, score {score}) — {rationale}")
+        lines.append(f"- Top corridor **{top.get('Route', '—')}** (share {share}, score {score}) — {rationale}")
         lines.append(f"- {len(best_routes)} total CBSA corridors met the performance filter.")
 
     if suggestions is None or suggestions.empty:

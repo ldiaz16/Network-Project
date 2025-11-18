@@ -120,12 +120,12 @@ def run_cbsa_simulation(data_storage, airline_name, airline_cost_df, args):
     else:
         cbsa_display_columns = [
             "Route",
+            "ASM Share",
             "Performance Score",
             "Route Strategy Baseline",
             "Competition Score",
             "Route Maturity Score",
             "Yield Proxy Score",
-            "ASM",
             "Total Seats",
             "Distance (miles)",
             "Seats per Mile",

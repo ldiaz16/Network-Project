@@ -536,8 +536,9 @@ def test_cbsa_simulation_filters_international_and_rounds(datastore):
     assert list(best_routes["Route"]) == ["AAA->BBB"]
     assert "Source CBSA" not in best_routes.columns
     assert "Destination CBSA" not in best_routes.columns
+    assert "ASM Share" in best_routes.columns
+    assert best_routes.loc[0, "ASM Share"] == "100.0%"
     assert "Route Rationale" in best_routes.columns
-    assert best_routes.loc[0, "ASM"] == pytest.approx(1234.57)
     assert simulation["suggested_routes"].empty
 
 

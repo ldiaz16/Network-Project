@@ -149,12 +149,12 @@ def showcase_cbsa(ds, package, args):
     )
     best_cols = [
         "Route",
+        "ASM Share",
         "Performance Score",
         "Route Strategy Baseline",
         "Competition Score",
         "Route Maturity Score",
         "Yield Proxy Score",
-        "ASM",
         "Total Seats",
         "Distance (miles)",
         "Seats per Mile",
