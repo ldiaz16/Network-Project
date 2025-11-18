@@ -8,10 +8,13 @@ from pydantic import ValidationError
 from src.backend_service import (
     AnalysisError,
     AnalysisRequest,
+    FleetAssignmentRequest,
     OptimalAircraftRequest,
+    get_airline_fleet_profile,
     list_airlines as list_airlines_logic,
     recommend_optimal_aircraft,
     run_analysis as run_analysis_logic,
+    simulate_live_assignment,
 )
 from src.cors_config import get_cors_settings
 from src.load_data import DataStore
@@ -95,6 +98,32 @@ def optimal_aircraft():
 
     try:
         result = recommend_optimal_aircraft(data_store, request_model)
+    except AnalysisError as exc:
+        return jsonify({"detail": str(exc)}), exc.status_code
+
+    return jsonify(result)
+
+
+@app.get("/api/fleet")
+def fleet_profile():
+    query = request.args.get("airline", "")
+    try:
+        result = get_airline_fleet_profile(data_store, query)
+    except AnalysisError as exc:
+        return jsonify({"detail": str(exc)}), exc.status_code
+    return jsonify(result)
+
+
+@app.post("/api/fleet-assignment")
+def fleet_assignment():
+    payload = request.get_json(force=True, silent=True) or {}
+    try:
+        request_model = FleetAssignmentRequest(**payload)
+    except ValidationError as exc:
+        return jsonify({"detail": exc.errors()}), 422
+
+    try:
+        result = simulate_live_assignment(data_store, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 

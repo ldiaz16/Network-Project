@@ -85,6 +85,53 @@ class OptimalAircraftRequest(BaseModel):
         return value
 
 
+class FleetConfigEntry(BaseModel):
+    equipment: str
+    count: int = Field(..., ge=1)
+
+    @validator("equipment", pre=True, always=True)
+    def _require_equipment(cls, value: Any) -> str:
+        if value is None:
+            raise ValueError("Equipment name is required.")
+        normalized = str(value).strip()
+        if not normalized:
+            raise ValueError("Equipment name is required.")
+        return normalized.upper()
+
+
+class FleetAssignmentRequest(BaseModel):
+    airline: str
+    fleet: List[FleetConfigEntry]
+    route_limit: int = Field(default=60, ge=1, le=500)
+    day_hours: float = Field(default=18.0, gt=0)
+    maintenance_hours: float = Field(default=6.0, ge=0)
+    crew_max_hours: float = Field(default=14.0, gt=0)
+    taxi_buffer_minutes: int = Field(default=20, ge=0)
+    default_turn_minutes: int = Field(default=45, ge=0)
+
+    @validator("airline", pre=True, always=True)
+    def _require_airline(cls, value: Any) -> str:
+        if value is None:
+            raise ValueError("Airline name is required.")
+        normalized = str(value).strip()
+        if not normalized:
+            raise ValueError("Airline name is required.")
+        return normalized
+
+    @validator("fleet")
+    def _require_fleet(cls, value: List[FleetConfigEntry]) -> List[FleetConfigEntry]:
+        if not value:
+            raise ValueError("Provide at least one fleet entry.")
+        return value
+
+    @validator("maintenance_hours")
+    def _validate_maintenance(cls, value: float, values: Dict[str, Any]) -> float:
+        day_hours = values.get("day_hours", 0)
+        if day_hours and value >= day_hours:
+            raise ValueError("Maintenance window must be shorter than the operating day.")
+        return value
+
+
 class AirlineSearchResponse(BaseModel):
     airline: str
     alias: Optional[str]
@@ -120,6 +167,90 @@ def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
     }
 
 
+def _prepare_top_routes(cost_df: Optional[pd.DataFrame], limit: int = 15) -> List[Dict[str, Any]]:
+    """Return the heaviest ASM routes for quick reference on the fleet page."""
+    if cost_df is None or cost_df.empty:
+        return []
+    columns = [
+        "Source airport",
+        "Destination airport",
+        "Equipment",
+        "Distance (miles)",
+        "Total Seats",
+        "ASM",
+        "Competition Level",
+        "Route Strategy Baseline",
+        "Route Maturity Label",
+    ]
+    available_columns = [column for column in columns if column in cost_df.columns]
+    if not available_columns:
+        return []
+    snapshot = (
+        cost_df.sort_values("ASM", ascending=False)
+        .head(limit)
+        .loc[:, available_columns]
+        .copy()
+    )
+    rename_map = {
+        "Source airport": "Source",
+        "Destination airport": "Destination",
+        "Distance (miles)": "Distance (mi)",
+        "Total Seats": "Seats",
+        "Route Strategy Baseline": "Strategy Baseline",
+        "Route Maturity Label": "Route Maturity",
+    }
+    snapshot.rename(columns={key: rename_map.get(key, key) for key in available_columns}, inplace=True)
+    return _dataframe_to_records(snapshot)
+
+
+def get_airline_fleet_profile(data_store, query: str) -> Dict[str, Any]:
+    """Return a single-airline profile with fleet composition and route context."""
+    if not isinstance(query, str) or not query.strip():
+        raise AnalysisError(400, "Airline name is required.")
+    try:
+        package = _build_airline_package(data_store, query)
+    except ValueError as exc:
+        raise AnalysisError(404, str(exc)) from exc
+
+    metadata = package.get("metadata") or {}
+    if hasattr(metadata, "to_dict"):
+        metadata = metadata.to_dict()
+
+    def _clean(value):
+        if pd.isna(value):
+            return None
+        return value
+
+    airline_info = {
+        "name": package.get("name"),
+        "normalized": package.get("normalized"),
+        "alias": _clean(metadata.get("Alias")),
+        "iata": _clean(metadata.get("IATA")),
+        "icao": _clean(metadata.get("ICAO")),
+        "country": _clean(metadata.get("Country")),
+        "callsign": _clean(metadata.get("Callsign")),
+        "active": _clean(metadata.get("Active")),
+        "total_routes": _clean(metadata.get("Total Routes")),
+    }
+
+    network = data_store.build_network(package["processed"])
+    network_stats = data_store.analyze_network(network)
+    asm_summary = data_store.summarize_asm_sources(package["cost"])
+    fleet_utilization = _dataframe_to_records(package.get("fleet_utilization"))
+    market_share = _dataframe_to_records(package.get("market_share"))
+    top_routes = _prepare_top_routes(package.get("cost"))
+
+    return {
+        "airline": airline_info,
+        "network_stats": network_stats,
+        "scorecard": package.get("scorecard"),
+        "fleet_utilization": fleet_utilization,
+        "market_share": market_share,
+        "top_routes": top_routes,
+        "asm_sources": _dataframe_to_records(asm_summary),
+    }
+
+
 def recommend_optimal_aircraft(data_store, payload: OptimalAircraftRequest) -> Dict[str, Any]:
     try:
         recommendations = data_store.find_best_aircraft_for_route(
@@ -135,6 +266,27 @@ def recommend_optimal_aircraft(data_store, payload: OptimalAircraftRequest) -> D
         "airline": payload.airline,
         "optimal_aircraft": _dataframe_to_records(recommendations),
     }
+
+
+def simulate_live_assignment(data_store, payload: FleetAssignmentRequest) -> Dict[str, Any]:
+    if not payload.fleet:
+        raise AnalysisError(400, "Fleet definition cannot be empty.")
+
+    try:
+        result = data_store.simulate_fleet_assignment(
+            airline_query=payload.airline,
+            fleet_config=[{"equipment": entry.equipment, "count": entry.count} for entry in payload.fleet],
+            route_limit=payload.route_limit,
+            day_hours=payload.day_hours,
+            maintenance_hours=payload.maintenance_hours,
+            crew_max_hours=payload.crew_max_hours,
+            taxi_buffer_minutes=payload.taxi_buffer_minutes,
+            default_turn_minutes=payload.default_turn_minutes,
+        )
+    except ValueError as exc:
+        raise AnalysisError(400, str(exc)) from exc
+
+    return result
 
 
 def _run_cbsa_simulation(data_store, package: Dict[str, Any], args: AnalysisRequest) -> Dict[str, Any]:

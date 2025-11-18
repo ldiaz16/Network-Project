@@ -7,8 +7,11 @@ from src.backend_service import (
     AnalysisError,
     AnalysisRequest,
     AirlineSearchResponse,
+    FleetAssignmentRequest,
+    get_airline_fleet_profile,
     list_airlines as list_airlines_logic,
     run_analysis as run_analysis_logic,
+    simulate_live_assignment,
 )
 from src.load_data import DataStore
 from src.cors_config import combine_regex_patterns, get_cors_settings
@@ -44,5 +47,21 @@ def list_airlines(query: Optional[str] = Query(default=None, description="Filter
 def run_analysis(payload: AnalysisRequest) -> Dict[str, Any]:
     try:
         return run_analysis_logic(data_store, payload)
+    except AnalysisError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+@app.get("/api/fleet")
+def get_fleet_profile(airline: str = Query(..., description="Airline name, alias, or code to profile.")) -> Dict[str, Any]:
+    try:
+        return get_airline_fleet_profile(data_store, airline)
+    except AnalysisError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+@app.post("/api/fleet-assignment")
+def run_fleet_assignment(payload: FleetAssignmentRequest) -> Dict[str, Any]:
+    try:
+        return simulate_live_assignment(data_store, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

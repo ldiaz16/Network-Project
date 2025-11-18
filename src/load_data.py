@@ -1257,6 +1257,299 @@ class DataStore:
         ## print(airline_df[["Airline", "Source airport", "Destination airport", "Distance (miles)", "Total Seats", "Seats per Mile"]].head())
         return df[columns]
 
+    def simulate_fleet_assignment(
+        self,
+        airline_query,
+        fleet_config,
+        route_limit=80,
+        day_hours=18.0,
+        maintenance_hours=6.0,
+        crew_max_hours=14.0,
+        taxi_buffer_minutes=20,
+        default_turn_minutes=45,
+    ):
+        """
+        Greedy fleet assignment simulator that approximates a daily schedule.
+
+        Args:
+            airline_query: Airline identifier to derive the representative route list.
+            fleet_config: List of {"equipment": str, "count": int}.
+            route_limit: Maximum number of routes (sorted by ASM) to include in the simulation.
+            day_hours: Total length of the operating day considered by the simulator.
+            maintenance_hours: Required daily maintenance window for each tail.
+            crew_max_hours: Maximum flight (block) hours allowed per tail within the day.
+            taxi_buffer_minutes: Fixed taxi/approach buffer per flight, applied to the block time.
+            default_turn_minutes: Minimum turn time to assume when equipment-specific heuristics are unavailable.
+        """
+        if not isinstance(fleet_config, list) or not fleet_config:
+            raise ValueError("At least one fleet entry is required.")
+
+        if not isinstance(day_hours, (int, float)) or day_hours <= 0:
+            raise ValueError("Operating day must be greater than zero hours.")
+
+        if maintenance_hours < 0:
+            raise ValueError("Maintenance hours cannot be negative.")
+
+        if maintenance_hours >= day_hours:
+            raise ValueError("Maintenance window must be shorter than the operating day.")
+
+        max_operating_window = day_hours - maintenance_hours
+        crew_limit = min(float(crew_max_hours or 0), max_operating_window)
+        if crew_limit <= 0:
+            raise ValueError("Crew hour limit leaves no time for flight assignment.")
+
+        route_limit = max(1, min(int(route_limit or 1), 500))
+        taxi_buffer_hours = max(0.0, float(taxi_buffer_minutes or 0) / 60.0)
+        base_turn_hours = max(0.1, float(default_turn_minutes or 45) / 60.0)
+
+        routes_df, airline_meta = self.select_airline_routes(airline_query)
+        processed = self.process_routes(routes_df)
+        cost_df = self.cost_analysis(processed)
+        if cost_df.empty:
+            raise ValueError("No routes available for fleet assignment.")
+
+        flights_df = cost_df.sort_values("ASM", ascending=False).head(route_limit).copy()
+        if flights_df.empty:
+            raise ValueError("Unable to extract representative routes for simulation.")
+
+        def _seat_capacity_for_equipment(value):
+            record = self._estimate_seat_capacity(value)
+            if isinstance(record, dict):
+                seats = record.get("seats")
+                if seats:
+                    return int(seats)
+            return None
+
+        def _categorize_equipment(seat_count):
+            seats = seat_count if seat_count and seat_count > 0 else 150
+            if seats >= 260:
+                return {"category": "widebody", "cruise_speed": 515.0, "turn_hours": 1.5, "range_miles": 6500}
+            if seats >= 150:
+                return {"category": "narrowbody", "cruise_speed": 500.0, "turn_hours": 1.0, "range_miles": 3500}
+            if seats >= 90:
+                return {"category": "crossover", "cruise_speed": 470.0, "turn_hours": 0.75, "range_miles": 2200}
+            return {"category": "regional", "cruise_speed": 430.0, "turn_hours": 0.5, "range_miles": 1200}
+
+        resolved_fleet = []
+        for entry in fleet_config:
+            equipment_name = (entry.get("equipment") or "").strip()
+            count = int(entry.get("count") or 0)
+            if not equipment_name or count <= 0:
+                continue
+            seat_guess = _seat_capacity_for_equipment(equipment_name)
+            equipment_profile = _categorize_equipment(seat_guess)
+            resolved_fleet.append(
+                {
+                    "equipment": equipment_name,
+                    "count": count,
+                    "seat_capacity": seat_guess if seat_guess and seat_guess > 0 else 150,
+                    "category": equipment_profile["category"],
+                    "cruise_speed": equipment_profile["cruise_speed"],
+                    "turn_hours": max(equipment_profile["turn_hours"], base_turn_hours),
+                    "range_miles": equipment_profile["range_miles"],
+                }
+            )
+
+        if not resolved_fleet:
+            raise ValueError("Fleet configuration did not include any valid entries.")
+
+        tails = []
+        for fleet_entry in resolved_fleet:
+            for index in range(fleet_entry["count"]):
+                tails.append(
+                    {
+                        "tail_id": f"{fleet_entry['equipment'].upper()}-{index + 1:02d}",
+                        "equipment": fleet_entry["equipment"].upper(),
+                        "category": fleet_entry["category"],
+                        "seat_capacity": fleet_entry["seat_capacity"],
+                        "cruise_speed": fleet_entry["cruise_speed"],
+                        "turn_time": fleet_entry["turn_hours"],
+                        "max_range": fleet_entry["range_miles"],
+                        "next_available": 0.0,
+                        "block_hours": 0.0,
+                        "assignments": [],
+                    }
+                )
+
+        if not tails:
+            raise ValueError("Fleet configuration resolved to zero tails.")
+
+        def _format_clock(hour_value, start_offset=5.0):
+            total_hours = start_offset + hour_value
+            total_minutes = int(round(total_hours * 60))
+            hours_component = (total_minutes // 60) % 24
+            minutes_component = total_minutes % 60
+            return f"{hours_component:02d}:{minutes_component:02d}"
+
+        flights = flights_df.to_dict(orient="records")
+        assignments = []
+        unassigned = []
+        total_block_hours = 0.0
+
+        for record in flights:
+            required_seats = record.get("Total Seats")
+            try:
+                required_seats = float(required_seats)
+            except (TypeError, ValueError):
+                required_seats = None
+            if not required_seats or required_seats <= 0:
+                seat_record = _seat_capacity_for_equipment(record.get("Equipment"))
+                required_seats = float(seat_record) if seat_record else 120.0
+            required_seats = max(40.0, required_seats)
+
+            distance_miles = record.get("Distance (miles)")
+            try:
+                distance_miles = float(distance_miles)
+            except (TypeError, ValueError):
+                distance_miles = None
+            if not distance_miles or distance_miles <= 0:
+                distance_miles = 500.0
+
+            best_tail = None
+            best_candidate_block = None
+            best_score = None
+            capacity_candidate = False
+            schedule_candidate = False
+            crew_candidate = False
+
+            for tail in tails:
+                if tail["max_range"] + 1e-6 < distance_miles:
+                    continue
+                capacity_candidate = True
+                if tail["seat_capacity"] < required_seats * 0.75:
+                    continue
+
+                block_time = max(distance_miles / tail["cruise_speed"], 0.5) + taxi_buffer_hours
+                tentative_end = tail["next_available"] + block_time
+                next_available = tentative_end + tail["turn_time"]
+
+                if next_available > max_operating_window + 1e-6:
+                    continue
+                schedule_candidate = True
+
+                if tail["block_hours"] + block_time > crew_limit + 1e-6:
+                    continue
+                crew_candidate = True
+
+                seat_gap = abs(tail["seat_capacity"] - required_seats)
+                score = (
+                    round(tail["next_available"], 3),
+                    seat_gap,
+                    round(tail["block_hours"], 3),
+                )
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best_tail = tail
+                    best_candidate_block = block_time
+
+            if best_tail is None:
+                if not capacity_candidate:
+                    reason = "No fleet type can cover the route distance/seat demand."
+                elif not schedule_candidate:
+                    reason = "All compatible aircraft are outside the operating window."
+                elif not crew_candidate:
+                    reason = "Crew duty limits exhausted for compatible aircraft."
+                else:
+                    reason = "No available aircraft matched the request."
+                unassigned.append(
+                    {
+                        "route": f"{record.get('Source airport', '?')} → {record.get('Destination airport', '?')}",
+                        "equipment": record.get("Equipment"),
+                        "distance_miles": round(distance_miles, 1),
+                        "required_seats": round(required_seats, 1),
+                        "reason": reason,
+                    }
+                )
+                continue
+
+            start_time = best_tail["next_available"]
+            end_time = start_time + best_candidate_block
+            best_tail["next_available"] = end_time + best_tail["turn_time"]
+            best_tail["block_hours"] += best_candidate_block
+            total_block_hours += best_candidate_block
+
+            assignment_entry = {
+                "route": f"{record.get('Source airport', '?')} → {record.get('Destination airport', '?')}",
+                "source": record.get("Source airport"),
+                "destination": record.get("Destination airport"),
+                "tail_id": best_tail["tail_id"],
+                "assigned_equipment": best_tail["equipment"],
+                "equipment_requested": record.get("Equipment"),
+                "block_hours": round(best_candidate_block, 2),
+                "turn_hours": round(best_tail["turn_time"], 2),
+                "start_hour": round(start_time, 2),
+                "end_hour": round(end_time, 2),
+                "start_label": _format_clock(start_time),
+                "end_label": _format_clock(end_time),
+                "distance_miles": round(distance_miles, 1),
+                "required_seats": round(required_seats, 0),
+            }
+            assignments.append(assignment_entry)
+            best_tail["assignments"].append(assignment_entry)
+
+        total_flights = len(flights)
+        scheduled_flights = len(assignments)
+        available_block_hours = len(tails) * crew_limit
+        utilization = (total_block_hours / available_block_hours) if available_block_hours > 0 else 0.0
+
+        tail_logs = []
+        for tail in tails:
+            maintenance_buffer = max(day_hours - tail["next_available"], maintenance_hours)
+            tail_logs.append(
+                {
+                    "tail_id": tail["tail_id"],
+                    "equipment": tail["equipment"],
+                    "category": tail["category"],
+                    "flights": len(tail["assignments"]),
+                    "block_hours": round(tail["block_hours"], 2),
+                    "duty_hours": round(tail["next_available"], 2),
+                    "utilization": round((tail["block_hours"] / crew_limit) if crew_limit > 0 else 0.0, 3),
+                    "maintenance_buffer": round(maintenance_buffer, 2),
+                }
+            )
+
+        airline_label = airline_meta.get("Airline") if isinstance(airline_meta, dict) else airline_query
+        normalized_label = airline_meta.get("Airline (Normalized)") if isinstance(airline_meta, dict) else None
+
+        fleet_overview = [
+            {
+                "equipment": entry["equipment"].upper(),
+                "count": entry["count"],
+                "seat_capacity": entry["seat_capacity"],
+                "category": entry["category"],
+            }
+            for entry in resolved_fleet
+        ]
+
+        summary = {
+            "airline": airline_label,
+            "normalized": normalized_label,
+            "total_flights": total_flights,
+            "scheduled_flights": scheduled_flights,
+            "coverage": round((scheduled_flights / total_flights) if total_flights else 0.0, 3),
+            "total_block_hours": round(total_block_hours, 2),
+            "available_block_hours": round(available_block_hours, 2),
+            "utilization": round(utilization, 3),
+            "unassigned": len(unassigned),
+        }
+
+        return {
+            "airline": airline_label,
+            "normalized": normalized_label,
+            "parameters": {
+                "day_hours": day_hours,
+                "maintenance_hours": maintenance_hours,
+                "crew_max_hours": crew_max_hours,
+                "route_limit": route_limit,
+                "taxi_buffer_minutes": taxi_buffer_minutes,
+            },
+            "fleet_overview": fleet_overview,
+            "summary": summary,
+            "assignments": assignments,
+            "unassigned": unassigned,
+            "tail_logs": tail_logs,
+        }
+
     def summarize_asm_sources(self, cost_df):
         """Provide an accuracy snapshot for ASM calculations by seat source."""
         if cost_df is None or cost_df.empty:

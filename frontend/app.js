@@ -455,10 +455,10 @@ const StatusAlert = ({ status }) => {
     );
 };
 
-const DataTable = ({ rows, title, maxHeight, enableWrapping = false }) => {
+const DataTable = ({ rows, title, maxHeight, enableWrapping = false, disableMargin = false }) => {
     if (!rows || !rows.length) {
         return (
-            <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+            <Paper variant="outlined" sx={{ p: 2, mb: disableMargin ? 0 : 3 }}>
                 <Typography color="text.secondary">No {title.toLowerCase()} available.</Typography>
             </Paper>
         );
@@ -472,7 +472,7 @@ const DataTable = ({ rows, title, maxHeight, enableWrapping = false }) => {
         <Paper
             variant="outlined"
             sx={{
-                mb: 3,
+                mb: disableMargin ? 0 : 3,
                 overflowX: "auto",
             }}
         >
@@ -552,6 +552,225 @@ const NetworkSummary = ({ airlines }) => {
                 })}
             </Grid>
         </Stack>
+    );
+};
+
+const FleetProfile = ({ profile }) => {
+    if (!profile) {
+        return null;
+    }
+    const airline = profile.airline || {};
+    const networkStats = profile.network_stats || {};
+    const quickFacts = [
+        { label: "IATA", value: airline.iata },
+        { label: "ICAO", value: airline.icao },
+        { label: "Country", value: airline.country },
+        { label: "Total Routes", value: airline.total_routes ? integerNumberFormatter.format(airline.total_routes) : null },
+        { label: "Status", value: airline.active },
+        { label: "Callsign", value: airline.callsign },
+    ].filter((item) => item.value);
+
+    const networkEntries = Object.entries(networkStats).filter(([, value]) => value !== undefined && value !== null);
+
+    return (
+        <Stack spacing={3}>
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: { xs: 2.5, md: 3 },
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: "0 30px 60px rgba(0,0,0,0.35)",
+                }}
+            >
+                <Stack spacing={3}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+                        <AirlineLogo airline={airline} size={72} name={airline.name} />
+                        <Box>
+                            <Typography variant="h4" fontWeight={700}>
+                                {airline.name || "Airline"}
+                            </Typography>
+                            {airline.alias && (
+                                <Typography variant="body2" color="text.secondary">
+                                    Also known as {airline.alias}
+                                </Typography>
+                            )}
+                        </Box>
+                    </Stack>
+                    {quickFacts.length > 0 && (
+                        <Grid container spacing={2}>
+                            {quickFacts.map((fact) => (
+                                <Grid item xs={6} sm={4} md={3} key={fact.label}>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {fact.label}
+                                    </Typography>
+                                    <Typography variant="body1">{fact.value}</Typography>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                    {networkEntries.length > 0 && (
+                        <Box>
+                            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                                Network Stats
+                            </Typography>
+                            <Stack component="ul" spacing={1} sx={{ listStyle: "none", p: 0, m: 0 }}>
+                                {networkEntries.map(([key, value]) => (
+                                    <Box component="li" key={key} sx={{ color: "text.secondary" }}>
+                                        <strong>{key}:</strong> {formatNetworkStat(key, value)}
+                                    </Box>
+                                ))}
+                            </Stack>
+                        </Box>
+                    )}
+                </Stack>
+            </Paper>
+
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: { xs: 2.5, md: 3 },
+                    border: "1px solid rgba(255,255,255,0.08)",
+                }}
+            >
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                    Network Context
+                </Typography>
+                <ScorecardView data={profile.scorecard} />
+                <MarketShareList rows={profile.market_share} maxRows={8} />
+                <FleetUtilizationList rows={profile.fleet_utilization} maxRows={8} />
+            </Paper>
+
+            <Box>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                    Fleet Utilization Detail
+                </Typography>
+                <DataTable rows={profile.fleet_utilization} title="Fleet Utilization" disableMargin enableWrapping />
+            </Box>
+
+            <Box>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                    Top Routes by ASM
+                </Typography>
+                <DataTable rows={profile.top_routes} title="Top Routes" disableMargin enableWrapping maxHeight={420} />
+            </Box>
+
+            <Box>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                    ASM Source Snapshot
+                </Typography>
+                <DataTable rows={profile.asm_sources} title="ASM Snapshot" disableMargin enableWrapping />
+            </Box>
+        </Stack>
+    );
+};
+
+const FleetAssignmentResults = ({ result }) => {
+    if (!result) {
+        return null;
+    }
+    const summary = result.summary || {};
+    const assignments = result.assignments || [];
+    const tailLogs = result.tail_logs || [];
+    const unassigned = result.unassigned || [];
+    const fleetOverview = result.fleet_overview || [];
+    const summaryChips = [
+        { label: "Flights Scheduled", value: `${summary.scheduled_flights || 0} / ${summary.total_flights || 0}` },
+        { label: "Coverage", value: formatPercent(summary.coverage || 0) },
+        { label: "Utilization", value: formatPercent(summary.utilization || 0) },
+        { label: "Block Hours", value: summary.total_block_hours ? `${summary.total_block_hours.toFixed(1)} h` : "0" },
+        { label: "Unassigned", value: summary.unassigned || 0 },
+    ];
+
+    const assignmentRows = assignments.map((entry) => ({
+        Route: entry.route || `${entry.source || "?"} → ${entry.destination || "?"}`,
+        Tail: entry.tail_id || "—",
+        Equipment: entry.assigned_equipment || "—",
+        "Requested Equip": entry.equipment_requested || "—",
+        "Start": entry.start_label || formatValue(entry.start_hour),
+        "End": entry.end_label || formatValue(entry.end_hour),
+        "Block Hours": entry.block_hours,
+        "Turn Hours": entry.turn_hours,
+        "Distance (mi)": entry.distance_miles,
+        "Seats Planned": entry.required_seats,
+    }));
+
+    const tailRows = tailLogs.map((tail) => ({
+        Tail: tail.tail_id,
+        Equipment: tail.equipment,
+        Category: tail.category,
+        Flights: tail.flights,
+        "Block Hours": tail.block_hours,
+        "Duty Hours": tail.duty_hours,
+        Utilization: tail.utilization,
+        "Maintenance Buffer": tail.maintenance_buffer,
+    }));
+
+    const unassignedRows = unassigned.map((item) => ({
+        Route: item.route,
+        Equipment: item.equipment,
+        "Distance (mi)": item.distance_miles,
+        "Seats Needed": item.required_seats,
+        Reason: item.reason,
+    }));
+
+    const fleetRows = fleetOverview.map((entry) => ({
+        Equipment: entry.equipment,
+        Count: entry.count,
+        "Seat Capacity": entry.seat_capacity,
+        Category: entry.category,
+    }));
+
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: { xs: 2.5, md: 3 },
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 30px 60px rgba(0,0,0,0.35)",
+            }}
+        >
+            <Stack spacing={3}>
+                <Box>
+                    <Typography variant="h5">Live Fleet Assignment Results</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Greedy assignment honors block time, turn buffers, daily crew limits, and maintenance windows.
+                    </Typography>
+                </Box>
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                    {summaryChips.map((chip) => (
+                        <Chip key={chip.label} label={`${chip.label}: ${chip.value}`} color="primary" variant="outlined" />
+                    ))}
+                </Stack>
+                {fleetRows.length > 0 && (
+                    <Box>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                            Fleet Inputs
+                        </Typography>
+                        <DataTable rows={fleetRows} title="Fleet Overview" disableMargin />
+                    </Box>
+                )}
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 1 }}>
+                        Feasible Assignments
+                    </Typography>
+                    <DataTable rows={assignmentRows} title="Assignments" disableMargin enableWrapping maxHeight={420} />
+                </Box>
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 1 }}>
+                        Hours Flown per Tail
+                    </Typography>
+                    <DataTable rows={tailRows} title="Tail Utilization" disableMargin enableWrapping />
+                </Box>
+                {unassignedRows.length > 0 && (
+                    <Box>
+                        <Typography variant="h6" sx={{ mb: 1 }}>
+                            Unassigned Routes
+                        </Typography>
+                        <DataTable rows={unassignedRows} title="Unassigned Routes" disableMargin enableWrapping />
+                    </Box>
+                )}
+            </Stack>
+        </Paper>
     );
 };
 
@@ -644,6 +863,22 @@ function App() {
     const [optimalResults, setOptimalResults] = React.useState([]);
     const [optimalStatus, setOptimalStatus] = React.useState({ message: "", kind: "" });
     const [optimalLoading, setOptimalLoading] = React.useState(false);
+    const [activePage, setActivePage] = React.useState("analysis");
+    const [fleetQuery, setFleetQuery] = React.useState("");
+    const [fleetStatus, setFleetStatus] = React.useState({ message: "", kind: "" });
+    const [fleetLoading, setFleetLoading] = React.useState(false);
+    const [fleetProfile, setFleetProfile] = React.useState(null);
+    const [fleetAssignmentConfig, setFleetAssignmentConfig] = React.useState({
+        airline: "",
+        route_limit: "60",
+        day_hours: "18",
+        maintenance_hours: "6",
+        crew_max_hours: "14",
+        fleet: [{ equipment: "A320", count: "5" }],
+    });
+    const [fleetAssignmentStatus, setFleetAssignmentStatus] = React.useState({ message: "", kind: "" });
+    const [fleetAssignmentLoading, setFleetAssignmentLoading] = React.useState(false);
+    const [fleetAssignmentResults, setFleetAssignmentResults] = React.useState(null);
 
     const fetchSuggestions = React.useCallback(async (query = "") => {
         try {
@@ -826,6 +1061,123 @@ function App() {
         [optimalConfig]
     );
 
+    const handleFleetSubmit = React.useCallback(
+        async (event) => {
+            event.preventDefault();
+            const trimmed = (fleetQuery || "").trim();
+            if (!trimmed) {
+                setFleetStatus({ message: "Enter an airline name or code.", kind: "error" });
+                setFleetProfile(null);
+                return;
+            }
+            setFleetLoading(true);
+            setFleetStatus({ message: "Fetching fleet details…", kind: "info" });
+            try {
+                const response = await fetch(`${API_BASE}/fleet?airline=${encodeURIComponent(trimmed)}`);
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.detail || "Unable to fetch fleet profile.");
+                }
+                setFleetProfile(result);
+                setFleetStatus({
+                    message: `Fleet profile ready for ${result.airline?.name || trimmed}.`,
+                    kind: "success",
+                });
+            } catch (error) {
+                setFleetProfile(null);
+                setFleetStatus({ message: error.message || "Unable to fetch fleet profile.", kind: "error" });
+            } finally {
+                setFleetLoading(false);
+            }
+        },
+        [fleetQuery]
+    );
+
+    const handleAssignmentFieldChange = (field) => (event) => {
+        const value = event.target.value;
+        setFleetAssignmentConfig((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleAssignmentFleetChange = (index, field) => (event) => {
+        const value = event.target.value;
+        setFleetAssignmentConfig((prev) => {
+            const nextFleet = prev.fleet.map((entry, entryIndex) =>
+                entryIndex === index ? { ...entry, [field]: value } : entry
+            );
+            return { ...prev, fleet: nextFleet };
+        });
+    };
+
+    const handleAddFleetRow = () => {
+        setFleetAssignmentConfig((prev) => ({
+            ...prev,
+            fleet: [...prev.fleet, { equipment: "", count: "1" }],
+        }));
+    };
+
+    const handleRemoveFleetRow = (index) => {
+        setFleetAssignmentConfig((prev) => {
+            if (prev.fleet.length <= 1) {
+                return prev;
+            }
+            const nextFleet = prev.fleet.filter((_, entryIndex) => entryIndex !== index);
+            return { ...prev, fleet: nextFleet };
+        });
+    };
+
+    const handleAssignmentSubmit = React.useCallback(
+        async (event) => {
+            event.preventDefault();
+            const airline = (fleetAssignmentConfig.airline || "").trim();
+            if (!airline) {
+                setFleetAssignmentStatus({ message: "Enter an airline before simulating.", kind: "error" });
+                setFleetAssignmentResults(null);
+                return;
+            }
+            const fleetEntries = (fleetAssignmentConfig.fleet || [])
+                .map((entry) => ({
+                    equipment: (entry.equipment || "").trim(),
+                    count: Number(entry.count),
+                }))
+                .filter((entry) => entry.equipment && Number.isFinite(entry.count) && entry.count > 0);
+            if (!fleetEntries.length) {
+                setFleetAssignmentStatus({ message: "Add at least one valid fleet entry.", kind: "error" });
+                setFleetAssignmentResults(null);
+                return;
+            }
+            const payload = {
+                airline,
+                fleet: fleetEntries,
+                route_limit: Number(fleetAssignmentConfig.route_limit) || 60,
+                day_hours: Number(fleetAssignmentConfig.day_hours) || 18,
+                maintenance_hours: Number(fleetAssignmentConfig.maintenance_hours) || 6,
+                crew_max_hours: Number(fleetAssignmentConfig.crew_max_hours) || 14,
+            };
+            setFleetAssignmentLoading(true);
+            setFleetAssignmentStatus({ message: "Simulating fleet assignment…", kind: "info" });
+            setFleetAssignmentResults(null);
+            try {
+                const response = await fetch(`${API_BASE}/fleet-assignment`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.detail || "Unable to simulate fleet assignment.");
+                }
+                setFleetAssignmentResults(result);
+                setFleetAssignmentStatus({ message: "Simulation complete.", kind: "success" });
+            } catch (error) {
+                setFleetAssignmentResults(null);
+                setFleetAssignmentStatus({ message: error.message || "Unable to simulate fleet assignment.", kind: "error" });
+            } finally {
+                setFleetAssignmentLoading(false);
+            }
+        },
+        [fleetAssignmentConfig]
+    );
+
     const renderAirlineField = (label, field) => (
         <Autocomplete
             freeSolo
@@ -877,20 +1229,38 @@ function App() {
                     backdropFilter: "blur(12px)",
                 }}
             >
-                <Toolbar sx={{ minHeight: 88 }}>
-                    <Box>
+                <Toolbar
+                    sx={{
+                        minHeight: 88,
+                        flexDirection: { xs: "column", md: "row" },
+                        alignItems: { xs: "flex-start", md: "center" },
+                        gap: 2,
+                    }}
+                >
+                    <Box sx={{ flexGrow: 1 }}>
                         <Typography variant="h5" fontWeight={700}>
                             Airline Route Optimizer
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
-                            Compare airline networks and surface CBSA-aligned opportunities.
+                            Compare airline networks, surface CBSA-aligned opportunities, or inspect a single fleet.
                         </Typography>
                     </Box>
+                    <Tabs
+                        value={activePage}
+                        onChange={(_, value) => setActivePage(value)}
+                        textColor="inherit"
+                        indicatorColor="secondary"
+                        sx={{ minHeight: 48 }}
+                    >
+                        <Tab label="Route Analysis" value="analysis" />
+                        <Tab label="Fleet Explorer" value="fleet" />
+                    </Tabs>
                 </Toolbar>
             </AppBar>
 
             <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
-                <Grid container spacing={3} alignItems="stretch">
+                {activePage === "analysis" ? (
+                    <Grid container spacing={3} alignItems="stretch">
                     <Grid item xs={12} md={5} lg={4}>
                         <Stack spacing={3}>
                             <Paper
@@ -1219,7 +1589,273 @@ function App() {
                             )}
                         </Paper>
                     </Grid>
+                    </Grid>
+                ) : (
+                    <Stack spacing={3}>
+                        <Grid container spacing={3} alignItems="stretch">
+                            <Grid item xs={12} md={4}>
+                                <Paper
+                                    component="form"
+                                    onSubmit={handleFleetSubmit}
+                                    sx={{
+                                        p: { xs: 2.5, md: 3 },
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2.5,
+                                    }}
+                                >
+                                    <Box>
+                                        <Typography variant="h6">Fleet Explorer</Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Pull the fleet mix, top routes, and ASM accuracy for a single airline.
+                                        </Typography>
+                                    </Box>
+                                    <StatusAlert status={fleetStatus} />
+                                    <Autocomplete
+                                        freeSolo
+                                        options={suggestions}
+                                        filterOptions={(options, { inputValue }) => {
+                                            const normalized = (inputValue || "").trim().toLowerCase();
+                                            const filtered = normalized
+                                                ? options.filter((option) => option.toLowerCase().includes(normalized))
+                                                : options;
+                                            return filtered.slice(0, MAX_AIRLINE_SUGGESTIONS);
+                                        }}
+                                        openOnFocus
+                                        autoHighlight
+                                        noOptionsText="No matching airlines"
+                                        value={fleetQuery}
+                                        inputValue={fleetQuery}
+                                        onChange={(_, value) => {
+                                            setFleetQuery(value || "");
+                                        }}
+                                        onInputChange={(_, value) => {
+                                            const nextValue = value || "";
+                                            setFleetQuery(nextValue);
+                                            handleSuggestionQuery(nextValue);
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Airline"
+                                                variant="outlined"
+                                            />
+                                        )}
+                                    />
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        size="large"
+                                        disabled={fleetLoading}
+                                    >
+                                        {fleetLoading ? (
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <CircularProgress size={20} color="inherit" />
+                                                <span>Loading...</span>
+                                            </Stack>
+                                        ) : (
+                                            "View Fleet Profile"
+                                        )}
+                                    </Button>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Tip: start typing to discover fuzzy-matched airlines.
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={12} md={8}>
+                                {fleetProfile ? (
+                                    <FleetProfile profile={fleetProfile} />
+                                ) : (
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: { xs: 2.5, md: 3 },
+                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            minHeight: 360,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        <Typography color="text.secondary">
+                                            Search for an airline to view its fleet composition and top routes.
+                                        </Typography>
+                                    </Paper>
+                                )}
+                            </Grid>
+                        </Grid>
+
+        <Paper
+            component="form"
+            onSubmit={handleAssignmentSubmit}
+            sx={{
+                p: { xs: 2.5, md: 3 },
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2.5,
+            }}
+        >
+            <Box>
+                <Typography variant="h6">Live Fleet Assignment Simulator</Typography>
+                <Typography variant="body2" color="text.secondary">
+                    Define a fleet, then assign tails to the busiest routes while respecting block times, turn buffers, and maintenance.
+                </Typography>
+            </Box>
+            <StatusAlert status={fleetAssignmentStatus} />
+            <Autocomplete
+                freeSolo
+                options={suggestions}
+                filterOptions={(options, { inputValue }) => {
+                    const normalized = (inputValue || "").trim().toLowerCase();
+                    const filtered = normalized
+                        ? options.filter((option) => option.toLowerCase().includes(normalized))
+                        : options;
+                    return filtered.slice(0, MAX_AIRLINE_SUGGESTIONS);
+                }}
+                openOnFocus
+                autoHighlight
+                noOptionsText="No matching airlines"
+                value={fleetAssignmentConfig.airline}
+                inputValue={fleetAssignmentConfig.airline}
+                onChange={(_, value) => {
+                    const next = value || "";
+                    setFleetAssignmentConfig((prev) => ({ ...prev, airline: next }));
+                }}
+                onInputChange={(_, value) => {
+                    const nextValue = value || "";
+                    setFleetAssignmentConfig((prev) => ({ ...prev, airline: nextValue }));
+                    handleSuggestionQuery(nextValue);
+                }}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        label="Airline"
+                        variant="outlined"
+                        helperText="Use any public carrier or search for a code"
+                    />
+                )}
+            />
+            <Stack spacing={1.5}>
+                <Typography variant="subtitle2" color="text.secondary">
+                    Fleet mix
+                </Typography>
+                {fleetAssignmentConfig.fleet.map((entry, index) => (
+                    <Stack
+                        key={`fleet-row-${index}`}
+                        direction={{ xs: "column", md: "row" }}
+                        spacing={1}
+                        alignItems={{ xs: "stretch", md: "flex-end" }}
+                    >
+                        <TextField
+                            label="Equipment"
+                            value={entry.equipment}
+                            onChange={handleAssignmentFleetChange(index, "equipment")}
+                            fullWidth
+                        />
+                        <TextField
+                            label="Tails"
+                            type="number"
+                            inputProps={{ min: 1 }}
+                            value={entry.count}
+                            onChange={handleAssignmentFleetChange(index, "count")}
+                            sx={{ width: { xs: "100%", md: 140 } }}
+                        />
+                        {fleetAssignmentConfig.fleet.length > 1 && (
+                            <Button color="secondary" onClick={() => handleRemoveFleetRow(index)}>
+                                Remove
+                            </Button>
+                        )}
+                    </Stack>
+                ))}
+                <Button variant="outlined" color="secondary" onClick={handleAddFleetRow} sx={{ alignSelf: "flex-start" }}>
+                    Add equipment type
+                </Button>
+            </Stack>
+            <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                        label="Sample routes"
+                        type="number"
+                        helperText="Top O&D segments to schedule"
+                        value={fleetAssignmentConfig.route_limit}
+                        onChange={handleAssignmentFieldChange("route_limit")}
+                        fullWidth
+                    />
                 </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                        label="Operating day (hrs)"
+                        type="number"
+                        value={fleetAssignmentConfig.day_hours}
+                        onChange={handleAssignmentFieldChange("day_hours")}
+                        fullWidth
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                        label="Maintenance window (hrs)"
+                        type="number"
+                        value={fleetAssignmentConfig.maintenance_hours}
+                        onChange={handleAssignmentFieldChange("maintenance_hours")}
+                        fullWidth
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                        label="Crew max block (hrs)"
+                        type="number"
+                        value={fleetAssignmentConfig.crew_max_hours}
+                        onChange={handleAssignmentFieldChange("crew_max_hours")}
+                        fullWidth
+                    />
+                </Grid>
+            </Grid>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={fleetAssignmentLoading}
+                    sx={{ alignSelf: "flex-start" }}
+                >
+                    {fleetAssignmentLoading ? (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={20} color="inherit" />
+                            <span>Simulating...</span>
+                        </Stack>
+                    ) : (
+                        "Simulate assignments"
+                    )}
+                </Button>
+                <Typography variant="caption" color="text.secondary" sx={{ alignSelf: "center" }}>
+                    Heuristic assigns aircraft by seat class, stage length, duty limits, and nightly maintenance buffer.
+                </Typography>
+            </Stack>
+        </Paper>
+
+        {fleetAssignmentResults ? (
+            <FleetAssignmentResults result={fleetAssignmentResults} />
+        ) : (
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: { xs: 2.5, md: 3 },
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    textAlign: "center",
+                }}
+            >
+                <Typography color="text.secondary">
+                    Configure a fleet above to generate a duty-day schedule with block utilization and hours per tail.
+                </Typography>
+            </Paper>
+        )}
+                    </Stack>
+                )}
             </Container>
         </Box>
     );
