@@ -1921,7 +1921,7 @@ class DataStore:
         )
 
         best_routes = aggregated.sort_values("Performance Score", ascending=False).head(top_n).reset_index(drop=True)
-        best_routes["Route"] = best_routes["Source airport"] + "-" + best_routes["Destination airport"]
+        best_routes["Route"] = best_routes["Source airport"] + "->" + best_routes["Destination airport"]
 
         existing_pairs = set(
             zip(
@@ -1941,6 +1941,60 @@ class DataStore:
             for col in columns:
                 if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
                     df[col] = df[col].round(digits)
+
+        def _score_descriptor(value, strong_label, steady_label, watch_label):
+            if pd.isna(value):
+                return None
+            if value >= 0.8:
+                return strong_label
+            if value >= 0.6:
+                return steady_label
+            return watch_label
+
+        def _route_rationale(row):
+            parts = []
+            perf = row.get("Performance Score")
+            if pd.notna(perf):
+                parts.append(f"Performance score {perf:.2f}")
+
+            yield_score = row.get("Yield Proxy Score")
+            yield_phrase = _score_descriptor(yield_score, "premium yields", "stable yields", "developing yields")
+            if yield_phrase:
+                parts.append(f"{yield_phrase} ({yield_score:.2f})")
+
+            competition_score = row.get("Competition Score")
+            competition_phrase = _score_descriptor(
+                competition_score,
+                "limited competition",
+                "balanced competition",
+                "heavy competition",
+            )
+            if competition_phrase:
+                parts.append(f"{competition_phrase} ({competition_score:.2f})")
+
+            maturity_score = row.get("Route Maturity Score")
+            maturity_phrase = _score_descriptor(
+                maturity_score,
+                "well-established corridor",
+                "maturing demand",
+                "early-stage demand",
+            )
+            if maturity_phrase:
+                parts.append(f"{maturity_phrase} ({maturity_score:.2f})")
+
+            asm = row.get("ASM")
+            if pd.notna(asm) and asm > 0:
+                parts.append(f"{asm:,.0f} ASM deployed")
+
+            seats = row.get("Total Seats")
+            if pd.notna(seats) and seats > 0:
+                parts.append(f"{seats:,.0f} seats scheduled")
+
+            if not parts:
+                return "Consistently strong CBSA performer."
+            return "; ".join(parts)
+
+        best_routes["Route Rationale"] = best_routes.apply(_route_rationale, axis=1)
 
         def get_airports_for_cbsa(cbsa_name):
             normalized = _normalize_cbsa(cbsa_name)
@@ -2047,17 +2101,16 @@ class DataStore:
             )
         display_columns = [
             "Route",
-            "Source CBSA Name",
-            "Destination CBSA Name",
-            "ASM",
-            "Total Seats",
-            "Distance (miles)",
-            "Seats per Mile",
+            "Performance Score",
             "Route Strategy Baseline",
             "Competition Score",
             "Route Maturity Score",
             "Yield Proxy Score",
-            "Performance Score",
+            "ASM",
+            "Total Seats",
+            "Distance (miles)",
+            "Seats per Mile",
+            "Route Rationale",
         ]
 
         if not best_routes.empty:
@@ -2077,23 +2130,9 @@ class DataStore:
                     "Performance Score",
                 ],
             )
-            best_routes_display = (
-                best_routes[display_columns]
-                .rename(
-                    columns={
-                        "Source CBSA Name": "Source CBSA",
-                        "Destination CBSA Name": "Destination CBSA",
-                    }
-                )
-                .copy()
-            )
+            best_routes_display = best_routes[display_columns].copy()
         else:
-            best_routes_display = best_routes.reindex(columns=display_columns).rename(
-                columns={
-                    "Source CBSA Name": "Source CBSA",
-                    "Destination CBSA Name": "Destination CBSA",
-                }
-            )
+            best_routes_display = best_routes.reindex(columns=display_columns)
 
         if not suggestions_df.empty:
             _round_numeric_columns(
