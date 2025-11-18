@@ -219,6 +219,12 @@ def get_airline_fleet_profile(data_store, query: str) -> Dict[str, Any]:
         metadata = metadata.to_dict()
 
     def _clean(value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if not trimmed or trimmed.upper() == "\\N":
+                return None
         if pd.isna(value):
             return None
         return value
