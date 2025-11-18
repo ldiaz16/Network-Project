@@ -149,11 +149,16 @@ def showcase_cbsa(ds, package, args):
     )
     best_cols = [
         "Route",
-        "Source CBSA Name",
-        "Destination CBSA Name",
+        "Performance Score",
+        "Route Strategy Baseline",
+        "Competition Score",
+        "Route Maturity Score",
+        "Yield Proxy Score",
         "ASM",
         "Total Seats",
-        "Performance Score",
+        "Distance (miles)",
+        "Seats per Mile",
+        "Route Rationale",
     ]
     print("Top-performing CBSA corridors:")
     print(format_table(simulation["best_routes"], best_cols, args.max_print))
@@ -161,10 +166,11 @@ def showcase_cbsa(ds, package, args):
     opportunity_cols = [
         "Proposed Source",
         "Proposed Destination",
-        "Source CBSA",
-        "Destination CBSA",
         "Reference Route",
+        "Distance Similarity",
+        "Estimated Distance (miles)",
         "Opportunity Score",
+        "Rationale",
     ]
     print("Look-alike CBSA opportunities:")
     print(format_table(simulation["suggested_routes"], opportunity_cols, args.max_print))

@@ -533,9 +533,10 @@ def test_cbsa_simulation_filters_international_and_rounds(datastore):
 
     simulation = datastore.simulate_cbsa_route_opportunities(airline_cost_df, top_n=5, max_suggestions_per_route=1)
     best_routes = simulation["best_routes"]
-    assert list(best_routes["Route"]) == ["AAA-BBB"]
-    assert list(best_routes["Source CBSA"]) == ["Metro AAA"]
-    assert list(best_routes["Destination CBSA"]) == ["Metro BBB"]
+    assert list(best_routes["Route"]) == ["AAA->BBB"]
+    assert "Source CBSA" not in best_routes.columns
+    assert "Destination CBSA" not in best_routes.columns
+    assert "Route Rationale" in best_routes.columns
     assert best_routes.loc[0, "ASM"] == pytest.approx(1234.57)
     assert simulation["suggested_routes"].empty
 
@@ -649,8 +650,8 @@ def test_find_competing_routes_identifies_common_pairs(datastore):
     assert len(competing) == 1
     assert competing.loc[0, "Source"] == "JFK"
     assert competing.loc[0, "Dest"] == "LAX"
-    assert competing.loc[0, "sample ASM"] == "10K"
-    assert competing.loc[0, "other ASM"] == "8K"
+    assert "sample ASM" not in competing.columns
+    assert "other ASM" not in competing.columns
     assert competing.loc[0, "sample ASM Share"] is None
     assert competing.loc[0, "other ASM Share"] is None
     assert competing.loc[0, "sample Aircraft"] == "A320"

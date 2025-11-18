@@ -2134,6 +2134,12 @@ class DataStore:
         else:
             best_routes_display = best_routes.reindex(columns=display_columns)
 
+        if not best_routes_display.empty:
+            best_routes_display = best_routes_display.drop(
+                columns=["Source CBSA Name", "Destination CBSA Name"],
+                errors="ignore",
+            )
+
         if not suggestions_df.empty:
             _round_numeric_columns(
                 suggestions_df,
@@ -2149,6 +2155,7 @@ class DataStore:
                     "Opportunity Score",
                 ],
             )
+            suggestions_df = suggestions_df.drop(columns=["Source CBSA", "Destination CBSA"], errors="ignore")
 
         return {
             "best_routes": best_routes_display,
@@ -2270,10 +2277,12 @@ class DataStore:
             if col in formatted.columns:
                 formatted[col] = formatted[col].apply(_format_share)
 
+        asm_label_columns = [rename_map[col] for col in asm_columns if rename_map.get(col) in formatted.columns]
+        if asm_label_columns:
+            formatted = formatted.drop(columns=asm_label_columns)
+
         ordered_columns = ["Source", "Dest"]
         for original in asm_columns:
-            asm_col = rename_map[original]
-            ordered_columns.append(asm_col)
             share_original = f"{original}_Share"
             share_col = rename_map.get(share_original)
             if share_col and share_col in formatted.columns:

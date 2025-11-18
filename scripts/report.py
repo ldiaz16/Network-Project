@@ -138,14 +138,6 @@ def _format_percentage(value):
     return f"{number * 100:.0f}%"
 
 
-def _format_cbsa_pair(source, destination):
-    left = str(source).strip() if isinstance(source, str) else ""
-    right = str(destination).strip() if isinstance(destination, str) else ""
-    if left and right:
-        return f"{left} <-> {right}"
-    return left or right or "—"
-
-
 def _format_route(source, destination):
     if isinstance(source, str) and isinstance(destination, str):
         return f"{source}-{destination}"
@@ -162,10 +154,6 @@ def format_cbsa_corridor_table(best_routes, max_rows):
 
     table = best_routes.copy()
     table.insert(0, "Rank", range(1, len(table) + 1))
-    table["CBSA Pair"] = table.apply(
-        lambda row: _format_cbsa_pair(row.get("Source CBSA Name"), row.get("Destination CBSA Name")),
-        axis=1,
-    )
     if "ASM" in table.columns:
         table["ASM"] = table["ASM"].apply(_format_large_number)
     else:
@@ -178,14 +166,18 @@ def format_cbsa_corridor_table(best_routes, max_rows):
         table["Performance Score"] = table["Performance Score"].apply(_format_score)
     else:
         table["Performance Score"] = "—"
+    if "Route Rationale" not in table.columns:
+        table["Route Rationale"] = "—"
+    else:
+        table["Route Rationale"] = table["Route Rationale"].fillna("—")
 
     columns = [
         "Rank",
         "Route",
-        "CBSA Pair",
         "ASM",
         "Total Seats",
         "Performance Score",
+        "Route Rationale",
     ]
     return df_to_markdown(table, columns, max_rows)
 
@@ -201,10 +193,6 @@ def format_cbsa_opportunity_table(suggestions, max_rows):
         lambda row: _format_route(row.get("Proposed Source"), row.get("Proposed Destination")),
         axis=1,
     )
-    table["CBSA Pair"] = table.apply(
-        lambda row: _format_cbsa_pair(row.get("Source CBSA"), row.get("Destination CBSA")),
-        axis=1,
-    )
     if "Distance Similarity" in table.columns:
         table["Distance Match"] = table["Distance Similarity"].apply(_format_percentage)
     else:
@@ -215,14 +203,18 @@ def format_cbsa_opportunity_table(suggestions, max_rows):
         table["Opportunity Score"] = "—"
     if "Reference Route" not in table.columns:
         table["Reference Route"] = "—"
+    if "Rationale" not in table.columns:
+        table["Rationale"] = "—"
+    else:
+        table["Rationale"] = table["Rationale"].fillna("—")
 
     columns = [
         "Rank",
         "Proposed Route",
-        "CBSA Pair",
         "Reference Route",
         "Distance Match",
         "Opportunity Score",
+        "Rationale",
     ]
     return df_to_markdown(table, columns, max_rows)
 
@@ -234,10 +226,10 @@ def format_cbsa_summary(best_routes, suggestions):
         lines.append("- No historical CBSA corridors found for this carrier.")
     else:
         top = best_routes.iloc[0]
-        cbsa_pair = _format_cbsa_pair(top.get("Source CBSA Name"), top.get("Destination CBSA Name"))
         asm = _format_large_number(top.get("ASM"))
         score = _format_score(top.get("Performance Score"))
-        lines.append(f"- Top corridor **{top.get('Route', '—')}** links {cbsa_pair} (ASM {asm}, score {score}).")
+        rationale = top.get("Route Rationale") or "Consistently strong CBSA performer."
+        lines.append(f"- Top corridor **{top.get('Route', '—')}** (ASM {asm}, score {score}) — {rationale}")
         lines.append(f"- {len(best_routes)} total CBSA corridors met the performance filter.")
 
     if suggestions is None or suggestions.empty:
@@ -245,13 +237,11 @@ def format_cbsa_summary(best_routes, suggestions):
     else:
         pick = suggestions.iloc[0]
         proposed = _format_route(pick.get("Proposed Source"), pick.get("Proposed Destination"))
-        cbsa_pair = _format_cbsa_pair(pick.get("Source CBSA"), pick.get("Destination CBSA"))
         score = _format_score(pick.get("Opportunity Score"))
         distance = _format_percentage(pick.get("Distance Similarity"))
         reference = pick.get("Reference Route") or "existing corridor"
-        lines.append(
-            f"- Best opportunity **{proposed}** mirrors {cbsa_pair} ({distance} distance match vs {reference}, score {score})."
-        )
+        rationale = pick.get("Rationale") or "Shares CBSA demand signature with a top route."
+        lines.append(f"- Best opportunity **{proposed}** ({distance} match vs {reference}, score {score}) — {rationale}")
     return "\n".join(lines)
 
 

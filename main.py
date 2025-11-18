@@ -115,25 +115,21 @@ def run_cbsa_simulation(data_storage, airline_name, airline_cost_df, args):
 
     print(f"\nTop CBSA-aligned routes for {airline_name}:")
     best_routes = simulation["best_routes"]
-    if not best_routes.empty:
-        # Align legacy column names with the updated CBSA simulation output.
-        best_routes = best_routes.rename(
-            columns={
-                "Source CBSA": "Source CBSA Name",
-                "Destination CBSA": "Destination CBSA Name",
-            }
-        )
     if best_routes.empty:
         print("No enriched route data available.")
     else:
         cbsa_display_columns = [
             "Route",
-            "Source CBSA Name",
-            "Destination CBSA Name",
+            "Performance Score",
+            "Route Strategy Baseline",
+            "Competition Score",
+            "Route Maturity Score",
+            "Yield Proxy Score",
             "ASM",
             "Total Seats",
             "Distance (miles)",
-            "Performance Score"
+            "Seats per Mile",
+            "Route Rationale",
         ]
         available_columns = [col for col in cbsa_display_columns if col in best_routes.columns]
         print(best_routes[available_columns].to_string(index=False))
@@ -145,8 +141,6 @@ def run_cbsa_simulation(data_storage, airline_name, airline_cost_df, args):
         display_columns = [
             "Proposed Source",
             "Proposed Destination",
-            "Source CBSA",
-            "Destination CBSA",
             "Reference Route",
             "Distance Similarity",
             "Estimated Distance (miles)",
