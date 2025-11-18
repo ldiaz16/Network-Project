@@ -91,6 +91,7 @@ class DataStore:
         self.cbsa_cache_path = self.data_dir / "cbsa_cache.json"
         self._load_cbsa_cache()
         self._route_total_asm_cache = {}
+        self.codeshare_overrides = self._load_codeshare_overrides()
         self.operational_metrics = self._load_operational_metrics()
 
     def load_data(self):
@@ -192,6 +193,101 @@ class DataStore:
         except Exception:
             # Silently skip persistence issues; cache is an optimization only
             pass
+
+    def _load_codeshare_overrides(self):
+        """
+        Load manual codeshare overrides that flag marketing-only segments.
+
+        The file (data/codeshare_overrides.json) can specify either whole airports
+        or explicit source/destination pairs to remove for a given airline.
+        """
+        overrides_path = self.data_dir / "codeshare_overrides.json"
+        if not overrides_path.exists():
+            return {}
+        try:
+            with overrides_path.open("r", encoding="utf-8") as raw_file:
+                payload = json.load(raw_file)
+        except Exception:
+            return {}
+
+        normalized = {}
+        for airline_name, config in (payload or {}).items():
+            if not isinstance(config, dict):
+                continue
+            normalized_name = normalize_name(airline_name)
+            if not normalized_name:
+                continue
+
+            blocked_airports = {
+                str(code).strip().upper()
+                for code in config.get("blocked_airports", [])
+                if isinstance(code, str) and code.strip()
+            }
+
+            blocked_pairs = set()
+            for entry in config.get("blocked_pairs", []):
+                if isinstance(entry, dict):
+                    source = entry.get("source")
+                    destination = entry.get("destination")
+                elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
+                    source, destination = entry[0], entry[1]
+                else:
+                    continue
+                if not isinstance(source, str) or not isinstance(destination, str):
+                    continue
+                source = source.strip().upper()
+                destination = destination.strip().upper()
+                if not source or not destination:
+                    continue
+                if source <= destination:
+                    blocked_pairs.add(f"{source}||{destination}")
+                else:
+                    blocked_pairs.add(f"{destination}||{source}")
+
+            normalized[normalized_name] = {
+                "blocked_airports": blocked_airports,
+                "blocked_pairs": blocked_pairs,
+            }
+
+        return normalized
+
+    def _apply_codeshare_overrides(self, routes_df, normalized_airline):
+        """
+        Drop known codeshare-only segments for the provided airline if overrides exist.
+        """
+        if routes_df is None or routes_df.empty:
+            return routes_df
+        normalized_key = normalize_name(normalized_airline) if normalized_airline else None
+        overrides = None
+        if normalized_key and normalized_key in self.codeshare_overrides:
+            overrides = self.codeshare_overrides[normalized_key]
+        elif normalized_airline in self.codeshare_overrides:
+            overrides = self.codeshare_overrides[normalized_airline]
+        if not overrides:
+            return routes_df
+
+        blocked_airports = overrides.get("blocked_airports") or set()
+        blocked_pairs = overrides.get("blocked_pairs") or set()
+        if not blocked_airports and not blocked_pairs:
+            return routes_df
+
+        source_codes = routes_df["Source airport"].fillna("").astype(str).str.upper()
+        dest_codes = routes_df["Destination airport"].fillna("").astype(str).str.upper()
+        mask = pd.Series(True, index=routes_df.index)
+
+        if blocked_airports:
+            airport_mask = source_codes.isin(blocked_airports) | dest_codes.isin(blocked_airports)
+            mask &= ~airport_mask
+
+        if blocked_pairs:
+            left = source_codes.where(source_codes <= dest_codes, dest_codes)
+            right = dest_codes.where(source_codes <= dest_codes, source_codes)
+            pair_keys = left + "||" + right
+            mask &= ~pair_keys.isin(blocked_pairs)
+
+        if mask.all():
+            return routes_df
+        return routes_df.loc[mask].copy()
 
     def _load_operational_metrics(self):
         """Load airline-level operational metrics (e.g., load factor averages)."""
@@ -627,6 +723,7 @@ class DataStore:
         filtered_routes = self.routes[self.routes['Airline Code'].str.lower() == matched_airline_IATA.lower()].copy()
         filtered_routes['Airline'] = matched_airline_name
         filtered_routes['Airline (Normalized)'] = matched_airline_name_normalized
+        filtered_routes = self._apply_codeshare_overrides(filtered_routes, matched_airline_name_normalized)
         return filtered_routes, best_match
     
     

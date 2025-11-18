@@ -736,3 +736,61 @@ def test_find_competing_routes_uses_all_airline_totals_for_share(datastore):
 
     assert competing.loc[0, "sample ASM Share"] == "22.2%"
     assert competing.loc[0, "other ASM Share"] == "33.3%"
+
+
+def test_select_airline_routes_respects_codeshare_overrides(datastore):
+    seed_sample_airline(datastore)
+    extra = pd.DataFrame(
+        [
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "ZZZ",
+                "Source airport ID": None,
+                "Destination airport": "AAA",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A320",
+            },
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "AAA",
+                "Source airport ID": None,
+                "Destination airport": "EEE",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A321",
+            },
+            {
+                "Airline Code": "SA",
+                "IDK": None,
+                "Source airport": "EEE",
+                "Source airport ID": None,
+                "Destination airport": "AAA",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "A321",
+            },
+        ]
+    )
+    datastore.routes = pd.concat([datastore.routes, extra], ignore_index=True)
+    normalized = normalize_name("Sample Airways")
+    datastore.codeshare_overrides = {
+        normalized: {
+            "blocked_airports": {"ZZZ"},
+            "blocked_pairs": {"AAA||EEE"},
+        }
+    }
+
+    routes_df, _ = datastore.select_airline_routes("Sample Airways")
+
+    assert not routes_df["Source airport"].eq("ZZZ").any()
+    assert not routes_df["Destination airport"].eq("ZZZ").any()
+    blocked = ((routes_df["Source airport"] == "AAA") & (routes_df["Destination airport"] == "EEE")) | (
+        (routes_df["Source airport"] == "EEE") & (routes_df["Destination airport"] == "AAA")
+    )
+    assert not blocked.any()
