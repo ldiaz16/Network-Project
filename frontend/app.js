@@ -1127,6 +1127,44 @@ const IndustryTrends = () => {
     );
 };
 
+const MetricsPlaybook = () => {
+    const bullets = [
+        "Competition score (Monopoly 1.0, Duopoly 0.55, Oligopoly 0.35, Multi-carrier 0.2): High scores mean you hold more “moat” on that O&D. Lean into capacity or upgauge where scores are high; be cautious adding seats or lowering fares where scores are low (crowded routes). If a fleet type is concentrated in low scores, consider redeploying it.",
+        "Maturity (Established ≥75th pct ASM, Maturing 40–74th, Emerging <40th): Established routes are stable cash engines—optimize pricing and cost; Emerging routes need watchlists: test frequency, right-size equipment, and watch early performance. If an airline’s network skews Emerging, expect volatility; if Established, it can absorb more price/margin.",
+        "Yield Proxy (inverted SPM percentile): High score = lower seat density, more premium potential. Use it to decide where to defend price vs. where you must compete on cost. If competition is high but yield proxy is strong, you can still hold price; if both competition is high and yield proxy is weak, expect fare pressure.",
+        "Route Strategy Baseline: Blends ASM share, seat-density uplift, and distance fit vs. the airline’s median. Use it to sort “core” vs. “fringe” routes: high baseline = defend/optimize; low baseline = candidate for reduction or swap to another type.",
+        "Performance Score (CBSA): 0.7 ASM_norm + 0.3 SPM_norm. High performers are anchor routes in a metro pair. Use them as references for CBSA-similar suggestions; if suggestions have decent similarity and opportunity scores, they’re next to trial.",
+        "Opportunity Score (CBSA suggestions): Reference performance × distance similarity. Use to prioritize new CBSA-aligned pairs; start with top scores, sanity-check ops/slots.",
+        "Market Share snapshot: ASM and Market Share per top O&D. If your share is low but competition score is high (crowded), winning requires either price moves or a capacity play; if share is low and competition score is high but yield proxy is strong, try premium positioning.",
+        "Fleet Utilization Score (60% ASM share + 40% route-count share): Highlights which types are carrying the network vs. underused. High score + high competition exposure? Maybe rebalance to defensible routes. Low score? Consider redeploying, parking, or pairing with Emerging routes to probe demand.",
+        "Live Fleet Assignment: Coverage and utilization show whether your proposed fleet can actually fly the top routes under crew/maintenance constraints. Unassigned routes list why tails failed—use it to adjust counts, turn times, or mix.",
+        "Optimal Aircraft (per route): Uses utilization, distance fit, seat fit, and load factor. Pick the top recommendations to maximize utilization without overshooting demand; if you see wide gaps between top and second choices, stick with #1; if close, rotate to spread cycles.",
+        "Competition/Maturity tooltips in the UI: Hover in the results to see the bands and what they mean; same for fleet utilization weighting.",
+    ];
+
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: { xs: 2.5, md: 3 },
+                border: "1px solid rgba(255,255,255,0.08)",
+                backgroundColor: "rgba(255,255,255,0.03)",
+            }}
+        >
+            <Typography variant="h6" sx={{ mb: 1 }}>
+                Metrics playbook
+            </Typography>
+            <Stack component="ul" spacing={1.2} sx={{ listStyle: "none", p: 0, m: 0 }}>
+                {bullets.map((text, idx) => (
+                    <Box key={idx} component="li" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
+                        {text}
+                    </Box>
+                ))}
+            </Stack>
+        </Paper>
+    );
+};
+
 const PageIntro = ({ activePage }) => {
     const sharedStyles = {
         p: { xs: 2, md: 2.5 },
@@ -1266,6 +1304,7 @@ function App() {
     const [fleetAssignmentResults, setFleetAssignmentResults] = React.useState(null);
     const [routeShareRows, setRouteShareRows] = React.useState([{ source: "", destination: "" }]);
     const [routeShareTopN, setRouteShareTopN] = React.useState("5");
+    const [routeShareIncludeAll, setRouteShareIncludeAll] = React.useState(true);
     const [routeShareStatus, setRouteShareStatus] = React.useState({ message: "", kind: "" });
     const [routeShareLoading, setRouteShareLoading] = React.useState(false);
     const [routeShareResults, setRouteShareResults] = React.useState([]);
@@ -1557,7 +1596,11 @@ function App() {
             const response = await fetch(`${API_BASE}/route-share`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ routes: normalizedRoutes, top_airlines: topAirlines }),
+                body: JSON.stringify({
+                    routes: normalizedRoutes,
+                    top_airlines: topAirlines,
+                    include_all_competitors: routeShareIncludeAll,
+                }),
             });
             const result = await response.json();
             if (!response.ok) {
@@ -2058,9 +2101,10 @@ function App() {
                 )}
 
                 {activePage === "metrics" && (
-                    <Box sx={{ pb: 3 }}>
+                    <Stack spacing={3} sx={{ pb: 3 }}>
                         <MetricsGuide />
-                    </Box>
+                        <MetricsPlaybook />
+                    </Stack>
                 )}
 
                 {activePage === "trends" && (
@@ -2144,6 +2188,15 @@ function App() {
                                     inputProps={{ min: 1, max: 20 }}
                                     value={routeShareTopN}
                                     onChange={(event) => setRouteShareTopN(event.target.value)}
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={routeShareIncludeAll}
+                                            onChange={(_, checked) => setRouteShareIncludeAll(checked)}
+                                        />
+                                    }
+                                    label="Include all competitors"
                                 />
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                                     <Button type="submit" variant="contained" size="large" disabled={routeShareLoading}>

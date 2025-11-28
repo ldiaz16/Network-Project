@@ -679,13 +679,13 @@ def test_find_competing_routes_identifies_common_pairs(datastore):
     assert competing.loc[0, "Dest"] == "LAX"
     assert "sample ASM" not in competing.columns
     assert "other ASM" not in competing.columns
-    assert competing.loc[0, "sample ASM Share"] is None
-    assert competing.loc[0, "other ASM Share"] is None
+    assert competing.loc[0, "sample ASM Share"] == "55.6%"
+    assert competing.loc[0, "other ASM Share"] == "44.4%"
     assert competing.loc[0, "sample Aircraft"] == "A320"
     assert competing.loc[0, "other Aircraft"] == "B738"
 
 
-def test_find_competing_routes_uses_all_airline_totals_for_share(datastore):
+def test_find_competing_routes_uses_combined_totals_for_share(datastore):
     airports = pd.DataFrame(
         [
             {"IATA": "SRC", "Name": "Source", "Latitude": 0.0, "Longitude": 0.0},
@@ -762,8 +762,8 @@ def test_find_competing_routes_uses_all_airline_totals_for_share(datastore):
 
     competing = datastore.find_competing_routes(airline_x_df, airline_y_df)
 
-    assert competing.loc[0, "sample ASM Share"] == "22.2%"
-    assert competing.loc[0, "other ASM Share"] == "33.3%"
+    assert competing.loc[0, "sample ASM Share"] == "40.0%"
+    assert competing.loc[0, "other ASM Share"] == "60.0%"
 
 
 def test_select_airline_routes_respects_codeshare_overrides(datastore):

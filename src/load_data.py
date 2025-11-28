@@ -373,6 +373,19 @@ class DataStore:
         if subset.empty:
             return {pair: 0.0 for pair in pair_set}
 
+        if "Codeshare" in subset.columns:
+            codeshare_mask = (
+                subset["Codeshare"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .str.upper()
+                .replace({"\\N": ""})
+            )
+            subset = subset.loc[codeshare_mask != "Y"].copy()
+            if subset.empty:
+                return {pair: 0.0 for pair in pair_set}
+
         subset["__pair_key"] = list(zip(subset["Source airport"], subset["Destination airport"]))
         subset = subset[subset["__pair_key"].isin(pair_set)].copy()
         subset.drop(columns=["__pair_key"], inplace=True)
@@ -1216,10 +1229,10 @@ class DataStore:
             "yield": yield_percentiles,
         }
 
-    def compute_market_share_snapshot(self, cost_df, limit=20):
+    def compute_market_share_snapshot(self, cost_df, limit=20, include_all_competitors=True):
         """
         Produce a weighted market-share snapshot for the airline's largest O&D routes.
-        Uses the global ASM total for each airport pair as the denominator.
+        Uses the global ASM total for each airport pair as the denominator unless constrained.
         """
         if cost_df is None or cost_df.empty:
             return pd.DataFrame(columns=[
@@ -1234,11 +1247,14 @@ class DataStore:
         df = cost_df.copy()
         df = df.sort_values("ASM", ascending=False).head(limit).reset_index(drop=True)
         route_pairs = list(zip(df["Source airport"], df["Destination airport"]))
-        totals = self.get_route_total_asm(route_pairs)
-        df["Market ASM"] = [
-            totals.get(pair, row["ASM"]) if isinstance(pair, tuple) else row["ASM"]
-            for pair, row in zip(route_pairs, df.to_dict(orient="records"))
-        ]
+        totals = self.get_route_total_asm(route_pairs) if include_all_competitors else {}
+        if include_all_competitors:
+            df["Market ASM"] = [
+                totals.get(pair, row["ASM"]) if isinstance(pair, tuple) else row["ASM"]
+                for pair, row in zip(route_pairs, df.to_dict(orient="records"))
+            ]
+        else:
+            df["Market ASM"] = df["ASM"]
         df["Market Share"] = df.apply(
             lambda row: (row["ASM"] / row["Market ASM"]) if row["Market ASM"] and row["Market ASM"] > 0 else None,
             axis=1
@@ -1261,7 +1277,7 @@ class DataStore:
         )
         return snapshot
 
-    def analyze_route_market_share(self, route_pairs, top_airlines=5):
+    def analyze_route_market_share(self, route_pairs, top_airlines=5, include_all_competitors=True):
         """
         Analyze market share and competitive stats for the provided city pairs.
         Returns the top airlines per route ordered by ASM contribution.
@@ -1329,7 +1345,7 @@ class DataStore:
             valid["Route Pair"] = list(zip(valid["Source airport"], valid["Destination airport"]))
             valid = valid[valid["Route Pair"].isin(route_set)].copy()
 
-        totals_lookup = self.get_route_total_asm(normalized_pairs)
+        totals_lookup = self.get_route_total_asm(normalized_pairs) if include_all_competitors else {}
 
         def _pick_mode(series: pd.Series):
             if series is None or series.empty:
@@ -1392,8 +1408,9 @@ class DataStore:
                 if "Yield Proxy Score" in route_group:
                     summary["yield_proxy_score"] = _mean(route_group["Yield Proxy Score"])
 
-                if summary.get("market_asm") is None:
-                    summary["market_asm"] = float(route_group["ASM"].sum()) if "ASM" in route_group else None
+                if include_all_competitors:
+                    if summary.get("market_asm") is None:
+                        summary["market_asm"] = float(route_group["ASM"].sum()) if "ASM" in route_group else None
 
                 airline_grouped = route_group.groupby("Airline", dropna=False)
                 for airline_name, airline_slice in airline_grouped:
@@ -1449,6 +1466,13 @@ class DataStore:
             airlines = summary.get("airlines", [])
             airlines.sort(key=lambda entry: entry.get("asm") or 0.0, reverse=True)
             summary["airline_count"] = len(airlines)
+            if not include_all_competitors:
+                # When constrained, recompute denominator using only included airlines.
+                market_total = sum(entry.get("asm") or 0.0 for entry in airlines) or None
+                summary["market_asm"] = market_total
+                for entry in airlines:
+                    asm_value = entry.get("asm") or 0.0
+                    entry["market_share"] = (asm_value / market_total) if market_total and market_total > 0 else None
             summary["airlines"] = airlines[:top_limit]
             if summary["status"] != "ok" and not summary["airlines"]:
                 summary["status"] = "not_found"
@@ -2430,16 +2454,8 @@ class DataStore:
         ]
 
         route_pairs = list(zip(pivoted["Source"], pivoted["Dest"]))
-        route_total_lookup = self.get_route_total_asm(route_pairs)
         pivoted["_combined_asm"] = pivoted[asm_columns].sum(axis=1, min_count=1)
-        pivoted["_route_total_asm"] = [
-            route_total_lookup.get(pair) for pair in route_pairs
-        ]
-        pivoted["_share_denominator"] = pivoted["_route_total_asm"]
-        pivoted.loc[
-            pivoted["_share_denominator"].isna() | (pivoted["_share_denominator"] <= 0),
-            "_share_denominator"
-        ] = pd.NA
+        pivoted["_share_denominator"] = pivoted["_combined_asm"].where(pivoted["_combined_asm"] > 0)
 
         share_columns = []
         share_column_map = {}
@@ -2452,7 +2468,7 @@ class DataStore:
             share_column_map[share_col] = f"{col} ASM Share"
             share_label_lookup[col] = share_column_map[share_col]
 
-        pivoted.drop(columns=asm_columns + ["_combined_asm", "_route_total_asm", "_share_denominator"], inplace=True)
+        pivoted.drop(columns=[col for col in asm_columns + ["_combined_asm", "_share_denominator"] if col in pivoted.columns], inplace=True)
 
         aircraft_suffix = "_Aircraft"
 

@@ -156,6 +156,7 @@ class RouteShareEntry(BaseModel):
 class RouteShareRequest(BaseModel):
     routes: List[RouteShareEntry]
     top_airlines: int = Field(default=5, ge=1, le=20)
+    include_all_competitors: bool = True
 
     @validator("routes")
     def _require_routes(cls, value: List[RouteShareEntry]) -> List[RouteShareEntry]:
@@ -173,7 +174,7 @@ def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
     processed_df = data_store.process_routes(routes_df)
     cost_df = data_store.cost_analysis(processed_df)
     scorecard = data_store.build_route_scorecard(cost_df)
-    market_share = data_store.compute_market_share_snapshot(cost_df)
+    market_share = data_store.compute_market_share_snapshot(cost_df, include_all_competitors=False)
     fleet_utilization = data_store.summarize_fleet_utilization(cost_df)
     airline_name = routes_df["Airline"].iloc[0]
     normalized_name = routes_df["Airline (Normalized)"].iloc[0]
@@ -325,7 +326,11 @@ def simulate_live_assignment(data_store, payload: FleetAssignmentRequest) -> Dic
 def analyze_route_market_share(data_store, payload: RouteShareRequest) -> Dict[str, Any]:
     try:
         route_pairs = [(entry.source, entry.destination) for entry in payload.routes]
-        return data_store.analyze_route_market_share(route_pairs, top_airlines=payload.top_airlines)
+        return data_store.analyze_route_market_share(
+            route_pairs,
+            top_airlines=payload.top_airlines,
+            include_all_competitors=payload.include_all_competitors,
+        )
     except ValueError as exc:
         raise AnalysisError(400, str(exc)) from exc
 
