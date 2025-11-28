@@ -942,6 +942,61 @@ const RouteShareResults = ({ routes }) => {
     );
 };
 
+const PageIntro = ({ activePage }) => {
+    const sharedStyles = {
+        p: { xs: 2, md: 2.5 },
+        border: "1px solid rgba(255,255,255,0.08)",
+        backgroundColor: "rgba(255,255,255,0.03)",
+    };
+
+    if (activePage === "analysis") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Quick start
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Pick one or two airlines (search is fuzzy), keep the defaults, and hit <strong>Run Analysis</strong>. We will
+                    show head-to-head routes and CBSA opportunities in the results panel on the right.
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Tip: turn on “Skip comparison” if you only want CBSA results for a single carrier.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (activePage === "routes") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    How to use route share
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Add airport pairs (IATA codes like JFK or LAX). We will list the top airlines on each route with their share,
+                    seats, and maturity.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (activePage === "fleet") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Fleet tools at a glance
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Search an airline to see its fleet profile, then scroll down to simulate a duty-day schedule with your own
+                    equipment mix.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    return null;
+};
+
 function App() {
     const [formState, setFormState] = React.useState(defaultFormState);
     const [status, setStatus] = React.useState({ message: "", kind: "" });
@@ -1430,6 +1485,9 @@ function App() {
             </AppBar>
 
             <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
+                <Box sx={{ mb: 3 }}>
+                    <PageIntro activePage={activePage} />
+                </Box>
                 {activePage === "analysis" && (
                     <Grid container spacing={3} alignItems="stretch">
                     <Grid item xs={12} md={5} lg={4}>
@@ -1485,6 +1543,7 @@ function App() {
                                     minRows={4}
                                     value={formState.cbsa_airlines}
                                     onChange={handleFieldChange("cbsa_airlines")}
+                                    helperText="Useful if you only want CBSA results without a head-to-head comparison."
                                 />
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
@@ -1495,6 +1554,7 @@ function App() {
                                             value={formState.cbsa_top_n}
                                             onChange={handleFieldChange("cbsa_top_n")}
                                             fullWidth
+                                            helperText="How many current routes to seed CBSA scoring."
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
@@ -1505,6 +1565,7 @@ function App() {
                                             value={formState.cbsa_suggestions}
                                             onChange={handleFieldChange("cbsa_suggestions")}
                                             fullWidth
+                                            helperText="How many CBSA-similar routes to propose per seed."
                                         />
                                     </Grid>
                                 </Grid>
@@ -1767,11 +1828,11 @@ function App() {
                     <Grid container spacing={3} alignItems="stretch">
                         <Grid item xs={12} md={4}>
                             <Paper
-                                component="form"
-                                onSubmit={handleRouteShareSubmit}
-                                sx={{
-                                    p: { xs: 2.5, md: 3 },
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    component="form"
+                                    onSubmit={handleRouteShareSubmit}
+                                    sx={{
+                                        p: { xs: 2.5, md: 3 },
+                                        border: "1px solid rgba(255,255,255,0.08)",
                                     boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
                                     display: "flex",
                                     flexDirection: "column",
