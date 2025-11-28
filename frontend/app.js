@@ -1273,7 +1273,7 @@ const PageIntro = ({ activePage }) => {
                     Pick an airline, enter a new route, and we’ll score it using competition, market depth, and distance fit.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Recommendations: good (score ≥ 0.65), watch (0.45–0.65), avoid (< 0.45).
+                    Recommendations: good (score >= 0.65), watch (0.45-0.65), avoid (< 0.45).
                 </Typography>
             </Paper>
         );
