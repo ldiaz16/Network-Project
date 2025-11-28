@@ -151,6 +151,21 @@ const MAX_AIRLINE_SUGGESTIONS = 25;
 const integerNumberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 const decimalNumberFormatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const percentFormatter = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 0 });
+const JFK = "JFK";
+const MIA = "MIA";
+const AMERICAN_ALIASES = ["american airlines", "aa"];
+const LOAD_FACTOR_BENCHMARKS = {
+    "delta air lines": 0.86,
+    "delta": 0.86,
+    "dl": 0.86,
+    "united airlines": 0.844,
+    "united": 0.844,
+    "ua": 0.844,
+    "jetblue airways corporation": 0.851,
+    "jetblue airways": 0.851,
+    "jetblue": 0.851,
+    "b6": 0.851,
+};
 
 function formatValue(value) {
     if (value === null || value === undefined || value === "") {
@@ -222,6 +237,7 @@ const localAirlineLogoMap = {
 };
 
 const normalizeLogoKey = (value) => (value || "").trim().toLowerCase();
+const normalizeAirline = (value) => (value || "").trim().toLowerCase();
 
 const collectAirlineIdentifierCandidates = (airline) => {
     const candidates = [];
@@ -532,6 +548,45 @@ const DataTable = ({ rows, title, maxHeight, enableWrapping = false, disableMarg
             </TableContainer>
         </Paper>
     );
+};
+
+const buildEmbeddedInsight = (result) => {
+    if (!result) {
+        return null;
+    }
+    const airline = normalizeAirline(result.airline);
+    const src = (result.source || "").toUpperCase();
+    const dst = (result.destination || "").toUpperCase();
+    const isAmerican = AMERICAN_ALIASES.some((alias) => airline.includes(alias));
+    const isJfkMia = (src === JFK && dst === MIA) || (src === MIA && dst === JFK);
+    if (!isAmerican || !isJfkMia) {
+        return null;
+    }
+    return [
+        "Hub alignment: JFK gateway to TATL and premium domestic; MIA is the cornerstone AA hub, so keep it hub-to-hub with strong feed both directions.",
+        "Market depth: Miami-New York is a global top-30 O&D; resource: resources/text/TOP 30 O&Ds World ASK.txt lists AA at ~27% capacity share.",
+        "Load-factor bar: peer legacy LFs sit ~84-86% (resources/airline_operational_metrics.json); target >=85% here, trimming shoulder banks if needed.",
+        "Network posture: multi-competitor trunk; lean on schedule/product versus monopoly-style yield (context from resources/text/29Network Aggressiveness - Website.txt).",
+        "Maturity: stable, high-frequency trunk (see resources/text/30Network Maturity Q2 2024 - Website.txt); adjust timing not experimentation.",
+    ];
+};
+
+const buildGeneralProposalNote = (result) => {
+    if (!result) {
+        return null;
+    }
+    const airlineName = (result.airline || "").trim();
+    const normalizedAirline = normalizeAirline(airlineName);
+    const lf = LOAD_FACTOR_BENCHMARKS[normalizedAirline];
+    const lfText = lf ? `Target load factor: >= ${percentFormatter.format(Math.max(lf, 0.85))} (peer current ${percentFormatter.format(lf)} per resources/airline_operational_metrics.json)` : "Target load factor: >= 85% (peer legacy benchmarks from resources/airline_operational_metrics.json).";
+    return [
+        `Hub fit: confirm ${result.source} and ${result.destination} align to the carrier's hubs/focus cities; prioritize hub-to-hub or hub-to-spoke unless the airline runs a fluid network.`,
+        "CBSA analog demand: match origin/destination CBSAs to similar CBSAs already served by the airline; use population/GDP peers to size PDEW and fares.",
+        lfText,
+        "Competition posture: label the route as monopoly/duopoly/multi-competitor and align with the airline's appetite (see resources/text/29Network Aggressiveness - Website.txt).",
+        "Network maturity: stable trunks favor timing tweaks; fluid networks can trial new dayparts (see resources/text/30Network Maturity Q2 2024 - Website.txt).",
+        "Product/fleet fit: stage length vs in-fleet types; adjust bank timing to preserve connectivity and avoid over-scheduling low-yield dayparts.",
+    ];
 };
 
 const NetworkSummary = ({ airlines }) => {
@@ -1328,6 +1383,8 @@ function App() {
     const [proposalStatus, setProposalStatus] = React.useState({ message: "", kind: "" });
     const [proposalLoading, setProposalLoading] = React.useState(false);
     const [proposalResult, setProposalResult] = React.useState(null);
+    const embeddedInsight = React.useMemo(() => buildEmbeddedInsight(proposalResult), [proposalResult]);
+    const generalProposalNote = React.useMemo(() => buildGeneralProposalNote(proposalResult), [proposalResult]);
 
     const fetchSuggestions = React.useCallback(async (query = "") => {
         try {
@@ -2342,6 +2399,50 @@ function App() {
                                                 </Box>
                                             ))}
                                         </Stack>
+                                        {generalProposalNote ? (
+                                            <Box
+                                                sx={{
+                                                    mt: 1,
+                                                    p: 2,
+                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                    borderRadius: 2,
+                                                    background: "linear-gradient(135deg, rgba(138,180,248,0.05), rgba(138,180,248,0.02))",
+                                                }}
+                                            >
+                                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                    Playbook for this route
+                                                </Typography>
+                                                <Stack component="ul" spacing={0.6} sx={{ listStyle: "disc", pl: 3, color: "text.secondary" }}>
+                                                    {generalProposalNote.map((item, idx) => (
+                                                        <Box key={`general-note-${idx}`} component="li">
+                                                            {item}
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Box>
+                                        ) : null}
+                                        {embeddedInsight ? (
+                                            <Box
+                                                sx={{
+                                                    mt: 1,
+                                                    p: 2,
+                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                    borderRadius: 2,
+                                                    background: "linear-gradient(135deg, rgba(138,180,248,0.08), rgba(242,139,130,0.06))",
+                                                }}
+                                            >
+                                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                    Embedded analyst note (AA JFK-MIA)
+                                                </Typography>
+                                                <Stack component="ul" spacing={0.6} sx={{ listStyle: "disc", pl: 3, color: "text.secondary" }}>
+                                                    {embeddedInsight.map((item, idx) => (
+                                                        <Box key={`insight-${idx}`} component="li">
+                                                            {item}
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Box>
+                                        ) : null}
                                     </Stack>
                                 </Paper>
                             ) : (
