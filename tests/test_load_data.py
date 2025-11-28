@@ -424,7 +424,11 @@ def test_summarize_fleet_utilization_returns_scores(datastore):
     }
     assert util.iloc[0]["Equipment"] == "A320"
     assert util.iloc[0]["Route Count"] == 2
-    assert util.iloc[0]["Utilization Score"] == pytest.approx((150000 + 144000) / (150000 + 144000 + 98000), rel=1e-6)
+    total_asm = 150000 + 144000 + 98000
+    asm_share = (150000 + 144000) / total_asm
+    route_share = 2 / 3  # two routes for A320 out of three total
+    expected_score = round(0.6 * asm_share + 0.4 * route_share, 3)
+    assert util.iloc[0]["Utilization Score"] == pytest.approx(expected_score, rel=1e-6)
 
 
 def test_summarize_fleet_utilization_splits_multi_equipment_entries(datastore):
@@ -453,9 +457,12 @@ def test_summarize_fleet_utilization_splits_multi_equipment_entries(datastore):
     assert records["M88"]["Route Count"] == 1
     asm_route1 = 150 * 1000
     asm_route2 = 160 * 500
-    expected_m88_share = (asm_route1 / 2) / (asm_route1 + asm_route2)
+    total_asm = asm_route1 + asm_route2
+    asm_share_m88 = (asm_route1 / 2) / total_asm
+    route_share_m88 = 1 / 3  # one route for M88 out of three equipment-route combos
+    expected_m88_score = 0.6 * asm_share_m88 + 0.4 * route_share_m88
     assert records["738"]["Utilization Score"] > records["M88"]["Utilization Score"]
-    assert records["M88"]["Utilization Score"] == pytest.approx(round(expected_m88_share, 3), rel=1e-6)
+    assert records["M88"]["Utilization Score"] == pytest.approx(round(expected_m88_score, 3), rel=1e-6)
 
 
 def test_find_best_aircraft_for_route_ranks_by_distance_and_seats(datastore):

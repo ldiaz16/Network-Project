@@ -1090,7 +1090,7 @@ class DataStore:
     def _compute_route_competition(self, cost_df):
         """
         Annotate each route with an estimated competition level using the full routes dataset.
-        Monopoly: only one airline flies the O&D, Duopoly: two airlines, Competitive: 3+ airlines.
+        Monopoly: only one airline flies the O&D, Duopoly: two airlines, Oligopoly: 3-4 airlines, Multi-Carrier: 5+ airlines.
         """
         if cost_df is None or cost_df.empty:
             return pd.Series(dtype="float64"), pd.Series(dtype=object), pd.Series(dtype="float64")
@@ -1112,8 +1112,10 @@ class DataStore:
             if value <= 1:
                 return "Monopoly", 1.0
             if value == 2:
-                return "Duopoly", 0.6
-            return "Competitive", 0.2
+                return "Duopoly", 0.55
+            if value <= 4:
+                return "Oligopoly", 0.35
+            return "Multi-Carrier", 0.2
 
         for _, row in cost_df.iterrows():
             key = (row.get("Source airport"), row.get("Destination airport"))
@@ -1131,41 +1133,48 @@ class DataStore:
 
     def _compute_route_maturity_proxy(self, cost_df):
         """
-        Approximate route maturity by normalizing ASM against the airline's network median.
-        High ASM routes are treated as established (stable); low ASM routes are more fluid.
+        Approximate route maturity using percentile bands of ASM within the airline network.
+        Higher percentile => more established; lower percentile => emerging.
         """
         if cost_df is None or cost_df.empty:
             return pd.Series(dtype="float64"), pd.Series(dtype=object)
 
         asm_values = pd.to_numeric(cost_df.get("ASM"), errors="coerce").fillna(0.0)
-        reference = asm_values[asm_values > 0].median()
-        if pd.isna(reference) or reference <= 0:
+        positive_mask = asm_values > 0
+        if not positive_mask.any():
             return (
                 pd.Series(0.5, index=cost_df.index, dtype="float64"),
                 pd.Series("Unknown", index=cost_df.index, dtype=object),
             )
 
-        maturity_score = 1 - (asm_values - reference).abs() / reference
-        maturity_score = maturity_score.clip(lower=0.0, upper=1.0)
-        labels = maturity_score.apply(lambda value: "Stable" if value >= 0.6 else "Fluid")
+        percentile = asm_values.rank(pct=True, method="average")
+        maturity_score = percentile.clip(lower=0.0, upper=1.0)
+
+        def _label(value):
+            if value >= 0.75:
+                return "Established"
+            if value >= 0.4:
+                return "Maturing"
+            return "Emerging"
+
+        labels = maturity_score.apply(_label)
         return maturity_score.round(4), labels
 
     def _compute_route_yield_proxy(self, cost_df):
         """
-        Normalize seats-per-mile to approximate relative pricing/ticket-yield pressure.
-        Higher seats-per-mile typically correlates with denser cabins -> lower fares.
+        Normalize seats-per-mile via percentile ranks to approximate pricing pressure.
+        Lower seat density (low SPM percentile) -> higher yield score.
         """
         if cost_df is None or cost_df.empty:
             return pd.Series(dtype="float64")
 
         spm_values = pd.to_numeric(cost_df.get("Seats per Mile"), errors="coerce").fillna(0.0)
-        reference = spm_values[spm_values > 0].median()
-        if pd.isna(reference) or reference <= 0:
+        positive_mask = spm_values > 0
+        if not positive_mask.any():
             return pd.Series(0.5, index=cost_df.index, dtype="float64")
 
-        ratio = spm_values / reference
-        # Invert so low seat density (premium) yields higher score.
-        yield_score = (1 / (1 + ratio)).clip(lower=0.0, upper=1.0)
+        percentile = spm_values.rank(pct=True, method="average")
+        yield_score = (1 - percentile).clip(lower=0.0, upper=1.0)
         return yield_score.round(4)
 
     def build_route_scorecard(self, cost_df):
@@ -1501,8 +1510,13 @@ class DataStore:
         if asm_total <= 0:
             grouped["ASM_Total"] = grouped["Route Count"]
             asm_total = grouped["ASM_Total"].sum()
+
+        route_weight_total = grouped["Route Count"].sum() or 1.0
         asm_total = asm_total or 1.0
-        grouped["Utilization Score"] = grouped["ASM_Total"] / asm_total
+
+        asm_share = grouped["ASM_Total"] / asm_total
+        route_share = grouped["Route Count"] / route_weight_total
+        grouped["Utilization Score"] = (0.6 * asm_share + 0.4 * route_share).clip(lower=0.0, upper=1.0)
 
         grouped["Average Distance"] = grouped["Average Distance"].round(2)
         grouped["Total Distance"] = grouped["Total Distance"].round(2)

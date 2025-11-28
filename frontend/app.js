@@ -103,6 +103,7 @@ const {
     CircularProgress,
     Tabs,
     Tab,
+    Tooltip,
 } = MaterialUI;
 
 const darkTheme = createTheme({
@@ -190,6 +191,20 @@ function formatPercent(value) {
     }
     return percentFormatter.format(value);
 }
+
+const InfoHint = ({ label, tooltip }) => (
+    <Tooltip title={tooltip} placement="top" enterTouchDelay={0}>
+        <Box
+            component="span"
+            sx={{
+                textDecoration: "underline dotted",
+                cursor: "help",
+            }}
+        >
+            {label}
+        </Box>
+    </Tooltip>
+);
 
 const localAirlineLogoMap = {
     AA: "logos/AA.png",
@@ -327,13 +342,19 @@ const ScorecardView = ({ data }) => {
     return (
         <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2" color="text.secondary">
-                Route Scorecard
+                <InfoHint
+                    label="Route Scorecard"
+                    tooltip="Competition bands: Monopoly 1.0, Duopoly 0.55, Oligopoly (3-4) 0.35, Multi-carrier 5+ 0.2. Maturity: Established ≥75th percentile ASM, Maturing 40–74th, Emerging <40th. Yield Proxy inverts SPM percentile (lower density → higher score)."
+                />
             </Typography>
             <Grid container spacing={2}>
                 {competitionEntries.length > 0 && (
                     <Grid item xs={12} md={6}>
                         <Typography variant="caption" color="text.secondary">
-                            Competition Mix
+                            <InfoHint
+                                label="Competition Mix"
+                                tooltip="Share of ASM by competition level (Monopoly, Duopoly, Oligopoly, Multi-carrier) based on unique carriers on the city pair."
+                            />
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
                             {competitionEntries.map(([label, value]) => (
@@ -345,7 +366,10 @@ const ScorecardView = ({ data }) => {
                 {maturityEntries.length > 0 && (
                     <Grid item xs={12} md={6}>
                         <Typography variant="caption" color="text.secondary">
-                            Network Maturity
+                            <InfoHint
+                                label="Network Maturity"
+                                tooltip="Percentile rank of ASM within the airline: Established ≥75th percentile, Maturing 40–74th, Emerging <40th."
+                            />
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
                             {maturityEntries.map(([label, value]) => (
@@ -357,7 +381,10 @@ const ScorecardView = ({ data }) => {
                 {yieldEntries.length > 0 && (
                     <Grid item xs={12}>
                         <Typography variant="caption" color="text.secondary">
-                            Yield Proxy (lower values lean cost-leader)
+                            <InfoHint
+                                label="Yield Proxy"
+                                tooltip="Inverted percentile of Seats per Mile (SPM) within the airline; lower seat density pushes the score higher (premium)."
+                            />
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
                             {yieldEntries.map(([label, value]) => (
@@ -412,7 +439,10 @@ const FleetUtilizationList = ({ rows, maxRows = 5 }) => {
     return (
         <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2" color="text.secondary">
-                Fleet Utilization Snapshot
+                <InfoHint
+                    label="Fleet Utilization Snapshot"
+                    tooltip="Utilization Score blends 60% ASM share and 40% route-count share across equipment (multi-equipment routes split evenly)."
+                />
             </Typography>
             <Table size="small" sx={{ mt: 1 }}>
                 <TableHead>
@@ -942,6 +972,161 @@ const RouteShareResults = ({ routes }) => {
     );
 };
 
+const MetricsGuide = () => {
+    const sections = [
+        {
+            title: "Route fundamentals",
+            points: [
+                "ASM (Available Seat Miles) = Total Seats × Distance (miles); marked valid only when both are > 0.",
+                "Seats per Mile (SPM) captures seat density (Total Seats ÷ Distance).",
+                "Route Strategy Baseline = 0.5 * ASM share on that O&D + 0.3 * seat-density uplift vs. airline median + 0.2 * distance alignment to the airline median stage length. Clipped to [0,1].",
+            ],
+        },
+        {
+            title: "Competition, maturity, yield",
+            points: [
+                "Competition levels: Monopoly (score 1.0), Duopoly (0.6), Competitive (0.2) based on unique carriers on the city pair.",
+                "Route Maturity (percentile bands): percentile rank of ASM within the airline. Labels: Established (≥75th pct), Maturing (40–74th), Emerging (<40th). Score is the percentile in [0,1].",
+                "Yield Proxy (percentile bands): percentile rank of Seats per Mile within the airline, inverted: yield score = 1 - percentile(SPM). Lower seat density → higher score.",
+            ],
+        },
+        {
+            title: "Dashboards & share",
+            points: [
+                "Route Scorecard: ASM-weighted share by Competition Level and Route Maturity Label; Yield Proxy percentiles (p25/p50/p75).",
+                "Market Share Snapshot: Market ASM from the global routes DB; Market Share = Airline ASM ÷ Market ASM for the pair.",
+                "ASM Source quality: per seat source (airline_config, equipment_estimate, unknown) show routes, valid ASM routes, total seats/ASM, ASM share; warnings when estimates or unknown dominate.",
+            ],
+        },
+        {
+            title: "CBSA scoring (US-only)",
+            points: [
+                "Performance Score = 0.7 * normalized ASM + 0.3 * normalized Seats per Mile within CBSA-filtered routes.",
+                "ASM Share (CBSA view): route ASM ÷ total ASM of CBSA-eligible set.",
+                "Opportunity Score = reference Performance Score × (0.5 + 0.5 × distance similarity to the reference CBSA route).",
+            ],
+        },
+        {
+            title: "Fleet & assignment",
+            points: [
+                "Fleet Utilization Score: split ASM across multi-equipment routes, sum per equipment, normalize by total ASM across all equipment.",
+                "Optimal Aircraft (single route): weights utilization, distance fit, seat fit, and airline load factor to rank in-fleet types (see fleet card).",
+                "Live Fleet Assignment: Coverage = scheduled ÷ sampled flights; Utilization = flown block hours ÷ (tails × crew_max_hours); tail-level utilization and maintenance buffers shown per tail.",
+            ],
+        },
+    ];
+
+    return (
+        <Grid container spacing={3}>
+            {sections.map((section) => (
+                <Grid item xs={12} md={6} key={section.title}>
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: { xs: 2.5, md: 3 },
+                            height: "100%",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            backgroundColor: "rgba(255,255,255,0.03)",
+                        }}
+                    >
+                        <Typography variant="h6" sx={{ mb: 1 }}>
+                            {section.title}
+                        </Typography>
+                        <Stack component="ul" spacing={1.2} sx={{ listStyle: "none", p: 0, m: 0 }}>
+                            {section.points.map((point, idx) => (
+                                <Box key={idx} component="li" sx={{ color: "text.secondary", lineHeight: 1.45 }}>
+                                    {point}
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Paper>
+                </Grid>
+            ))}
+        </Grid>
+    );
+};
+
+const IndustryTrends = () => {
+    const sections = [
+        {
+            title: "Network strategy & maturity",
+            points: [
+                "Network Strategy Matrix (since COVID & Q2 2023–Q2 2024): Freeze, Shift, Entrenchment, Expansion based on seat growth vs. share of seats on new routes.",
+                "Maturity signals (Network Maturity Q2 2024): stable networks keep most routes >3 years; fluid networks have many routes <12 months.",
+                "Aggressiveness vs. competition: share of capacity on monopoly/duopoly/multi-competitor routes by fleet type; higher monopoly share = defensive moat, higher multi-competitor share = aggressive stance.",
+            ],
+        },
+        {
+            title: "Pricing & revenue",
+            points: [
+                "Ticket revenue trends: post-COVID fares rose globally; LCCs captured the largest uplift. Few exceptions lowered fares (flyadeal, flynas).",
+                "Market share evolution: capacity growth + fare strategy drive passenger/revenue share. Over-aggressive fare hikes (e.g., Spirit, American) can erode share; balanced growth with moderated fares (Frontier, Southwest, United) holds or gains share.",
+            ],
+        },
+        {
+            title: "Fleet utilization & deployment",
+            points: [
+                "Fleet Utilization (Q2 2024): cycles per aircraft over 12 months; benchmark narrowbody types and lessor portfolios. Combine cycles with stage length to spot over/under-use.",
+                "Aggressiveness by fleet type: examples show dispersion—e.g., Lufthansa A321neo ~37% monopoly vs. Vistara A321neo ~95% competitive; Ethiopian 737-8 mostly monopoly vs. Akasa fully competitive.",
+            ],
+        },
+        {
+            title: "Route performance & demand",
+            points: [
+                "Top O&Ds by ASK (2023): London–NYC, LAX–NYC, Dubai–London, London–Singapore, etc. remain the heaviest corridors; largest operators control ~20–80% of seats.",
+                "Ryanair vs. easyJet (Europe): Ryanair is the disruptive growth leader; easyJet/Vueling/Transavia often sit in Network Freeze/Shift bands with lower new-route velocity.",
+            ],
+        },
+        {
+            title: "Regional snapshots",
+            points: [
+                "Europe: Iberia leads margins/OTP; Lufthansa/Air France lean on Eurowings/Transavia for network shifts; Wizz/Transavia France/Volotea push aggressive expansion.",
+                "Middle East: Emirates sets the pace; Qatar fastest post-COVID capacity ramp with overcapacity risk; Turkish uses narrow + widebody mix for flexibility; Saudia balances flyadeal vs. flynas.",
+                "North America: United grew capacity fastest among majors, holding share; Southwest gained passenger share with lower fares; ULCC fare hikes can backfire on share.",
+                "Asia: Recovery uneven—Fiji/ATR fleets fluid; AirAsia still behind pre-COVID network; India LCCs kept fare increases modest.",
+            ],
+        },
+        {
+            title: "How to use in the app",
+            points: [
+                "When comparing airlines, overlay competition and maturity labels with these benchmarks to explain if a network is fluid or entrenched relative to peers.",
+                "Use equipment competition mix to justify fleet assignments (avoid over-exposing a type to highly competitive markets unless yield supports it).",
+                "Stress-test yield proxies against ticket-revenue trends: high yield scores are more credible where fares grew with discipline.",
+                "Flag CBSA or route opportunities more strongly when they align with regions showing share gains and dial back when market share is contracting.",
+            ],
+        },
+    ];
+
+    return (
+        <Grid container spacing={3}>
+            {sections.map((section) => (
+                <Grid item xs={12} md={6} key={section.title}>
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: { xs: 2.5, md: 3 },
+                            height: "100%",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            backgroundColor: "rgba(255,255,255,0.03)",
+                        }}
+                    >
+                        <Typography variant="h6" sx={{ mb: 1 }}>
+                            {section.title}
+                        </Typography>
+                        <Stack component="ul" spacing={1.2} sx={{ listStyle: "none", p: 0, m: 0 }}>
+                            {section.points.map((point, idx) => (
+                                <Box key={idx} component="li" sx={{ color: "text.secondary", lineHeight: 1.45 }}>
+                                    {point}
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Paper>
+                </Grid>
+            ))}
+        </Grid>
+    );
+};
+
 const PageIntro = ({ activePage }) => {
     const sharedStyles = {
         p: { xs: 2, md: 2.5 },
@@ -989,6 +1174,52 @@ const PageIntro = ({ activePage }) => {
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                     Search an airline to see its fleet profile, then scroll down to simulate a duty-day schedule with your own
                     equipment mix.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (activePage === "metrics") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Metric definitions
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Every score shown in the app is documented below: what it measures, how it is calculated, and how to read it.
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Use this when presenting results to anchor stakeholders on what “performance”, “maturity”, and “yield” mean here.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (activePage === "metrics") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Metric definitions
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Every score shown in the app is documented below: what it measures, how it is calculated, and how to read it.
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Use this when presenting results to anchor stakeholders on what “performance”, “maturity”, and “yield” mean here.
+                </Typography>
+            </Paper>
+        );
+    }
+
+    if (activePage === "trends") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Industry trends
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Condensed insights from all resource files (network strategy, aggressiveness, maturity, pricing, market share, fleet
+                    utilization) to keep the analysis grounded in current market patterns.
                 </Typography>
             </Paper>
         );
@@ -1480,6 +1711,8 @@ function App() {
                         <Tab label="Route Analysis" value="analysis" />
                         <Tab label="Route Share" value="routes" />
                         <Tab label="Fleet Explorer" value="fleet" />
+                        <Tab label="Metrics Guide" value="metrics" />
+                        <Tab label="Industry Trends" value="trends" />
                     </Tabs>
                 </Toolbar>
             </AppBar>
@@ -1824,12 +2057,24 @@ function App() {
                     </Grid>
                 )}
 
+                {activePage === "metrics" && (
+                    <Box sx={{ pb: 3 }}>
+                        <MetricsGuide />
+                    </Box>
+                )}
+
+                {activePage === "trends" && (
+                    <Box sx={{ pb: 3 }}>
+                        <IndustryTrends />
+                    </Box>
+                )}
+
                 {activePage === "routes" && (
                     <Grid container spacing={3} alignItems="stretch">
                         <Grid item xs={12} md={4}>
                             <Paper
-                                    component="form"
-                                    onSubmit={handleRouteShareSubmit}
+                                component="form"
+                                onSubmit={handleRouteShareSubmit}
                                     sx={{
                                         p: { xs: 2.5, md: 3 },
                                         border: "1px solid rgba(255,255,255,0.08)",

@@ -1,0 +1,30 @@
+Airline Route Optimizer — metric definitions (source: src/load_data.py)
+=====================================================================
+
+Route fundamentals
+- ASM (Available Seat Miles): Total Seats * Distance (miles). Marked ASM Valid when both seats and distance are > 0.
+- Seats per Mile (SPM): seat density proxy (Total Seats / Distance); used in yield and CBSA scoring.
+- Route Strategy Baseline: blended score per route = 0.5 * ASM share on that O&D (vs. all carriers) + 0.3 * seat-density uplift (SPM vs. airline median, clipped at 1.0) + 0.2 * distance alignment (closeness to airline median stage length). Output clipped to [0,1].
+- Competition metrics: count how many airlines fly the O&D across the global routes set. Levels: Monopoly (score 1.0), Duopoly (0.55), Oligopoly 3–4 (0.35), Multi-Carrier 5+ (0.2). Count is stored alongside the level and score.
+- Route Maturity (percentile bands): percentile rank of ASM within the airline’s network. Labels: Established (>=75th percentile), Maturing (40–74th), Emerging (<40th). Score is the percentile in [0,1]; defaults to 0.5/“Unknown” when ASM is missing.
+- Yield Proxy (percentile bands): percentile rank of seats-per-mile within the airline. Yield score = 1 - percentile(SPM) so lower seat density pushes the score toward 1. Defaults to 0.5 when SPM is missing.
+
+Dashboards and snapshots
+- Route Scorecard: ASM-weighted share by Competition Level and Route Maturity Label, plus Yield Proxy p25/p50/p75 percentiles. Feeds the “Route Scorecard” chips in the UI.
+- Market Share Snapshot: for top ASM routes, Market ASM is pulled from the global routes DB; Market Share = Airline ASM / Market ASM; also includes Competition Level.
+- ASM source accuracy: per Seat Source (airline_config, equipment_estimate, unknown) shows Routes, Valid ASM Routes, Total Seats/ASM, ASM Share (and raw share value). Alerts fire when estimated ASM >= 40% or unknown ASM >= 10% (or their combined share crosses the dominant threshold).
+
+CBSA scoring (U.S. routes only)
+- Performance Score: normalize ASM and Seats per Mile inside the CBSA-filtered set, then score = 0.7 * ASM_norm + 0.3 * SPM_norm. Drives the “Top CBSA Routes” table.
+- ASM Share (CBSA view): each top CBSA route’s ASM / total ASM of the CBSA-eligible set.
+- Route Rationale (CBSA): text snippets summarizing Performance Score plus Yield Proxy, Competition Score, Route Maturity Score, and ASM Share (when available).
+- Opportunity Score (CBSA suggestions): for each top CBSA route, propose new CBSA-aligned airport pairs. Distance Similarity = 1 - |proposed distance - reference distance| / reference distance (clipped at 0). Opportunity Score = reference Performance Score * (0.5 + 0.5 * Distance Similarity). Suggestions capped per seed route.
+
+Fleet metrics
+- Fleet Utilization Score (summary table): split multi-equipment routes, share each route’s ASM equally across listed equipment, then score = 0.6 * ASM share + 0.4 * route-count share across equipment. Also shows Route Count, Average Distance, Total Distance.
+- Optimal Aircraft ranking (single route): weights existing utilization (0.65 default for short routes, 0.45 for long haul), distance fit vs. requested stage length, seat fit vs. requested demand, and airline load factor to produce Optimal Score; higher is better (see _rank_equipment_for_route in src/load_data.py).
+- Live Fleet Assignment (daily heuristic):
+  - Coverage = scheduled_flights / total_flights in the sampled route list.
+  - Utilization = total_block_hours flown / (tails * crew_max_hours) after maintenance windows.
+  - Tail Utilization (per tail) = tail block hours / crew_max_hours; Duty Hours = clock time the tail is busy including turns; Maintenance Buffer = remaining time in the day after final assignment vs. required maintenance window.
+  - Unassigned entries list routes skipped because of distance/seat fit, schedule window, or crew limits.
