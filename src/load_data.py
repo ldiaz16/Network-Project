@@ -431,6 +431,105 @@ class DataStore:
             totals[key] = float(row["ASM"]) if pd.notna(row["ASM"]) else 0.0
         return totals
 
+    def evaluate_route_opportunity(self, airline_query, source_airport, dest_airport, seat_demand=None):
+        """
+        Provide a simple go/no-go recommendation for a proposed route based on:
+        - Competition level on the O&D
+        - Market ASM vs. airline median ASM (depth)
+        - Distance fit vs. airline median stage length
+        """
+        if not airline_query or not source_airport or not dest_airport:
+            raise ValueError("Airline, source, and destination are required.")
+
+        # Validate airports
+        airports_lookup = self.airports.set_index("IATA") if self.airports is not None else pd.DataFrame()
+        src_row = airports_lookup.loc[source_airport] if source_airport in airports_lookup.index else None
+        dst_row = airports_lookup.loc[dest_airport] if dest_airport in airports_lookup.index else None
+        if src_row is None or dst_row is None:
+            raise ValueError("Source or destination airport not found.")
+
+        # Pull airline data to derive medians
+        routes_df, airline_meta = self.select_airline_routes(airline_query)
+        processed = self.process_routes(routes_df)
+        cost_df = self.cost_analysis(processed)
+        median_distance = float(pd.to_numeric(cost_df.get("Distance (miles)"), errors="coerce").median()) if not cost_df.empty else None
+        median_asm = float(pd.to_numeric(cost_df.get("ASM"), errors="coerce").median()) if not cost_df.empty else None
+        existing = ((routes_df["Source airport"] == source_airport) & (routes_df["Destination airport"] == dest_airport)).any()
+
+        # Distance for proposed route
+        distance = geodesic((src_row["Latitude"], src_row["Longitude"]), (dst_row["Latitude"], dst_row["Longitude"])).miles
+
+        # Competition and market depth
+        totals_lookup = self.get_route_total_asm([(source_airport, dest_airport)])
+        market_asm = float(totals_lookup.get((source_airport, dest_airport)) or 0.0)
+        competition_subset = self.routes[
+            (self.routes["Source airport"] == source_airport)
+            & (self.routes["Destination airport"] == dest_airport)
+        ]
+        competition_count = int(competition_subset["Airline Code"].nunique()) if not competition_subset.empty else 0
+
+        def _competition_score(count):
+            if count <= 1:
+                return 1.0, "Monopoly"
+            if count == 2:
+                return 0.55, "Duopoly"
+            if count <= 4:
+                return 0.35, "Oligopoly"
+            return 0.2, "Multi-Carrier"
+
+        competition_score, competition_label = _competition_score(competition_count)
+
+        def _distance_fit(value, reference):
+            if not reference or reference <= 0:
+                return 0.5
+            return float(max(0.0, min(1.0, 1 - abs(value - reference) / reference)))
+
+        distance_fit = _distance_fit(distance, median_distance)
+
+        def _market_depth_score(value, reference):
+            if not reference or reference <= 0:
+                return 0.5
+            scaled = value / (reference * 1.5)
+            return float(max(0.0, min(1.0, scaled)))
+
+        market_depth_score = _market_depth_score(market_asm, median_asm)
+
+        score = 0.45 * competition_score + 0.35 * distance_fit + 0.2 * market_depth_score
+        if score >= 0.65:
+            recommendation = "good"
+        elif score >= 0.45:
+            recommendation = "watch"
+        else:
+            recommendation = "avoid"
+
+        rationale = [
+            f"Competition: {competition_label} ({competition_count} carriers)",
+            f"Market depth vs. airline median ASM: {market_depth_score:.2f}",
+            f"Distance fit vs. airline median: {distance_fit:.2f}",
+        ]
+        if existing:
+            rationale.append("Airline already serves this route.")
+        if seat_demand:
+            rationale.append(f"Seat demand provided: {seat_demand}")
+
+        return {
+            "airline": airline_meta.get("Airline") if isinstance(airline_meta, dict) else airline_query,
+            "airline_normalized": airline_meta.get("Airline (Normalized)") if isinstance(airline_meta, dict) else normalize_name(airline_query),
+            "source": source_airport,
+            "destination": dest_airport,
+            "distance_miles": round(distance, 2),
+            "market_asm": market_asm,
+            "competition_count": competition_count,
+            "competition_label": competition_label,
+            "competition_score": round(competition_score, 3),
+            "distance_fit": round(distance_fit, 3),
+            "market_depth_score": round(market_depth_score, 3),
+            "score": round(score, 3),
+            "recommendation": recommendation,
+            "already_served": bool(existing),
+            "rationale": rationale,
+        }
+
 
     @staticmethod
     def _format_cbsa_cache_key(lat, lon):
@@ -2454,8 +2553,14 @@ class DataStore:
         ]
 
         route_pairs = list(zip(pivoted["Source"], pivoted["Dest"]))
+        route_total_lookup = self.get_route_total_asm(route_pairs)
         pivoted["_combined_asm"] = pivoted[asm_columns].sum(axis=1, min_count=1)
-        pivoted["_share_denominator"] = pivoted["_combined_asm"].where(pivoted["_combined_asm"] > 0)
+        pivoted["_route_total_asm"] = [route_total_lookup.get(pair) for pair in route_pairs]
+        pivoted["_share_denominator"] = pivoted["_route_total_asm"]
+        pivoted.loc[
+            pivoted["_share_denominator"].isna() | (pivoted["_share_denominator"] <= 0),
+            "_share_denominator"
+        ] = pd.NA
 
         share_columns = []
         share_column_map = {}
@@ -2468,7 +2573,7 @@ class DataStore:
             share_column_map[share_col] = f"{col} ASM Share"
             share_label_lookup[col] = share_column_map[share_col]
 
-        pivoted.drop(columns=[col for col in asm_columns + ["_combined_asm", "_share_denominator"] if col in pivoted.columns], inplace=True)
+        pivoted.drop(columns=asm_columns + ["_combined_asm", "_route_total_asm", "_share_denominator"], inplace=True)
 
         aircraft_suffix = "_Aircraft"
 

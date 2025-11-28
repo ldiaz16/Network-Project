@@ -1263,6 +1263,22 @@ const PageIntro = ({ activePage }) => {
         );
     }
 
+    if (activePage === "proposal") {
+        return (
+            <Paper variant="outlined" sx={sharedStyles}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    Route proposal
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Pick an airline, enter a new route, and we’ll score it using competition, market depth, and distance fit.
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Recommendations: good (score ≥ 0.65), watch (0.45–0.65), avoid (< 0.45).
+                </Typography>
+            </Paper>
+        );
+    }
+
     return null;
 };
 
@@ -1308,6 +1324,10 @@ function App() {
     const [routeShareStatus, setRouteShareStatus] = React.useState({ message: "", kind: "" });
     const [routeShareLoading, setRouteShareLoading] = React.useState(false);
     const [routeShareResults, setRouteShareResults] = React.useState([]);
+    const [proposal, setProposal] = React.useState({ airline: "", source: "", destination: "", seat_demand: "" });
+    const [proposalStatus, setProposalStatus] = React.useState({ message: "", kind: "" });
+    const [proposalLoading, setProposalLoading] = React.useState(false);
+    const [proposalResult, setProposalResult] = React.useState(null);
 
     const fetchSuggestions = React.useCallback(async (query = "") => {
         try {
@@ -1624,6 +1644,49 @@ function App() {
         }
     };
 
+    const handleProposalField = (field) => (event) => {
+        const value = event.target.value || "";
+        setProposal((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleProposalSubmit = async (event) => {
+        event.preventDefault();
+        const airline = (proposal.airline || "").trim();
+        const source = (proposal.source || "").trim().toUpperCase();
+        const destination = (proposal.destination || "").trim().toUpperCase();
+        if (!airline || !source || !destination) {
+            setProposalStatus({ message: "Airline, source, and destination are required.", kind: "error" });
+            setProposalResult(null);
+            return;
+        }
+        const payload = { airline, source, destination };
+        const seatDemand = proposal.seat_demand && Number(proposal.seat_demand);
+        if (seatDemand && Number.isFinite(seatDemand) && seatDemand > 0) {
+            payload.seat_demand = seatDemand;
+        }
+        setProposalLoading(true);
+        setProposalStatus({ message: "Evaluating route…", kind: "info" });
+        setProposalResult(null);
+        try {
+            const response = await fetch(`${API_BASE}/propose-route`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.detail || "Unable to evaluate route.");
+            }
+            setProposalResult(result);
+            setProposalStatus({ message: `Recommendation: ${result.recommendation}`, kind: "success" });
+        } catch (error) {
+            setProposalResult(null);
+            setProposalStatus({ message: error.message || "Unable to evaluate route.", kind: "error" });
+        } finally {
+            setProposalLoading(false);
+        }
+    };
+
     const handleAssignmentSubmit = React.useCallback(
         async (event) => {
             event.preventDefault();
@@ -1754,6 +1817,7 @@ function App() {
                         <Tab label="Route Analysis" value="analysis" />
                         <Tab label="Route Share" value="routes" />
                         <Tab label="Fleet Explorer" value="fleet" />
+                        <Tab label="Route Proposal" value="proposal" />
                         <Tab label="Metrics Guide" value="metrics" />
                         <Tab label="Industry Trends" value="trends" />
                     </Tabs>
@@ -2111,6 +2175,195 @@ function App() {
                     <Box sx={{ pb: 3 }}>
                         <IndustryTrends />
                     </Box>
+                )}
+
+                {activePage === "proposal" && (
+                    <Grid container spacing={3} alignItems="stretch">
+                        <Grid item xs={12} md={4}>
+                            <Paper
+                                component="form"
+                                onSubmit={handleProposalSubmit}
+                                sx={{
+                                    p: { xs: 2.5, md: 3 },
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    boxShadow: "0 30px 60px rgba(0,0,0,0.45)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                }}
+                            >
+                                <Typography variant="h6">New Route Proposal</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    We’ll score the route by competition, market depth, and distance fit vs. the airline’s network.
+                                </Typography>
+                                <StatusAlert status={proposalStatus} />
+                                <Autocomplete
+                                    freeSolo
+                                    options={suggestions}
+                                    filterOptions={(options, { inputValue }) => {
+                                        const normalized = (inputValue || "").trim().toLowerCase();
+                                        const filtered = normalized
+                                            ? options.filter((option) => option.toLowerCase().includes(normalized))
+                                            : options;
+                                        return filtered.slice(0, MAX_AIRLINE_SUGGESTIONS);
+                                    }}
+                                    openOnFocus
+                                    autoHighlight
+                                    noOptionsText="No matching airlines"
+                                    value={proposal.airline}
+                                    inputValue={proposal.airline}
+                                    onChange={(_, value) => {
+                                        setProposal((prev) => ({ ...prev, airline: value || "" }));
+                                    }}
+                                    onInputChange={(_, value) => {
+                                        const nextValue = value || "";
+                                        setProposal((prev) => ({ ...prev, airline: nextValue }));
+                                        handleSuggestionQuery(nextValue);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Airline"
+                                            variant="outlined"
+                                        />
+                                    )}
+                                />
+                                <Grid container spacing={2}>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            label="Source"
+                                            placeholder="e.g. JFK"
+                                            value={proposal.source}
+                                            onChange={handleProposalField("source")}
+                                            inputProps={{ maxLength: 4 }}
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            label="Destination"
+                                            placeholder="e.g. LHR"
+                                            value={proposal.destination}
+                                            onChange={handleProposalField("destination")}
+                                            inputProps={{ maxLength: 4 }}
+                                            fullWidth
+                                        />
+                                    </Grid>
+                                </Grid>
+                                <TextField
+                                    label="Seat demand (optional)"
+                                    type="number"
+                                    value={proposal.seat_demand}
+                                    onChange={handleProposalField("seat_demand")}
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    size="large"
+                                    disabled={proposalLoading}
+                                    sx={{ alignSelf: "flex-start" }}
+                                >
+                                    {proposalLoading ? (
+                                        <Stack direction="row" spacing={1} alignItems="center">
+                                            <CircularProgress size={20} color="inherit" />
+                                            <span>Evaluating…</span>
+                                        </Stack>
+                                    ) : (
+                                        "Evaluate route"
+                                    )}
+                                </Button>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} md={8}>
+                            {proposalResult ? (
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        p: { xs: 2.5, md: 3 },
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        boxShadow: "0 30px 60px rgba(0,0,0,0.35)",
+                                    }}
+                                >
+                                    <Stack spacing={2}>
+                                        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                                            <Typography variant="h5">
+                                                {proposalResult.source} → {proposalResult.destination}
+                                            </Typography>
+                                            <Chip label={`Airline: ${proposalResult.airline}`} />
+                                            <Chip
+                                                label={`Recommendation: ${proposalResult.recommendation.toUpperCase()} (score ${proposalResult.score.toFixed(2)})`}
+                                                color={
+                                                    proposalResult.recommendation === "good"
+                                                        ? "success"
+                                                        : proposalResult.recommendation === "watch"
+                                                        ? "warning"
+                                                        : "error"
+                                                }
+                                            />
+                                        </Stack>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} sm={6} md={4}>
+                                                <Typography variant="subtitle2" color="text.secondary">
+                                                    Competition
+                                                </Typography>
+                                                <Typography variant="body1">
+                                                    {proposalResult.competition_label} ({proposalResult.competition_count} carriers)
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6} md={4}>
+                                                <Typography variant="subtitle2" color="text.secondary">
+                                                    Market ASM
+                                                </Typography>
+                                                <Typography variant="body1">
+                                                    {proposalResult.market_asm ? integerNumberFormatter.format(proposalResult.market_asm) : "—"}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6} md={4}>
+                                                <Typography variant="subtitle2" color="text.secondary">
+                                                    Distance
+                                                </Typography>
+                                                <Typography variant="body1">
+                                                    {proposalResult.distance_miles ? `${integerNumberFormatter.format(proposalResult.distance_miles)} mi` : "—"}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+                                        <Stack direction="row" flexWrap="wrap" gap={1}>
+                                            <Chip label={`Competition score: ${proposalResult.competition_score}`} />
+                                            <Chip label={`Distance fit: ${proposalResult.distance_fit}`} />
+                                            <Chip label={`Market depth: ${proposalResult.market_depth_score}`} />
+                                        </Stack>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            Rationale
+                                        </Typography>
+                                        <Stack component="ul" spacing={0.6} sx={{ listStyle: "disc", pl: 3, color: "text.secondary" }}>
+                                            {proposalResult.rationale?.map((item, idx) => (
+                                                <Box key={idx} component="li">
+                                                    {item}
+                                                </Box>
+                                            ))}
+                                        </Stack>
+                                    </Stack>
+                                </Paper>
+                            ) : (
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        p: { xs: 2.5, md: 3 },
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        minHeight: 260,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    <Typography color="text.secondary">
+                                        Enter an airline and an unserved route to get a quick go/watch/avoid recommendation.
+                                    </Typography>
+                                </Paper>
+                            )}
+                        </Grid>
+                    </Grid>
                 )}
 
                 {activePage === "routes" && (

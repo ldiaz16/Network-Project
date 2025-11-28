@@ -10,12 +10,14 @@ from src.backend_service import (
     AnalysisRequest,
     FleetAssignmentRequest,
     OptimalAircraftRequest,
+    ProposedRouteRequest,
     RouteShareRequest,
     analyze_route_market_share,
     get_airline_fleet_profile,
     list_airlines as list_airlines_logic,
     recommend_optimal_aircraft,
     run_analysis as run_analysis_logic,
+    propose_route as propose_route_logic,
     simulate_live_assignment,
 )
 from src.cors_config import get_cors_settings
@@ -142,6 +144,22 @@ def route_share():
 
     try:
         result = analyze_route_market_share(data_store, request_model)
+    except AnalysisError as exc:
+        return jsonify({"detail": str(exc)}), exc.status_code
+
+    return jsonify(result)
+
+
+@app.post("/api/propose-route")
+def propose_route():
+    payload = request.get_json(force=True, silent=True) or {}
+    try:
+        request_model = ProposedRouteRequest(**payload)
+    except ValidationError as exc:
+        return jsonify({"detail": exc.errors()}), 422
+
+    try:
+        result = propose_route_logic(data_store, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 

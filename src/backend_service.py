@@ -165,6 +165,26 @@ class RouteShareRequest(BaseModel):
         return value
 
 
+class ProposedRouteRequest(BaseModel):
+    airline: str
+    source: str
+    destination: str
+    seat_demand: Optional[float] = None
+
+    @validator("airline", "source", "destination", pre=True, always=True)
+    def _require_fields(cls, value: Any) -> str:
+        if value is None:
+            raise ValueError("This field is required.")
+        normalized = str(value).strip()
+        if not normalized:
+            raise ValueError("This field is required.")
+        return normalized
+
+    @validator("source", "destination")
+    def _uppercase_airports(cls, value: str) -> str:
+        return value.upper()
+
+
 def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
     """Create a reusable package containing core dataframes for an airline."""
     routes_df, metadata = data_store.select_airline_routes(query, verbose=False)
@@ -331,6 +351,19 @@ def analyze_route_market_share(data_store, payload: RouteShareRequest) -> Dict[s
             top_airlines=payload.top_airlines,
             include_all_competitors=payload.include_all_competitors,
         )
+    except ValueError as exc:
+        raise AnalysisError(400, str(exc)) from exc
+
+
+def propose_route(data_store, payload: ProposedRouteRequest) -> Dict[str, Any]:
+    try:
+        result = data_store.evaluate_route_opportunity(
+            payload.airline,
+            payload.source,
+            payload.destination,
+            seat_demand=payload.seat_demand,
+        )
+        return result
     except ValueError as exc:
         raise AnalysisError(400, str(exc)) from exc
 
