@@ -154,14 +154,14 @@ const percentFormatter = new Intl.NumberFormat(undefined, { style: "percent", ma
 
 function formatValue(value) {
     if (value === null || value === undefined || value === "") {
-        return "—";
+        return "-";
     }
     if (Array.isArray(value)) {
         return value.map((entry) => formatValue(entry)).join(", ");
     }
     if (typeof value === "number") {
         if (!Number.isFinite(value)) {
-            return "—";
+            return "-";
         }
         const hasFraction = Math.abs(value - Math.trunc(value)) > 1e-6;
         const formatter = hasFraction ? decimalNumberFormatter : integerNumberFormatter;
@@ -175,11 +175,11 @@ function formatValue(value) {
 
 function formatNetworkStat(key, value) {
     if (value === null || value === undefined) {
-        return "—";
+        return "-";
     }
     if (key.toLowerCase().includes("hub") && Array.isArray(value)) {
         return value
-            .map((hub) => (Array.isArray(hub) ? `${hub[0]} — ${hub[1]}` : formatValue(hub)))
+            .map((hub) => (Array.isArray(hub) ? `${hub[0]} - ${hub[1]}` : formatValue(hub)))
             .join(", ");
     }
     return formatValue(value);
@@ -187,7 +187,7 @@ function formatNetworkStat(key, value) {
 
 function formatPercent(value) {
     if (typeof value !== "number" || Number.isNaN(value)) {
-        return "—";
+        return "-";
     }
     return percentFormatter.format(value);
 }
@@ -344,7 +344,7 @@ const ScorecardView = ({ data }) => {
             <Typography variant="subtitle2" color="text.secondary">
                 <InfoHint
                     label="Route Scorecard"
-                    tooltip="Competition bands: Monopoly 1.0, Duopoly 0.55, Oligopoly (3-4) 0.35, Multi-carrier 5+ 0.2. Maturity: Established ≥75th percentile ASM, Maturing 40–74th, Emerging <40th. Yield Proxy inverts SPM percentile (lower density → higher score)."
+                    tooltip="Competition bands: Monopoly 1.0, Duopoly 0.55, Oligopoly (3-4) 0.35, Multi-carrier 5+ 0.2. Maturity: Established >=75th percentile ASM, Maturing 40-74th, Emerging <40th. Yield Proxy inverts SPM percentile (lower density -> higher score)."
                 />
             </Typography>
             <Grid container spacing={2}>
@@ -368,7 +368,7 @@ const ScorecardView = ({ data }) => {
                         <Typography variant="caption" color="text.secondary">
                             <InfoHint
                                 label="Network Maturity"
-                                tooltip="Percentile rank of ASM within the airline: Established ≥75th percentile, Maturing 40–74th, Emerging <40th."
+                                tooltip="Percentile rank of ASM within the airline: Established >=75th percentile, Maturing 40-74th, Emerging <40th."
                             />
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
@@ -420,9 +420,9 @@ const MarketShareList = ({ rows, maxRows = 5 }) => {
                 <TableBody>
                     {topRows.map((row, index) => (
                         <TableRow key={`${row.Source}-${row.Destination}-${index}`}>
-                            <TableCell>{`${row.Source || "?"} → ${row.Destination || "?"}`}</TableCell>
+                            <TableCell>{`${row.Source || "?"} -> ${row.Destination || "?"}`}</TableCell>
                             <TableCell align="right">{formatPercent(row["Market Share"])}</TableCell>
-                            <TableCell>{row["Competition Level"] || "—"}</TableCell>
+                            <TableCell>{row["Competition Level"] || "-"}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -712,10 +712,10 @@ const FleetAssignmentResults = ({ result }) => {
     ];
 
     const assignmentRows = assignments.map((entry) => ({
-        Route: entry.route || `${entry.source || "?"} → ${entry.destination || "?"}`,
-        Tail: entry.tail_id || "—",
-        Equipment: entry.assigned_equipment || "—",
-        "Requested Equip": entry.equipment_requested || "—",
+        Route: entry.route || `${entry.source || "?"} -> ${entry.destination || "?"}`,
+        Tail: entry.tail_id || "-",
+        Equipment: entry.assigned_equipment || "-",
+        "Requested Equip": entry.equipment_requested || "-",
         "Start": entry.start_label || formatValue(entry.start_hour),
         "End": entry.end_label || formatValue(entry.end_hour),
         "Block Hours": entry.block_hours,
@@ -894,41 +894,41 @@ const RouteShareResults = ({ routes }) => {
         <Stack spacing={3}>
             {routes.map((route, index) => {
                 const key = `${route.source || "?"}-${route.destination || "?"}-${index}`;
-                const title = `${route.source || "?"} → ${route.destination || "?"}`;
+                const title = `${route.source || "?"} -> ${route.destination || "?"}`;
                 const summaryChips = [
                     {
                         label: "Distance",
-                        value: route.distance_miles ? `${integerNumberFormatter.format(route.distance_miles)} mi` : "—",
+                        value: route.distance_miles ? `${integerNumberFormatter.format(route.distance_miles)} mi` : "-",
                     },
                     {
                         label: "Market ASM",
-                        value: route.market_asm ? `${integerNumberFormatter.format(route.market_asm)} ASM` : "—",
+                        value: route.market_asm ? `${integerNumberFormatter.format(route.market_asm)} ASM` : "-",
                     },
                     {
                         label: "Competitors",
-                        value: route.competitor_count != null ? integerNumberFormatter.format(route.competitor_count) : "—",
+                        value: route.competitor_count != null ? integerNumberFormatter.format(route.competitor_count) : "-",
                     },
-                    { label: "Competition", value: route.competition_level || "—" },
-                    { label: "Maturity", value: route.route_maturity_label || "—" },
+                    { label: "Competition", value: route.competition_level || "-" },
+                    { label: "Maturity", value: route.route_maturity_label || "-" },
                     {
                         label: "Yield Proxy",
                         value:
                             route.yield_proxy_score != null
                                 ? decimalNumberFormatter.format(route.yield_proxy_score)
-                                : "—",
+                                : "-",
                     },
                 ];
                 const tableRows = (route.airlines || []).map((entry) => ({
                     Airline: entry.airline || entry.airline_normalized || "Airline",
                     ASM: entry.asm,
                     "Market Share":
-                        typeof entry.market_share === "number" ? formatPercent(entry.market_share) : "—",
+                        typeof entry.market_share === "number" ? formatPercent(entry.market_share) : "-",
                     Seats: entry.seats,
                     "Seats / Mile": entry.seats_per_mile,
-                    Equipment: entry.equipment && entry.equipment.length ? entry.equipment.join(", ") : "—",
+                    Equipment: entry.equipment && entry.equipment.length ? entry.equipment.join(", ") : "-",
                     "Strategy Score": entry.route_strategy_baseline,
                     "Yield Proxy": entry.yield_proxy_score,
-                    "Route Maturity": entry.route_maturity_label || route.route_maturity_label || "—",
+                    "Route Maturity": entry.route_maturity_label || route.route_maturity_label || "-",
                 }));
 
                 return (
@@ -977,8 +977,8 @@ const MetricsGuide = () => {
         {
             title: "Route fundamentals",
             points: [
-                "ASM (Available Seat Miles) = Total Seats × Distance (miles); marked valid only when both are > 0.",
-                "Seats per Mile (SPM) captures seat density (Total Seats ÷ Distance).",
+                "ASM (Available Seat Miles) = Total Seats x Distance (miles); marked valid only when both are > 0.",
+                "Seats per Mile (SPM) captures seat density (Total Seats / Distance).",
                 "Route Strategy Baseline = 0.5 * ASM share on that O&D + 0.3 * seat-density uplift vs. airline median + 0.2 * distance alignment to the airline median stage length. Clipped to [0,1].",
             ],
         },
@@ -986,15 +986,15 @@ const MetricsGuide = () => {
             title: "Competition, maturity, yield",
             points: [
                 "Competition levels: Monopoly (score 1.0), Duopoly (0.6), Competitive (0.2) based on unique carriers on the city pair.",
-                "Route Maturity (percentile bands): percentile rank of ASM within the airline. Labels: Established (≥75th pct), Maturing (40–74th), Emerging (<40th). Score is the percentile in [0,1].",
-                "Yield Proxy (percentile bands): percentile rank of Seats per Mile within the airline, inverted: yield score = 1 - percentile(SPM). Lower seat density → higher score.",
+                "Route Maturity (percentile bands): percentile rank of ASM within the airline. Labels: Established (>=75th pct), Maturing (40-74th), Emerging (<40th). Score is the percentile in [0,1].",
+                "Yield Proxy (percentile bands): percentile rank of Seats per Mile within the airline, inverted: yield score = 1 - percentile(SPM). Lower seat density -> higher score.",
             ],
         },
         {
             title: "Dashboards & share",
             points: [
                 "Route Scorecard: ASM-weighted share by Competition Level and Route Maturity Label; Yield Proxy percentiles (p25/p50/p75).",
-                "Market Share Snapshot: Market ASM from the global routes DB; Market Share = Airline ASM ÷ Market ASM for the pair.",
+                "Market Share Snapshot: Market ASM from the global routes DB; Market Share = Airline ASM / Market ASM for the pair.",
                 "ASM Source quality: per seat source (airline_config, equipment_estimate, unknown) show routes, valid ASM routes, total seats/ASM, ASM share; warnings when estimates or unknown dominate.",
             ],
         },
@@ -1002,8 +1002,8 @@ const MetricsGuide = () => {
             title: "CBSA scoring (US-only)",
             points: [
                 "Performance Score = 0.7 * normalized ASM + 0.3 * normalized Seats per Mile within CBSA-filtered routes.",
-                "ASM Share (CBSA view): route ASM ÷ total ASM of CBSA-eligible set.",
-                "Opportunity Score = reference Performance Score × (0.5 + 0.5 × distance similarity to the reference CBSA route).",
+                "ASM Share (CBSA view): route ASM / total ASM of CBSA-eligible set.",
+                "Opportunity Score = reference Performance Score x (0.5 + 0.5 x distance similarity to the reference CBSA route).",
             ],
         },
         {
@@ -1011,7 +1011,7 @@ const MetricsGuide = () => {
             points: [
                 "Fleet Utilization Score: split ASM across multi-equipment routes, sum per equipment, normalize by total ASM across all equipment.",
                 "Optimal Aircraft (single route): weights utilization, distance fit, seat fit, and airline load factor to rank in-fleet types (see fleet card).",
-                "Live Fleet Assignment: Coverage = scheduled ÷ sampled flights; Utilization = flown block hours ÷ (tails × crew_max_hours); tail-level utilization and maintenance buffers shown per tail.",
+                "Live Fleet Assignment: Coverage = scheduled / sampled flights; Utilization = flown block hours / (tails x crew_max_hours); tail-level utilization and maintenance buffers shown per tail.",
             ],
         },
     ];
@@ -1051,7 +1051,7 @@ const IndustryTrends = () => {
         {
             title: "Network strategy & maturity",
             points: [
-                "Network Strategy Matrix (since COVID & Q2 2023–Q2 2024): Freeze, Shift, Entrenchment, Expansion based on seat growth vs. share of seats on new routes.",
+                "Network Strategy Matrix (since COVID & Q2 2023-Q2 2024): Freeze, Shift, Entrenchment, Expansion based on seat growth vs. share of seats on new routes.",
                 "Maturity signals (Network Maturity Q2 2024): stable networks keep most routes >3 years; fluid networks have many routes <12 months.",
                 "Aggressiveness vs. competition: share of capacity on monopoly/duopoly/multi-competitor routes by fleet type; higher monopoly share = defensive moat, higher multi-competitor share = aggressive stance.",
             ],
@@ -1067,13 +1067,13 @@ const IndustryTrends = () => {
             title: "Fleet utilization & deployment",
             points: [
                 "Fleet Utilization (Q2 2024): cycles per aircraft over 12 months; benchmark narrowbody types and lessor portfolios. Combine cycles with stage length to spot over/under-use.",
-                "Aggressiveness by fleet type: examples show dispersion—e.g., Lufthansa A321neo ~37% monopoly vs. Vistara A321neo ~95% competitive; Ethiopian 737-8 mostly monopoly vs. Akasa fully competitive.",
+                "Aggressiveness by fleet type: examples show dispersion-e.g., Lufthansa A321neo ~37% monopoly vs. Vistara A321neo ~95% competitive; Ethiopian 737-8 mostly monopoly vs. Akasa fully competitive.",
             ],
         },
         {
             title: "Route performance & demand",
             points: [
-                "Top O&Ds by ASK (2023): London–NYC, LAX–NYC, Dubai–London, London–Singapore, etc. remain the heaviest corridors; largest operators control ~20–80% of seats.",
+                "Top O&Ds by ASK (2023): London-NYC, LAX-NYC, Dubai-London, London-Singapore, etc. remain the heaviest corridors; largest operators control ~20-80% of seats.",
                 "Ryanair vs. easyJet (Europe): Ryanair is the disruptive growth leader; easyJet/Vueling/Transavia often sit in Network Freeze/Shift bands with lower new-route velocity.",
             ],
         },
@@ -1083,7 +1083,7 @@ const IndustryTrends = () => {
                 "Europe: Iberia leads margins/OTP; Lufthansa/Air France lean on Eurowings/Transavia for network shifts; Wizz/Transavia France/Volotea push aggressive expansion.",
                 "Middle East: Emirates sets the pace; Qatar fastest post-COVID capacity ramp with overcapacity risk; Turkish uses narrow + widebody mix for flexibility; Saudia balances flyadeal vs. flynas.",
                 "North America: United grew capacity fastest among majors, holding share; Southwest gained passenger share with lower fares; ULCC fare hikes can backfire on share.",
-                "Asia: Recovery uneven—Fiji/ATR fleets fluid; AirAsia still behind pre-COVID network; India LCCs kept fare increases modest.",
+                "Asia: Recovery uneven-Fiji/ATR fleets fluid; AirAsia still behind pre-COVID network; India LCCs kept fare increases modest.",
             ],
         },
         {
@@ -1129,15 +1129,15 @@ const IndustryTrends = () => {
 
 const MetricsPlaybook = () => {
     const bullets = [
-        "Competition score (Monopoly 1.0, Duopoly 0.55, Oligopoly 0.35, Multi-carrier 0.2): High scores mean you hold more “moat” on that O&D. Lean into capacity or upgauge where scores are high; be cautious adding seats or lowering fares where scores are low (crowded routes). If a fleet type is concentrated in low scores, consider redeploying it.",
-        "Maturity (Established ≥75th pct ASM, Maturing 40–74th, Emerging <40th): Established routes are stable cash engines—optimize pricing and cost; Emerging routes need watchlists: test frequency, right-size equipment, and watch early performance. If an airline’s network skews Emerging, expect volatility; if Established, it can absorb more price/margin.",
+        "Competition score (Monopoly 1.0, Duopoly 0.55, Oligopoly 0.35, Multi-carrier 0.2): High scores mean you hold more "moat" on that O&D. Lean into capacity or upgauge where scores are high; be cautious adding seats or lowering fares where scores are low (crowded routes). If a fleet type is concentrated in low scores, consider redeploying it.",
+        "Maturity (Established >=75th pct ASM, Maturing 40-74th, Emerging <40th): Established routes are stable cash engines-optimize pricing and cost; Emerging routes need watchlists: test frequency, right-size equipment, and watch early performance. If an airline's network skews Emerging, expect volatility; if Established, it can absorb more price/margin.",
         "Yield Proxy (inverted SPM percentile): High score = lower seat density, more premium potential. Use it to decide where to defend price vs. where you must compete on cost. If competition is high but yield proxy is strong, you can still hold price; if both competition is high and yield proxy is weak, expect fare pressure.",
-        "Route Strategy Baseline: Blends ASM share, seat-density uplift, and distance fit vs. the airline’s median. Use it to sort “core” vs. “fringe” routes: high baseline = defend/optimize; low baseline = candidate for reduction or swap to another type.",
-        "Performance Score (CBSA): 0.7 ASM_norm + 0.3 SPM_norm. High performers are anchor routes in a metro pair. Use them as references for CBSA-similar suggestions; if suggestions have decent similarity and opportunity scores, they’re next to trial.",
-        "Opportunity Score (CBSA suggestions): Reference performance × distance similarity. Use to prioritize new CBSA-aligned pairs; start with top scores, sanity-check ops/slots.",
+        "Route Strategy Baseline: Blends ASM share, seat-density uplift, and distance fit vs. the airline's median. Use it to sort "core" vs. "fringe" routes: high baseline = defend/optimize; low baseline = candidate for reduction or swap to another type.",
+        "Performance Score (CBSA): 0.7 ASM_norm + 0.3 SPM_norm. High performers are anchor routes in a metro pair. Use them as references for CBSA-similar suggestions; if suggestions have decent similarity and opportunity scores, they're next to trial.",
+        "Opportunity Score (CBSA suggestions): Reference performance x distance similarity. Use to prioritize new CBSA-aligned pairs; start with top scores, sanity-check ops/slots.",
         "Market Share snapshot: ASM and Market Share per top O&D. If your share is low but competition score is high (crowded), winning requires either price moves or a capacity play; if share is low and competition score is high but yield proxy is strong, try premium positioning.",
         "Fleet Utilization Score (60% ASM share + 40% route-count share): Highlights which types are carrying the network vs. underused. High score + high competition exposure? Maybe rebalance to defensible routes. Low score? Consider redeploying, parking, or pairing with Emerging routes to probe demand.",
-        "Live Fleet Assignment: Coverage and utilization show whether your proposed fleet can actually fly the top routes under crew/maintenance constraints. Unassigned routes list why tails failed—use it to adjust counts, turn times, or mix.",
+        "Live Fleet Assignment: Coverage and utilization show whether your proposed fleet can actually fly the top routes under crew/maintenance constraints. Unassigned routes list why tails failed-use it to adjust counts, turn times, or mix.",
         "Optimal Aircraft (per route): Uses utilization, distance fit, seat fit, and load factor. Pick the top recommendations to maximize utilization without overshooting demand; if you see wide gaps between top and second choices, stick with #1; if close, rotate to spread cycles.",
         "Competition/Maturity tooltips in the UI: Hover in the results to see the bands and what they mean; same for fleet utilization weighting.",
     ];
@@ -1183,7 +1183,7 @@ const PageIntro = ({ activePage }) => {
                     show head-to-head routes and CBSA opportunities in the results panel on the right.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Tip: turn on “Skip comparison” if you only want CBSA results for a single carrier.
+                    Tip: turn on "Skip comparison" if you only want CBSA results for a single carrier.
                 </Typography>
             </Paper>
         );
@@ -1227,7 +1227,7 @@ const PageIntro = ({ activePage }) => {
                     Every score shown in the app is documented below: what it measures, how it is calculated, and how to read it.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Use this when presenting results to anchor stakeholders on what “performance”, “maturity”, and “yield” mean here.
+                    Use this when presenting results to anchor stakeholders on what "performance", "maturity", and "yield" mean here.
                 </Typography>
             </Paper>
         );
@@ -1243,7 +1243,7 @@ const PageIntro = ({ activePage }) => {
                     Every score shown in the app is documented below: what it measures, how it is calculated, and how to read it.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Use this when presenting results to anchor stakeholders on what “performance”, “maturity”, and “yield” mean here.
+                    Use this when presenting results to anchor stakeholders on what "performance", "maturity", and "yield" mean here.
                 </Typography>
             </Paper>
         );
@@ -1270,7 +1270,7 @@ const PageIntro = ({ activePage }) => {
                     Route proposal
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Pick an airline, enter a new route, and we’ll score it using competition, market depth, and distance fit.
+                    Pick an airline, enter a new route, and we'll score it using competition, market depth, and distance fit.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                     Recommendations: good (score >= 0.65), watch (0.45-0.65), avoid (< 0.45).
@@ -1399,7 +1399,7 @@ function App() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         resetResults();
-        setStatus({ message: "Running analysis…", kind: "info" });
+        setStatus({ message: "Running analysis...", kind: "info" });
         setLoading(true);
 
         const comparisonAirlines = formState.skip_comparison
@@ -1487,7 +1487,7 @@ function App() {
                 }
             }
             setOptimalLoading(true);
-            setOptimalStatus({ message: "Finding optimal equipment…", kind: "info" });
+            setOptimalStatus({ message: "Finding optimal equipment...", kind: "info" });
             setOptimalResults([]);
             try {
                 const response = await fetch(`${API_BASE}/optimal-aircraft`, {
@@ -1520,7 +1520,7 @@ function App() {
                 return;
             }
             setFleetLoading(true);
-            setFleetStatus({ message: "Fetching fleet details…", kind: "info" });
+            setFleetStatus({ message: "Fetching fleet details...", kind: "info" });
             try {
                 const response = await fetch(`${API_BASE}/fleet?airline=${encodeURIComponent(trimmed)}`);
                 const result = await response.json();
@@ -1610,7 +1610,7 @@ function App() {
         const parsedTop = Number(routeShareTopN);
         const topAirlines = Number.isFinite(parsedTop) && parsedTop > 0 ? Math.min(parsedTop, 20) : 5;
         setRouteShareLoading(true);
-        setRouteShareStatus({ message: "Fetching route market share…", kind: "info" });
+        setRouteShareStatus({ message: "Fetching route market share...", kind: "info" });
         setRouteShareResults([]);
         try {
             const response = await fetch(`${API_BASE}/route-share`, {
@@ -1665,7 +1665,7 @@ function App() {
             payload.seat_demand = seatDemand;
         }
         setProposalLoading(true);
-        setProposalStatus({ message: "Evaluating route…", kind: "info" });
+        setProposalStatus({ message: "Evaluating route...", kind: "info" });
         setProposalResult(null);
         try {
             const response = await fetch(`${API_BASE}/propose-route`, {
@@ -1716,7 +1716,7 @@ function App() {
                 crew_max_hours: Number(fleetAssignmentConfig.crew_max_hours) || 14,
             };
             setFleetAssignmentLoading(true);
-            setFleetAssignmentStatus({ message: "Simulating fleet assignment…", kind: "info" });
+            setFleetAssignmentStatus({ message: "Simulating fleet assignment...", kind: "info" });
             setFleetAssignmentResults(null);
             try {
                 const response = await fetch(`${API_BASE}/fleet-assignment`, {
@@ -2194,7 +2194,7 @@ function App() {
                             >
                                 <Typography variant="h6">New Route Proposal</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    We’ll score the route by competition, market depth, and distance fit vs. the airline’s network.
+                                    We'll score the route by competition, market depth, and distance fit vs. the airline's network.
                                 </Typography>
                                 <StatusAlert status={proposalStatus} />
                                 <Autocomplete
@@ -2266,7 +2266,7 @@ function App() {
                                     {proposalLoading ? (
                                         <Stack direction="row" spacing={1} alignItems="center">
                                             <CircularProgress size={20} color="inherit" />
-                                            <span>Evaluating…</span>
+                                            <span>Evaluating...</span>
                                         </Stack>
                                     ) : (
                                         "Evaluate route"
@@ -2287,7 +2287,7 @@ function App() {
                                     <Stack spacing={2}>
                                         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                                             <Typography variant="h5">
-                                                {proposalResult.source} → {proposalResult.destination}
+                                                {proposalResult.source} -> {proposalResult.destination}
                                             </Typography>
                                             <Chip label={`Airline: ${proposalResult.airline}`} />
                                             <Chip
@@ -2315,7 +2315,7 @@ function App() {
                                                     Market ASM
                                                 </Typography>
                                                 <Typography variant="body1">
-                                                    {proposalResult.market_asm ? integerNumberFormatter.format(proposalResult.market_asm) : "—"}
+                                                    {proposalResult.market_asm ? integerNumberFormatter.format(proposalResult.market_asm) : "-"}
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={12} sm={6} md={4}>
@@ -2323,7 +2323,7 @@ function App() {
                                                     Distance
                                                 </Typography>
                                                 <Typography variant="body1">
-                                                    {proposalResult.distance_miles ? `${integerNumberFormatter.format(proposalResult.distance_miles)} mi` : "—"}
+                                                    {proposalResult.distance_miles ? `${integerNumberFormatter.format(proposalResult.distance_miles)} mi` : "-"}
                                                 </Typography>
                                             </Grid>
                                         </Grid>
@@ -2456,7 +2456,7 @@ function App() {
                                         {routeShareLoading ? (
                                             <Stack direction="row" spacing={1} alignItems="center">
                                                 <CircularProgress size={20} color="inherit" />
-                                                <span>Analyzing…</span>
+                                                <span>Analyzing...</span>
                                             </Stack>
                                         ) : (
                                             "Analyze routes"
@@ -2484,7 +2484,7 @@ function App() {
                                     >
                                         <Stack direction="row" spacing={1.5} alignItems="center">
                                             <CircularProgress size={24} />
-                                            <Typography color="text.secondary">Crunching route stats…</Typography>
+                                            <Typography color="text.secondary">Crunching route stats...</Typography>
                                         </Stack>
                                     </Paper>
                                 ) : (
