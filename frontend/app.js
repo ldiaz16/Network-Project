@@ -1385,6 +1385,13 @@ function App() {
     const [proposalResult, setProposalResult] = React.useState(null);
     const embeddedInsight = React.useMemo(() => buildEmbeddedInsight(proposalResult), [proposalResult]);
     const generalProposalNote = React.useMemo(() => buildGeneralProposalNote(proposalResult), [proposalResult]);
+    const playbookNotes = React.useMemo(() => {
+        const backendPlaybook = proposalResult?.playbook;
+        if (backendPlaybook && backendPlaybook.length) {
+            return backendPlaybook;
+        }
+        return generalProposalNote;
+    }, [proposalResult, generalProposalNote]);
 
     const fetchSuggestions = React.useCallback(async (query = "") => {
         try {
@@ -2388,7 +2395,22 @@ function App() {
                                             <Chip label={`Competition score: ${proposalResult.competition_score}`} />
                                             <Chip label={`Distance fit: ${proposalResult.distance_fit}`} />
                                             <Chip label={`Market depth: ${proposalResult.market_depth_score}`} />
+                                            {proposalResult.hub_fit_label ? (
+                                                <Chip label={`Hub fit: ${proposalResult.hub_fit_label}`} />
+                                            ) : null}
+                                            {proposalResult.load_factor_target ? (
+                                                <Chip label={`LF target: ≥ ${percentFormatter.format(proposalResult.load_factor_target)}`} />
+                                            ) : null}
                                         </Stack>
+                                        {proposalResult.analog_summary ? (
+                                            <Typography variant="body2" color="text.secondary">
+                                                Analog demand: median ASM {integerNumberFormatter.format(proposalResult.analog_summary.median_asm || 0)}; median competition score{" "}
+                                                {proposalResult.analog_summary.median_competition_score ?? "-"}; sample routes{" "}
+                                                {proposalResult.analog_summary.sample_routes && proposalResult.analog_summary.sample_routes.length
+                                                    ? proposalResult.analog_summary.sample_routes.join(", ")
+                                                    : "N/A"}
+                                            </Typography>
+                                        ) : null}
                                         <Typography variant="subtitle2" color="text.secondary">
                                             Rationale
                                         </Typography>
@@ -2399,7 +2421,7 @@ function App() {
                                                 </Box>
                                             ))}
                                         </Stack>
-                                        {generalProposalNote ? (
+                                        {playbookNotes ? (
                                             <Box
                                                 sx={{
                                                     mt: 1,
@@ -2413,7 +2435,7 @@ function App() {
                                                     Playbook for this route
                                                 </Typography>
                                                 <Stack component="ul" spacing={0.6} sx={{ listStyle: "disc", pl: 3, color: "text.secondary" }}>
-                                                    {generalProposalNote.map((item, idx) => (
+                                                    {playbookNotes.map((item, idx) => (
                                                         <Box key={`general-note-${idx}`} component="li">
                                                             {item}
                                                         </Box>

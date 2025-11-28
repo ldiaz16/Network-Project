@@ -13,6 +13,18 @@ from .data_utils import filter_codeshare_routes
 
 DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
 RESOURCES_DIR = Path(__file__).resolve().parents[1] / "resources"
+LOAD_FACTOR_BENCHMARKS = {
+    "delta air lines": 0.86,
+    "delta": 0.86,
+    "dl": 0.86,
+    "united airlines": 0.844,
+    "united": 0.844,
+    "ua": 0.844,
+    "jetblue airways corporation": 0.851,
+    "jetblue airways": 0.851,
+    "jetblue": 0.851,
+    "b6": 0.851,
+}
 
 GENERIC_SEAT_GUESSES = {
     "100": 100,  # Fokker 100 / similar regional jets
@@ -437,6 +449,7 @@ class DataStore:
         - Competition level on the O&D
         - Market ASM vs. airline median ASM (depth)
         - Distance fit vs. airline median stage length
+        - Hub alignment and analog demand proxies to build a dynamic playbook
         """
         if not airline_query or not source_airport or not dest_airport:
             raise ValueError("Airline, source, and destination are required.")
@@ -455,6 +468,29 @@ class DataStore:
         median_distance = float(pd.to_numeric(cost_df.get("Distance (miles)"), errors="coerce").median()) if not cost_df.empty else None
         median_asm = float(pd.to_numeric(cost_df.get("ASM"), errors="coerce").median()) if not cost_df.empty else None
         existing = ((routes_df["Source airport"] == source_airport) & (routes_df["Destination airport"] == dest_airport)).any()
+
+        # Hub alignment
+        hub_fit_score = 0.5
+        hub_fit_label = "Off-hub"
+        top_hubs: list = []
+        try:
+            network = self.build_network(processed)
+            network_stats = self.analyze_network(network)
+            raw_hubs = network_stats.get("Top 5 Hubs") or []
+            top_hubs = [entry[0] for entry in raw_hubs if isinstance(entry, (list, tuple)) and len(entry) >= 1]
+            hits = sum(1 for airport in (source_airport, dest_airport) if airport in top_hubs)
+            if hits == 2:
+                hub_fit_score = 1.0
+                hub_fit_label = "Hub-to-hub"
+            elif hits == 1:
+                hub_fit_score = 0.7
+                hub_fit_label = "Hub-to-spoke"
+            else:
+                hub_fit_score = 0.35
+                hub_fit_label = "Off-hub"
+        except Exception:
+            # Keep defaults if network build fails
+            pass
 
         # Distance for proposed route
         distance = geodesic((src_row["Latitude"], src_row["Longitude"]), (dst_row["Latitude"], dst_row["Longitude"])).miles
@@ -494,6 +530,42 @@ class DataStore:
 
         market_depth_score = _market_depth_score(market_asm, median_asm)
 
+        # Analog demand: use airline's existing routes within ±20% distance
+        analog_summary = {}
+        if not cost_df.empty:
+            distances = pd.to_numeric(cost_df.get("Distance (miles)"), errors="coerce")
+            asm_series = pd.to_numeric(cost_df.get("ASM"), errors="coerce")
+            competition_series = pd.to_numeric(cost_df.get("Competition Score"), errors="coerce")
+            window_low = distance * 0.8
+            window_high = distance * 1.2
+            analogs = cost_df[(distances >= window_low) & (distances <= window_high)].copy()
+            if analogs.empty:
+                analogs = cost_df.copy()
+            analogs = analogs.assign(
+                _distance_gap=(pd.to_numeric(analogs["Distance (miles)"], errors="coerce") - distance).abs()
+            ).sort_values(["_distance_gap", "ASM"], ascending=[True, False])
+            top_analogs = analogs.head(5)
+            analog_median_asm = float(pd.to_numeric(top_analogs.get("ASM"), errors="coerce").median() or 0.0)
+            analog_median_competition = float(pd.to_numeric(top_analogs.get("Competition Score"), errors="coerce").median() or 0.0)
+            analog_median_distance = float(pd.to_numeric(top_analogs.get("Distance (miles)"), errors="coerce").median() or 0.0)
+            analog_seat_estimate = 0.0
+            if analog_median_distance > 0:
+                analog_seat_estimate = analog_median_asm / analog_median_distance
+            sample_pairs = top_analogs[["Source airport", "Destination airport"]].head(3).apply(
+                lambda row: f"{row['Source airport']}-{row['Destination airport']}", axis=1
+            ).tolist()
+            analog_summary = {
+                "median_asm": round(analog_median_asm, 2),
+                "median_competition_score": round(analog_median_competition, 3),
+                "median_distance": round(analog_median_distance, 2),
+                "estimated_seats": round(analog_seat_estimate, 2),
+                "sample_routes": sample_pairs,
+            }
+
+        # Load factor target from operational benchmarks (resources/airline_operational_metrics.json)
+        airline_normalized = airline_meta.get("Airline (Normalized)") if isinstance(airline_meta, dict) else normalize_name(airline_query)
+        lf_target = LOAD_FACTOR_BENCHMARKS.get((airline_normalized or "").lower(), 0.85)
+
         score = 0.45 * competition_score + 0.35 * distance_fit + 0.2 * market_depth_score
         if score >= 0.65:
             recommendation = "good"
@@ -512,6 +584,24 @@ class DataStore:
         if seat_demand:
             rationale.append(f"Seat demand provided: {seat_demand}")
 
+        # Dynamic playbook generation using computed metrics
+        def _fmt_percent(value):
+            try:
+                return f"{value * 100:.0f}%"
+            except Exception:
+                return "-"
+
+        playbook = [
+            f"Hub fit: {hub_fit_label} (top hubs: {', '.join(top_hubs[:3]) if top_hubs else 'N/A'})",
+            f"Competition: {competition_label} ({competition_count} carriers); score {competition_score:.2f}",
+            f"Distance fit: {distance_fit:.2f} vs. airline median {median_distance:.0f} mi" if median_distance else f"Distance fit: {distance_fit:.2f}",
+            f"Market depth proxy: ASM {int(market_asm or 0)} vs. airline median {int(median_asm or 0)}; score {market_depth_score:.2f}",
+            f"Analog demand: median ASM {int(analog_summary.get('median_asm', 0))} with competition score {analog_summary.get('median_competition_score', 0):.2f}; sample routes {', '.join(analog_summary.get('sample_routes', [])) or 'N/A'}",
+            f"Load factor target: >= {_fmt_percent(lf_target)} based on recent operational metrics",
+        ]
+        if seat_demand:
+            playbook.append(f"Provided seat demand: {seat_demand} (compare to analog estimated seats {int(analog_summary.get('estimated_seats') or 0)})")
+
         return {
             "airline": airline_meta.get("Airline") if isinstance(airline_meta, dict) else airline_query,
             "airline_normalized": airline_meta.get("Airline (Normalized)") if isinstance(airline_meta, dict) else normalize_name(airline_query),
@@ -524,10 +614,16 @@ class DataStore:
             "competition_score": round(competition_score, 3),
             "distance_fit": round(distance_fit, 3),
             "market_depth_score": round(market_depth_score, 3),
+            "hub_fit_score": round(hub_fit_score, 3),
+            "hub_fit_label": hub_fit_label,
+            "top_hubs": top_hubs,
+            "analog_summary": analog_summary,
+            "load_factor_target": lf_target,
             "score": round(score, 3),
             "recommendation": recommendation,
             "already_served": bool(existing),
             "rationale": rationale,
+            "playbook": playbook,
         }
 
 
