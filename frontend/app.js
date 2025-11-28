@@ -239,6 +239,17 @@ const localAirlineLogoMap = {
 const normalizeLogoKey = (value) => (value || "").trim().toLowerCase();
 const normalizeAirline = (value) => (value || "").trim().toLowerCase();
 
+const ScoreChip = ({ label, tooltip, color = "default" }) => (
+    <Tooltip title={tooltip} placement="top" enterTouchDelay={0}>
+        <Chip
+            label={label}
+            color={color}
+            size="medium"
+            sx={{ cursor: "help" }}
+        />
+    </Tooltip>
+);
+
 const collectAirlineIdentifierCandidates = (airline) => {
     const candidates = [];
     const pushCandidate = (value) => {
@@ -2392,14 +2403,29 @@ function App() {
                                             </Grid>
                                         </Grid>
                                         <Stack direction="row" flexWrap="wrap" gap={1}>
-                                            <Chip label={`Competition score: ${proposalResult.competition_score}`} />
-                                            <Chip label={`Distance fit: ${proposalResult.distance_fit}`} />
-                                            <Chip label={`Market depth: ${proposalResult.market_depth_score}`} />
+                                            <ScoreChip
+                                                label={`Competition score: ${proposalResult.competition_score}`}
+                                                tooltip="Higher is better; monopoly ~1.0, multi-carrier corridors score lower."
+                                            />
+                                            <ScoreChip
+                                                label={`Distance fit: ${proposalResult.distance_fit}`}
+                                                tooltip="How close this stage length is to the airline's median distance; 1.0 means perfect fit."
+                                            />
+                                            <ScoreChip
+                                                label={`Market depth: ${proposalResult.market_depth_score}`}
+                                                tooltip="Compares total ASM in this O&D to the airline's median; higher suggests thicker markets."
+                                            />
                                             {proposalResult.hub_fit_label ? (
-                                                <Chip label={`Hub fit: ${proposalResult.hub_fit_label}`} />
+                                                <ScoreChip
+                                                    label={`Hub fit: ${proposalResult.hub_fit_label}`}
+                                                    tooltip="Hub-to-hub > hub-to-spoke > off-hub. Higher fit usually supports frequency and yield."
+                                                />
                                             ) : null}
                                             {proposalResult.load_factor_target ? (
-                                                <Chip label={`LF target: ≥ ${percentFormatter.format(proposalResult.load_factor_target)}`} />
+                                                <ScoreChip
+                                                    label={`LF target: ≥ ${percentFormatter.format(proposalResult.load_factor_target)}`}
+                                                    tooltip="Target load factor derived from recent operational metrics; aim at or above this."
+                                                />
                                             ) : null}
                                         </Stack>
                                         {proposalResult.analog_summary ? (
