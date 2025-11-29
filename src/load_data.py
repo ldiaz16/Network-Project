@@ -1,6 +1,7 @@
 import sys
 import json
 from pathlib import Path
+from typing import List
 import requests
 import pandas as pd
 from data.airlines import normalize_name
@@ -808,10 +809,27 @@ class DataStore:
             f"Market depth vs. airline median ASM: {market_depth_score:.2f}",
             f"Distance fit vs. airline median: {distance_fit:.2f}",
         ]
+        warnings: List[str] = []
         if existing:
             rationale.append("Airline already serves this route.")
+            warnings.append("Route already exists in the airline's network; treat this as a sanity check, not a greenfield pick.")
         if seat_demand:
             rationale.append(f"Seat demand provided: {seat_demand}")
+
+        # Aircraft recommendations (restricted to airline fleet and observed stage lengths)
+        optimal_aircraft = []
+        try:
+            best_df = self.find_best_aircraft_for_route(
+                airline_query,
+                route_distance=distance,
+                seat_demand=seat_demand,
+                top_n=3,
+                cost_df=cost_df,
+            )
+            if best_df is not None and not best_df.empty:
+                optimal_aircraft = best_df.to_dict(orient="records")
+        except Exception:
+            optimal_aircraft = []
 
         # Dynamic playbook generation using computed metrics
         def _fmt_percent(value):
@@ -821,23 +839,57 @@ class DataStore:
                 return "-"
 
         hub_source_label = "manual bases" if hub_alignment.get("source") == "manual" else "network hubs"
-        focus_text = ""
+        hub_detail_parts = []
+        if top_hubs:
+            hub_detail_parts.append(f"hubs: {', '.join(top_hubs[:5])}")
         if hub_alignment.get("focus_cities"):
-            focus_text = f"; focus cities: {', '.join(hub_alignment.get('focus_cities', [])[:3])}"
-        off_point_text = ""
+            hub_detail_parts.append(f"focus cities: {', '.join(hub_alignment.get('focus_cities', [])[:3])}")
         if hub_alignment.get("off_points"):
-            off_point_text = f"; off-points: {', '.join(hub_alignment.get('off_points', [])[:3])}"
+            hub_detail_parts.append(f"off-points: {', '.join(hub_alignment.get('off_points', [])[:3])}")
+        hub_detail_parts.append(f"source: {hub_source_label}")
+        hub_line = f"Hub fit: {hub_fit_label}. ({'; '.join(hub_detail_parts)})"
 
+        competition_label_text = "no incumbent carriers (monopoly position)" if competition_count == 0 else f"{competition_count} incumbent {'carrier' if competition_count == 1 else 'carriers'}"
+        competition_line = f"Competition: {competition_label} — {competition_label_text}; score {competition_score:.2f}"
+
+        distance_miles_int = int(round(distance)) if distance else None
+        if median_distance:
+            distance_line = f"Distance fit: {distance_fit:.2f} (stage length {distance_miles_int if distance_miles_int is not None else '-'} mi vs. airline median {int(median_distance)} mi)"
+        else:
+            distance_line = f"Distance fit: {distance_fit:.2f} (stage length {distance_miles_int if distance_miles_int is not None else '-' } mi)"
+
+        if market_asm and market_asm > 0:
+            market_depth_line = f"Market depth: {int(market_asm)} ASM vs. airline median {int(median_asm or 0)}; score {market_depth_score:.2f}"
+        else:
+            market_depth_line = f"Market depth: no observed ASM for this O&D; airline median {int(median_asm or 0)}; score {market_depth_score:.2f}"
+
+        analog_routes = analog_summary.get("sample_routes") if isinstance(analog_summary, dict) else []
+        analog_median_asm = analog_summary.get("median_asm") if isinstance(analog_summary, dict) else None
+        analog_competition = analog_summary.get("median_competition_score") if isinstance(analog_summary, dict) else None
+        if analog_median_asm:
+            analog_demand_core = f"median ASM {int(analog_median_asm)}"
+        elif analog_summary:
+            analog_demand_core = "very thin analog demand (median ASM near 0)"
+        else:
+            analog_demand_core = "no close analog routes; use seat demand and hub fit as the primary guide"
+        analog_competition_text = f"{analog_competition:.2f}" if isinstance(analog_competition, (int, float)) else "-"
+        analog_routes_text = ", ".join(analog_routes[:3]) if analog_routes else "N/A"
+        analog_line = f"Analog demand: {analog_demand_core}; typical competition score {analog_competition_text}; sample routes {analog_routes_text}"
+
+        lf_target_text = _fmt_percent(lf_target)
         playbook = [
-            f"Hub fit: {hub_fit_label} (source: {hub_source_label}; hubs: {', '.join(top_hubs[:5]) if top_hubs else 'N/A'}{focus_text}{off_point_text})",
-            f"Competition: {competition_label} ({competition_count} carriers); score {competition_score:.2f}",
-            f"Distance fit: {distance_fit:.2f} vs. airline median {median_distance:.0f} mi" if median_distance else f"Distance fit: {distance_fit:.2f}",
-            f"Market depth proxy: ASM {int(market_asm or 0)} vs. airline median {int(median_asm or 0)}; score {market_depth_score:.2f}",
-            f"Analog demand: median ASM {int(analog_summary.get('median_asm', 0))} with competition score {analog_summary.get('median_competition_score', 0):.2f}; sample routes {', '.join(analog_summary.get('sample_routes', [])) or 'N/A'}",
-            f"Load factor target: >= {_fmt_percent(lf_target)} based on recent operational metrics",
+            hub_line,
+            competition_line,
+            distance_line,
+            market_depth_line,
+            analog_line,
+            f"Load factor target: >= {lf_target_text} based on recent operational metrics",
         ]
         if seat_demand:
-            playbook.append(f"Provided seat demand: {seat_demand} (compare to analog estimated seats {int(analog_summary.get('estimated_seats') or 0)})")
+            analog_seat_estimate = analog_summary.get("estimated_seats") if isinstance(analog_summary, dict) else 0
+            playbook.append(
+                f"Provided seat demand: {seat_demand} (compare to analog estimated seats {int(analog_seat_estimate or 0)})"
+            )
 
         return {
             "airline": airline_meta.get("Airline") if isinstance(airline_meta, dict) else airline_query,
@@ -869,6 +921,8 @@ class DataStore:
             "already_served": bool(existing),
             "rationale": rationale,
             "playbook": playbook,
+            "warnings": warnings,
+            "optimal_aircraft": optimal_aircraft,
         }
 
 

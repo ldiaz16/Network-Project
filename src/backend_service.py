@@ -194,7 +194,8 @@ def _build_airline_package(data_store, query: str) -> Dict[str, Any]:
     processed_df = data_store.process_routes(routes_df)
     cost_df = data_store.cost_analysis(processed_df)
     scorecard = data_store.build_route_scorecard(cost_df)
-    market_share = data_store.compute_market_share_snapshot(cost_df, include_all_competitors=False)
+    # Use full market ASM for share; avoids showing 100% share when competitors exist.
+    market_share = data_store.compute_market_share_snapshot(cost_df, include_all_competitors=True)
     fleet_utilization = data_store.summarize_fleet_utilization(cost_df)
     airline_name = routes_df["Airline"].iloc[0]
     normalized_name = routes_df["Airline (Normalized)"].iloc[0]

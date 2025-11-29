@@ -192,6 +192,32 @@ function formatNetworkStat(key, value) {
     if (value === null || value === undefined) {
         return "-";
     }
+    const lowerKey = key.toLowerCase();
+    const formatBaseDetail = (entry) => {
+        if (!entry || typeof entry !== "object") {
+            return formatValue(entry);
+        }
+        const parts = [];
+        const hubs = Array.isArray(entry.hubs) ? entry.hubs.filter(Boolean) : [];
+        const focus = Array.isArray(entry.focus_cities) ? entry.focus_cities.filter(Boolean) : [];
+        const off = Array.isArray(entry.off_points) ? entry.off_points.filter(Boolean) : [];
+        if (hubs.length) {
+            parts.push(`hubs: ${hubs.join(", ")}`);
+        }
+        if (focus.length) {
+            parts.push(`focus cities: ${focus.join(", ")}`);
+        }
+        if (off.length) {
+            parts.push(`off-points: ${off.join(", ")}`);
+        }
+        if (entry.source) {
+            parts.push(`source: ${entry.source}`);
+        }
+        return parts.length ? parts.join(" | ") : formatValue(entry);
+    };
+    if (lowerKey.includes("base")) {
+        return formatBaseDetail(value);
+    }
     if (key.toLowerCase().includes("hub") && Array.isArray(value)) {
         return value
             .map((hub) => (Array.isArray(hub) ? `${hub[0]} - ${hub[1]}` : formatValue(hub)))
@@ -2376,6 +2402,11 @@ function App() {
                                                 }
                                             />
                                         </Stack>
+                                        {proposalResult.warnings && proposalResult.warnings.length ? (
+                                            <Alert severity="warning" variant="outlined">
+                                                {proposalResult.warnings.join(" ")}
+                                            </Alert>
+                                        ) : null}
                                         <Grid container spacing={2}>
                                             <Grid item xs={12} sm={6} md={4}>
                                                 <Typography variant="subtitle2" color="text.secondary">
@@ -2436,6 +2467,61 @@ function App() {
                                                     ? proposalResult.analog_summary.sample_routes.join(", ")
                                                     : "N/A"}
                                             </Typography>
+                                        ) : null}
+                                        {proposalResult.optimal_aircraft && proposalResult.optimal_aircraft.length ? (
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    border: "1px solid rgba(255,255,255,0.12)",
+                                                    borderRadius: 2,
+                                                    backgroundColor: "rgba(255,255,255,0.02)",
+                                                }}
+                                            >
+                                                {(() => {
+                                                    const seatFitAvailable = proposalResult.optimal_aircraft.some(
+                                                        (row) => row["Seat Fit"] !== undefined && row["Seat Fit"] !== null
+                                                    );
+                                                    const fmtScore = (value) =>
+                                                        Number.isFinite(value) ? Number(value).toFixed(2) : "-";
+                                                    return (
+                                                        <>
+                                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                    Top aircraft for this route (within airline fleet)
+                                                </Typography>
+                                                <TableContainer>
+                                                    <Table size="small">
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableCell>Equipment</TableCell>
+                                                                <TableCell>Seat cap.</TableCell>
+                                                                <TableCell>Avg stage</TableCell>
+                                                                <TableCell>Util. score</TableCell>
+                                                                <TableCell>Distance fit</TableCell>
+                                                                {seatFitAvailable ? <TableCell>Seat fit</TableCell> : null}
+                                                                <TableCell>Optimal</TableCell>
+                                                            </TableRow>
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {proposalResult.optimal_aircraft.map((row, idx) => (
+                                                                <TableRow key={`opt-ac-${idx}`}>
+                                                                    <TableCell>{row.Equipment}</TableCell>
+                                                                    <TableCell>{row["Seat Capacity"] ? integerNumberFormatter.format(row["Seat Capacity"]) : "-"}</TableCell>
+                                                                    <TableCell>
+                                                                        {row["Average Distance"] ? `${integerNumberFormatter.format(row["Average Distance"])} mi` : "-"}
+                                                                    </TableCell>
+                                                                    <TableCell>{fmtScore(row["Utilization Score"])}</TableCell>
+                                                                    <TableCell>{fmtScore(row["Distance Fit"])}</TableCell>
+                                                                    {seatFitAvailable ? <TableCell>{fmtScore(row["Seat Fit"])}</TableCell> : null}
+                                                                    <TableCell>{fmtScore(row["Optimal Score"])}</TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </TableContainer>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </Box>
                                         ) : null}
                                         <Typography variant="subtitle2" color="text.secondary">
                                             Rationale
