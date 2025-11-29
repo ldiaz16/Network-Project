@@ -213,8 +213,16 @@ def main():
         airline_x_network = data_storage.build_network(airline_x_df)
         airline_y_network = data_storage.build_network(airline_y_df)
 
-        airline_x_stats = data_storage.analyze_network(airline_x_network)
-        airline_y_stats = data_storage.analyze_network(airline_y_network)
+        airline_x_stats = data_storage.analyze_network(
+            airline_x_network,
+            airline_x_pkg.get("normalized") or airline_x_pkg.get("name"),
+            processed_routes=airline_x_pkg.get("processed"),
+        )
+        airline_y_stats = data_storage.analyze_network(
+            airline_y_network,
+            airline_y_pkg.get("normalized") or airline_y_pkg.get("name"),
+            processed_routes=airline_y_pkg.get("processed"),
+        )
 
         print("Network analysis for Airlines")
         print(airline_x_pkg["name"], "Network:")

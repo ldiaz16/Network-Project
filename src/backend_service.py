@@ -288,7 +288,7 @@ def get_airline_fleet_profile(data_store, query: str) -> Dict[str, Any]:
     }
 
     network = data_store.build_network(package["processed"])
-    network_stats = data_store.analyze_network(network)
+    network_stats = data_store.analyze_network(network, package.get("normalized") or package.get("name"), processed_routes=package.get("processed"))
     asm_summary = data_store.summarize_asm_sources(package["cost"])
     fleet_utilization = _dataframe_to_records(package.get("fleet_utilization"))
     market_share = _dataframe_to_records(package.get("market_share"))
@@ -440,8 +440,16 @@ def run_analysis(data_store, payload: AnalysisRequest) -> Dict[str, Any]:
 
         airline_x_network = data_store.build_network(airline_x_pkg["processed"])
         airline_y_network = data_store.build_network(airline_y_pkg["processed"])
-        airline_x_stats = data_store.analyze_network(airline_x_network)
-        airline_y_stats = data_store.analyze_network(airline_y_network)
+        airline_x_stats = data_store.analyze_network(
+            airline_x_network,
+            airline_x_pkg.get("normalized") or airline_x_pkg.get("name"),
+            processed_routes=airline_x_pkg.get("processed"),
+        )
+        airline_y_stats = data_store.analyze_network(
+            airline_y_network,
+            airline_y_pkg.get("normalized") or airline_y_pkg.get("name"),
+            processed_routes=airline_y_pkg.get("processed"),
+        )
 
         try:
             competing_routes_df = data_store.find_competing_routes(airline_x_pkg["cost"], airline_y_pkg["cost"])

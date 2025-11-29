@@ -1,0 +1,37 @@
+{
+  "american airlines": {
+    "iata": "AA",
+    "aliases": ["American"],
+    "hubs": ["DFW", "CLT", "ORD", "MIA", "PHX", "DCA", "LAX", "JFK", "LGA", "PHL"],
+    "focus_cities": ["AUS", "RDU"],
+    "off_points": []
+  },
+  "delta air lines": {
+    "iata": "DL",
+    "aliases": ["Delta"],
+    "hubs": ["ATL", "DTW", "MSP", "SLC", "JFK", "LGA", "BOS", "SEA", "LAX"],
+    "focus_cities": ["AUS", "RDU"],
+    "off_points": []
+  },
+  "united airlines": {
+    "iata": "UA",
+    "aliases": ["United"],
+    "hubs": ["ORD", "IAH", "EWR", "IAD", "DEN", "SFO", "LAX"],
+    "focus_cities": ["CLE", "GUM"],
+    "off_points": []
+  },
+  "jetblue airways": {
+    "iata": "B6",
+    "aliases": ["JetBlue", "Jet Blue"],
+    "hubs": ["JFK", "BOS", "FLL", "MCO", "LAX"],
+    "focus_cities": ["SAN"],
+    "off_points": []
+  },
+  "southwest airlines": {
+    "iata": "WN",
+    "aliases": ["Southwest"],
+    "hubs": ["DAL", "HOU", "MDW", "DEN", "LAS", "PHX", "BWI", "OAK"],
+    "focus_cities": ["BNA"],
+    "off_points": []
+  }
+}

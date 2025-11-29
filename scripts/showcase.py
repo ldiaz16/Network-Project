@@ -104,7 +104,11 @@ def build_airline_package(ds, query, announce=True):
     routes_df, meta = ds.select_airline_routes(query, verbose=announce)
     processed = ds.process_routes(routes_df)
     cost = ds.cost_analysis(processed)
-    stats = ds.analyze_network(ds.build_network(processed))
+    stats = ds.analyze_network(
+        ds.build_network(processed),
+        meta.get("Airline (Normalized)") or meta.get("Airline"),
+        processed_routes=processed,
+    )
     package = {
         "name": meta["Airline"],
         "normalized": meta["Airline (Normalized)"],

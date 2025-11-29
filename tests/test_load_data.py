@@ -87,7 +87,7 @@ def test_build_and_analyze_network(datastore):
     )
 
     graph = datastore.build_network(routes_df)
-    metrics = datastore.analyze_network(graph)
+    metrics = datastore.analyze_network(graph, processed_routes=routes_df)
 
     assert graph.number_of_edges() == 3
     assert graph.number_of_nodes() == 3
@@ -225,6 +225,67 @@ def test_analyze_route_market_share_validates_routes(datastore):
 
     with pytest.raises(ValueError):
         datastore.analyze_route_market_share([], top_airlines=3)
+
+
+def test_auto_base_airports_from_route_share(datastore):
+    routes = (
+        [{"Source airport": "HUB", "Destination airport": "A"} for _ in range(25)]
+        + [{"Source airport": "FOC", "Destination airport": "B"} for _ in range(8)]
+        + [{"Source airport": "OFF", "Destination airport": "C"} for _ in range(1)]
+    )
+    routes_df = pd.DataFrame(routes)
+
+    bases = datastore._derive_base_airports(routes_df, "Sample Air")
+
+    assert "HUB" in bases["hubs"]
+    assert "FOC" in bases["focus_cities"]
+    assert "OFF" in bases["off_points"]
+    assert bases["source"].startswith("auto")
+
+
+def test_manual_bases_override_hub_scoring(datastore):
+    datastore.airports = pd.DataFrame(
+        [
+            {"IATA": "JFK", "Name": "John F. Kennedy", "Latitude": 40.6413, "Longitude": -73.7781},
+            {"IATA": "BGM", "Name": "Greater Binghamton", "Latitude": 42.2087, "Longitude": -75.9796},
+        ]
+    )
+    datastore.routes = pd.DataFrame(
+        [
+            {
+                "Airline Code": "AA",
+                "IDK": None,
+                "Source airport": "DFW",
+                "Source airport ID": None,
+                "Destination airport": "LAX",
+                "Destination airport ID": None,
+                "Codeshare": None,
+                "Stops": 0,
+                "Equipment": "738",
+            }
+        ]
+    )
+    datastore.airlines = pd.DataFrame(
+        [
+            {"Airline": "American Airlines", "Alias": "", "IATA": "AA", "ICAO": "", "Callsign": "", "Country": "US", "Active": "Y"}
+        ]
+    )
+    datastore.airlines["Airline (Normalized)"] = datastore.airlines["Airline"].apply(normalize_name)
+    datastore.aircraft_config = pd.DataFrame(columns=["Airline", "Aircraft", "Y", "W", "J", "F", "Total"])
+    datastore.equipment_capacity_lookup = datastore._build_equipment_capacity_lookup(datastore.aircraft_config)
+    datastore.airline_bases = {
+        normalize_name("American Airlines"): {
+            "hubs": ["JFK"],
+            "focus_cities": [],
+            "off_points": [],
+            "source": "manual",
+        }
+    }
+
+    result = datastore.evaluate_route_opportunity("American Airlines", "JFK", "BGM")
+
+    assert result["hub_fit_label"].startswith("Hub-to-")
+    assert result["hub_fit_source"] == "manual"
 
 
 def test_process_routes_estimates_seats_when_config_missing(datastore):

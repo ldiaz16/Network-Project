@@ -105,6 +105,7 @@ class DataStore:
         self._route_total_asm_cache = {}
         self.codeshare_overrides = self._load_codeshare_overrides()
         self.operational_metrics = self._load_operational_metrics()
+        self.airline_bases = self._load_airline_bases()
 
     def load_data(self):
         """Load data from CSV files into DataFrames and preprocess them."""
@@ -322,6 +323,176 @@ class DataStore:
             normalized[normalized_name] = entry
         return normalized
 
+    def _normalize_airport_list(self, codes):
+        """Normalize a list of airport codes to upper-case IATA strings."""
+        normalized = []
+        if not codes:
+            return normalized
+        for code in codes:
+            if not isinstance(code, str):
+                continue
+            trimmed = code.strip().upper()
+            if trimmed and trimmed not in normalized:
+                normalized.append(trimmed)
+        return normalized
+
+    def _load_airline_bases(self):
+        """
+        Load manual hub/focus/off-point definitions for airlines.
+
+        The file (resources/airline_bases.json) is expected to map airline labels or
+        codes to lists of hubs, focus cities, and off-points.
+        """
+        bases_path = self.resources_dir / "airline_bases.json"
+        if not bases_path.exists():
+            return {}
+        try:
+            with bases_path.open("r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+        except Exception:
+            return {}
+
+        normalized = {}
+        for airline_label, payload in raw.items():
+            if not isinstance(payload, dict):
+                continue
+            entry = {
+                "hubs": self._normalize_airport_list(payload.get("hubs")),
+                "focus_cities": self._normalize_airport_list(payload.get("focus_cities")),
+                "off_points": self._normalize_airport_list(payload.get("off_points")),
+                "source": "manual",
+            }
+            normalized_name = normalize_name(airline_label)
+            normalized[normalized_name] = entry
+
+            iata = payload.get("iata")
+            if isinstance(iata, str) and iata.strip():
+                normalized[iata.strip().lower()] = entry
+
+            aliases = payload.get("aliases") or []
+            for alias in aliases:
+                if not isinstance(alias, str):
+                    continue
+                normalized[normalize_name(alias)] = entry
+
+        return normalized
+
+    def _compute_auto_bases(
+        self,
+        routes_df,
+        hub_threshold=0.18,
+        focus_threshold=0.05,
+        offpoint_threshold=0.03,
+        hub_cumulative_target=0.6,
+        top_hub_limit=8,
+    ):
+        """
+        Derive hubs/focus/off-points from route counts by origin.
+
+        Hubs: highest-volume origins until cumulative share crosses target or individual share
+        exceeds hub_threshold (always include top origin). Focus: remaining origins above
+        focus_threshold. Off-points: origins below offpoint_threshold.
+        """
+        if routes_df is None or routes_df.empty:
+            return {
+                "hubs": [],
+                "focus_cities": [],
+                "off_points": [],
+                "source": "auto",
+            }
+
+        counts = (
+            routes_df.groupby("Source airport")
+            .size()
+            .reset_index(name="routes")
+            .sort_values("routes", ascending=False)
+        )
+        total_routes = float(counts["routes"].sum()) or 1.0
+        counts["share"] = counts["routes"] / total_routes
+
+        hubs = []
+        cumulative = 0.0
+        for _, row in counts.iterrows():
+            airport = row["Source airport"]
+            share = float(row["share"])
+            if not hubs:
+                hubs.append(airport)
+                cumulative += share
+                continue
+            if len(hubs) < top_hub_limit and cumulative < hub_cumulative_target and share >= hub_threshold:
+                hubs.append(airport)
+                cumulative += share
+            else:
+                break
+
+        focus_cities = []
+        off_points = []
+        for _, row in counts.iterrows():
+            airport = row["Source airport"]
+            if airport in hubs:
+                continue
+            share = float(row["share"])
+            if share >= focus_threshold:
+                focus_cities.append(airport)
+            elif share < offpoint_threshold:
+                off_points.append(airport)
+
+        return {
+            "hubs": self._normalize_airport_list(hubs),
+            "focus_cities": self._normalize_airport_list(focus_cities),
+            "off_points": self._normalize_airport_list(off_points),
+            "source": "auto",
+        }
+
+    def _derive_base_airports(self, routes_df, airline_identifier=None):
+        """
+        Combine auto-derived bases with optional manual overrides.
+        Manual entries override when present; auto fills gaps.
+        """
+        auto_bases = self._compute_auto_bases(routes_df)
+        manual = self.get_airline_bases(airline_identifier)
+        if not manual:
+            return auto_bases
+
+        merged = {
+            "hubs": manual.get("hubs") or auto_bases.get("hubs") or [],
+            "focus_cities": manual.get("focus_cities") or auto_bases.get("focus_cities") or [],
+            "off_points": manual.get("off_points") or auto_bases.get("off_points") or [],
+        }
+        manual_present = any(len(merged[key]) and merged[key] == manual.get(key, []) for key in merged)
+        merged["source"] = "manual" if manual_present and not auto_bases else "manual+auto"
+        return merged
+
+    def get_airline_bases(self, airline_identifier):
+        """
+        Retrieve manual base data (hubs/focus/off-points) for an airline.
+
+        Accepts an airline name/code string or a metadata dictionary containing
+        "Airline", "Airline (Normalized)", or "IATA" keys.
+        """
+        if airline_identifier is None:
+            return {}
+
+        candidates = []
+        if isinstance(airline_identifier, str):
+            candidates.append(airline_identifier)
+        elif isinstance(airline_identifier, dict):
+            for key in ("Airline (Normalized)", "Airline", "IATA"):
+                value = airline_identifier.get(key)
+                if value:
+                    candidates.append(value)
+
+        for candidate in candidates:
+            if not isinstance(candidate, str):
+                continue
+            normalized_key = normalize_name(candidate)
+            code_key = candidate.strip().lower()
+            if normalized_key in self.airline_bases:
+                return self.airline_bases[normalized_key].copy()
+            if code_key in self.airline_bases:
+                return self.airline_bases[code_key].copy()
+        return {}
+
     def _normalize_load_factor(self, value, midpoint=0.82, spread=0.14):
         """Convert an absolute load factor into a 0-1 pressure scale."""
         try:
@@ -443,6 +614,66 @@ class DataStore:
             totals[key] = float(row["ASM"]) if pd.notna(row["ASM"]) else 0.0
         return totals
 
+    def _score_hub_alignment(self, source_airport, dest_airport, network_hubs=None, base_info=None):
+        """
+        Score how closely a route aligns with an airline's hubs/focus cities.
+
+        Priority is given to manual base definitions (resources/airline_bases.json);
+        network hubs derived from the route graph are used as a fallback.
+        """
+        network_hubs = [code.strip().upper() for code in (network_hubs or []) if isinstance(code, str)]
+        base_info = base_info or {}
+        hubs = self._normalize_airport_list(base_info.get("hubs"))
+        focus_cities = self._normalize_airport_list(base_info.get("focus_cities"))
+        off_points = self._normalize_airport_list(base_info.get("off_points"))
+        hub_source = "manual" if hubs else "network"
+        top_hubs = hubs if hubs else network_hubs
+
+        def classify(airport_code):
+            code = (airport_code or "").upper()
+            if code in off_points:
+                return "off_point"
+            if code in hubs:
+                return "hub"
+            if code in focus_cities:
+                return "focus"
+            if code in network_hubs:
+                return "hub"
+            return "spoke"
+
+        categories = {
+            "source": classify(source_airport),
+            "destination": classify(dest_airport),
+        }
+        source_cat = categories["source"]
+        dest_cat = categories["destination"]
+        pair = {source_cat, dest_cat}
+
+        if source_cat == "hub" and dest_cat == "hub":
+            score, label = 1.0, "Hub-to-hub"
+        elif "hub" in pair and "focus" in pair:
+            score, label = 0.85, "Hub-to-focus"
+        elif "hub" in pair:
+            score, label = 0.7, "Hub-to-spoke"
+        elif source_cat == "focus" and dest_cat == "focus":
+            score, label = 0.65, "Focus-to-focus"
+        elif "focus" in pair:
+            score, label = 0.5, "Focus-to-spoke"
+        elif "off_point" in pair:
+            score, label = 0.25, "Off-point"
+        else:
+            score, label = 0.35, "Off-hub"
+
+        return {
+            "score": score,
+            "label": label,
+            "top_hubs": top_hubs,
+            "focus_cities": focus_cities,
+            "off_points": off_points,
+            "source": hub_source,
+            "categories": categories,
+        }
+
     def evaluate_route_opportunity(self, airline_query, source_airport, dest_airport, seat_demand=None):
         """
         Provide a simple go/no-go recommendation for a proposed route based on:
@@ -470,27 +701,25 @@ class DataStore:
         existing = ((routes_df["Source airport"] == source_airport) & (routes_df["Destination airport"] == dest_airport)).any()
 
         # Hub alignment
-        hub_fit_score = 0.5
-        hub_fit_label = "Off-hub"
-        top_hubs: list = []
+        network_hubs: list = []
+        base_info = self._derive_base_airports(processed, airline_meta if isinstance(airline_meta, dict) else airline_query)
         try:
             network = self.build_network(processed)
-            network_stats = self.analyze_network(network)
+            network_stats = self.analyze_network(network, airline_meta if isinstance(airline_meta, dict) else airline_query)
             raw_hubs = network_stats.get("Top 5 Hubs") or []
-            top_hubs = [entry[0] for entry in raw_hubs if isinstance(entry, (list, tuple)) and len(entry) >= 1]
-            hits = sum(1 for airport in (source_airport, dest_airport) if airport in top_hubs)
-            if hits == 2:
-                hub_fit_score = 1.0
-                hub_fit_label = "Hub-to-hub"
-            elif hits == 1:
-                hub_fit_score = 0.7
-                hub_fit_label = "Hub-to-spoke"
-            else:
-                hub_fit_score = 0.35
-                hub_fit_label = "Off-hub"
+            network_hubs = [entry[0] for entry in raw_hubs if isinstance(entry, (list, tuple)) and len(entry) >= 1]
         except Exception:
-            # Keep defaults if network build fails
-            pass
+            network_stats = {}
+
+        hub_alignment = self._score_hub_alignment(
+            source_airport,
+            dest_airport,
+            network_hubs=network_hubs,
+            base_info=base_info,
+        )
+        hub_fit_score = hub_alignment["score"]
+        hub_fit_label = hub_alignment["label"]
+        top_hubs = hub_alignment["top_hubs"]
 
         # Distance for proposed route
         distance = geodesic((src_row["Latitude"], src_row["Longitude"]), (dst_row["Latitude"], dst_row["Longitude"])).miles
@@ -591,8 +820,16 @@ class DataStore:
             except Exception:
                 return "-"
 
+        hub_source_label = "manual bases" if hub_alignment.get("source") == "manual" else "network hubs"
+        focus_text = ""
+        if hub_alignment.get("focus_cities"):
+            focus_text = f"; focus cities: {', '.join(hub_alignment.get('focus_cities', [])[:3])}"
+        off_point_text = ""
+        if hub_alignment.get("off_points"):
+            off_point_text = f"; off-points: {', '.join(hub_alignment.get('off_points', [])[:3])}"
+
         playbook = [
-            f"Hub fit: {hub_fit_label} (top hubs: {', '.join(top_hubs[:3]) if top_hubs else 'N/A'})",
+            f"Hub fit: {hub_fit_label} (source: {hub_source_label}; hubs: {', '.join(top_hubs[:5]) if top_hubs else 'N/A'}{focus_text}{off_point_text})",
             f"Competition: {competition_label} ({competition_count} carriers); score {competition_score:.2f}",
             f"Distance fit: {distance_fit:.2f} vs. airline median {median_distance:.0f} mi" if median_distance else f"Distance fit: {distance_fit:.2f}",
             f"Market depth proxy: ASM {int(market_asm or 0)} vs. airline median {int(median_asm or 0)}; score {market_depth_score:.2f}",
@@ -616,7 +853,15 @@ class DataStore:
             "market_depth_score": round(market_depth_score, 3),
             "hub_fit_score": round(hub_fit_score, 3),
             "hub_fit_label": hub_fit_label,
+            "hub_fit_source": hub_alignment.get("source"),
+            "hub_categories": hub_alignment.get("categories"),
             "top_hubs": top_hubs,
+            "base_airports": {
+                "hubs": top_hubs,
+                "focus_cities": hub_alignment.get("focus_cities"),
+                "off_points": hub_alignment.get("off_points"),
+                "source": hub_alignment.get("source"),
+            },
             "analog_summary": analog_summary,
             "load_factor_target": lf_target,
             "score": round(score, 3),
@@ -956,20 +1201,27 @@ class DataStore:
 
         return G
     
-    def analyze_network(self, G):
+    def analyze_network(self, G, airline_identifier=None, processed_routes=None):
         """Analyze the network graph and return basic statistics."""
         
         num_airports = G.number_of_nodes()
         num_routes = G.number_of_edges()
 
         top_hubs = sorted(G.degree, key=lambda x: x[1], reverse=True)[:5]
+        base_overrides = self.get_airline_bases(airline_identifier) if airline_identifier else {}
+        derived_bases = self._derive_base_airports(processed_routes, airline_identifier) if processed_routes is not None else None
 
         ## avg_degree = sum(dict(G.degree()).values()) / num_nodes if num_nodes > 0 else 0
-        return {
+        stats = {
             "Number of Aiports Flown To": num_airports,
             "Number of Routes Flown": num_routes,
             "Top 5 Hubs": top_hubs,
-        }      
+        }
+        if base_overrides:
+            stats["Base Overrides"] = base_overrides
+        if derived_bases:
+            stats["Base Airports"] = derived_bases
+        return stats
 
     def draw_network(self, G, layout='spring'):
         """Draw the network graph."""
