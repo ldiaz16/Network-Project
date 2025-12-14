@@ -1,12 +1,13 @@
 """
-Convert BTS .asc dumps (DB1B public, T-100 segment) into Parquet files the app can ingest.
+Convert BTS .asc dumps (DB1B public) into Parquet/CSV files the app can ingest.
 
 Input folder: "BTS DATA" in repo root (pipe-delimited, no headers).
 Outputs:
   data/db1b.parquet   -> DB1B market-level sample (carrier, origin, dest, passengers, fare, year, quarter)
-  data/bts_t100.parquet -> T-100 segments (carrier, origin, dest, seats, passengers, departures, distance, year, quarter)
 
 Notes:
+- The app reads `T_T100_SEGMENT_ALL_CARRIER.csv` directly from the repo root for route data, so this script no longer
+  generates a T-100 rollup file.
 - Streaming parser to handle large files; two passes per file type (pass1 to find latest quarter/month, pass2 to filter rolling 4Q).
 - Schema assumptions follow BTS standard layouts; if BTS publishes a new layout, adjust column maps below.
 """
@@ -20,7 +21,6 @@ import pandas as pd
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 RAW_DIR = BASE_DIR / "BTS DATA"
 OUT_DB1B = BASE_DIR / "data" / "db1b.parquet"
-OUT_T100 = BASE_DIR / "data" / "bts_t100.parquet"
 
 
 def iter_rows(path: pathlib.Path) -> Iterable[List[str]]:
@@ -204,7 +204,6 @@ def main():
         raise SystemExit(f"Missing raw directory: {RAW_DIR}")
 
     db1b_files = sorted(RAW_DIR.glob("db1b.public.*.asc"))
-    t100_files = sorted(RAW_DIR.glob("dd.db28ds.*.asc"))
 
     def _latest(files: List[pathlib.Path], n: int) -> List[pathlib.Path]:
         def _key(path: pathlib.Path):
@@ -216,12 +215,10 @@ def main():
         return sorted(files, key=_key)[-n:] if files else []
 
     db1b_files = _latest(db1b_files, 4)
-    t100_files = _latest(t100_files, 2)
 
-    print(f"Found {len(db1b_files)} DB1B files, {len(t100_files)} T-100 segment files.")
+    print(f"Found {len(db1b_files)} DB1B files.")
 
     db_df = convert_db1b(db1b_files)
-    t100_df = convert_t100(t100_files)
 
     OUT_DB1B.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -233,15 +230,6 @@ def main():
         print(f"Parquet not available; wrote CSV instead: {OUT_DB1B_csv}")
     else:
         print(f"Wrote {len(db_df)} DB1B rows to {OUT_DB1B}")
-
-    try:
-        t100_df.to_parquet(OUT_T100, index=False)
-    except Exception:
-        OUT_T100_csv = OUT_T100.with_suffix(".csv")
-        t100_df.to_csv(OUT_T100_csv, index=False)
-        print(f"Parquet not available; wrote CSV instead: {OUT_T100_csv}")
-    else:
-        print(f"Wrote {len(t100_df)} T-100 rows to {OUT_T100}")
 
 
 if __name__ == "__main__":

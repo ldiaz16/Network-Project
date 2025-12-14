@@ -1,7 +1,7 @@
-import sys
 import json
+import re
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional, Set
 import requests
 import pandas as pd
 from data.airlines import normalize_name
@@ -10,7 +10,6 @@ from rapidfuzz import process, fuzz # type: ignore
 from geopy.distance import geodesic
 from data.aircraft_config import AIRLINE_SEAT_CONFIG
 from collections import defaultdict
-from .data_utils import filter_codeshare_routes
 
 DATA_DIR_ROOT = Path(__file__).resolve().parents[1] / "data"
 RESOURCES_DIR = Path(__file__).resolve().parents[1] / "resources"
@@ -107,96 +106,17 @@ class DataStore:
         self.codeshare_overrides = self._load_codeshare_overrides()
         self.operational_metrics = self._load_operational_metrics()
         self.airline_bases = self._load_airline_bases()
-        self.bts_t100 = None
+        self.t100_segments = None
         self.bts_db1b = None
         self.bts_profitability = None
         self.airport_lookup = {}
 
-    def _load_routes_from_t100_rollup(self, path: Path) -> pd.DataFrame:
-        """
-        Load a pre-aggregated BTS T-100 rollup (data/bts_t100.*) into the canonical routes schema.
-
-        The rollup is expected to contain carrier, origin, destination, seats, passengers, distance,
-        and departure counts across recent quarters.
-        """
-        if path.suffix.lower() == ".parquet":
-            df = pd.read_parquet(path)
-        else:
-            df = pd.read_csv(path)
-
-        def _rename_columns(frame: pd.DataFrame) -> pd.DataFrame:
-            cols = {col.lower(): col for col in frame.columns}
-            rename = {}
-
-            def _pick(target, candidates):
-                for cand in candidates:
-                    key = cand.lower()
-                    if key in cols:
-                        rename[cols[key]] = target
-                        return
-
-            _pick("year", ["year"])
-            _pick("quarter", ["quarter"])
-            _pick("carrier", ["carrier", "unique_carrier", "unique_carrier_code"])
-            _pick("origin", ["origin", "origin_airport", "origin_iata"])
-            _pick("destination", ["destination", "dest", "destination_airport", "dest_airport"])
-            _pick("seats", ["seats"])
-            _pick("passengers", ["passengers", "pax"])
-            _pick("departures", ["departures", "departures_performed", "departures_scheduled"])
-            _pick("distance", ["distance"])
-            return frame.rename(columns=rename)
-
-        df = _rename_columns(df)
-        required = {"carrier", "origin", "destination", "seats"}
-        missing = [col for col in required if col not in df.columns]
-        if missing:
-            raise ValueError(f"T-100 rollup missing columns: {', '.join(missing)}")
-
-        df["carrier"] = df["carrier"].astype(str).str.strip().str.upper()
-        df["origin"] = df["origin"].astype(str).str.strip().str.upper()
-        df["destination"] = df["destination"].astype(str).str.strip().str.upper()
-
-        for numeric in ("seats", "passengers", "departures", "distance", "year", "quarter"):
-            if numeric in df.columns:
-                df[numeric] = pd.to_numeric(df[numeric], errors="coerce").fillna(0.0)
-
-        agg_map = {"Total": ("seats", "sum")}
-        if "passengers" in df.columns:
-            agg_map["Passengers"] = ("passengers", "sum")
-        if "departures" in df.columns:
-            agg_map["Departures"] = ("departures", "sum")
-        if "distance" in df.columns:
-            agg_map["Distance (reported)"] = ("distance", "mean")
-
-        grouped = (
-            df.groupby(["carrier", "origin", "destination"], dropna=False)
-            .agg(**agg_map)
-            .reset_index()
-        )
-
-        grouped.rename(
-            columns={
-                "carrier": "Airline Code",
-                "origin": "Source airport",
-                "destination": "Destination airport",
-            },
-            inplace=True,
-        )
-        grouped["Seat Source"] = "bts_t100"
-        grouped["Equipment"] = ""
-        grouped["Equipment Code"] = grouped["Equipment"]
-
-        mask = (
-            grouped["Airline Code"].astype(str).str.len() > 0
-        ) & (
-            grouped["Source airport"].astype(str).str.len() > 0
-        ) & (
-            grouped["Destination airport"].astype(str).str.len() > 0
-        )
-        grouped = grouped.loc[mask].reset_index(drop=True)
-        return grouped
-
-    def _load_routes_from_t100_segments(self, path: Path) -> pd.DataFrame:
+    def _load_routes_from_t100_segments(
+        self,
+        path: Path,
+        rolling_quarters: int = 4,
+        domestic_only: bool = True,
+    ) -> pd.DataFrame:
         """
         Convert a raw BTS T-100 segment CSV into the canonical routes schema.
 
@@ -204,7 +124,32 @@ class DataStore:
         by carrier + O&D to produce a single row per directional route, carrying
         total seats (seat-miles proxy) and a best-effort equipment hint.
         """
-        raw = pd.read_csv(path)
+        header = pd.read_csv(path, nrows=0)
+        columns = set(header.columns)
+        carrier_col = "UNIQUE_CARRIER" if "UNIQUE_CARRIER" in columns else "CARRIER"
+        if carrier_col is None or carrier_col not in columns:
+            raise ValueError("T-100 segment file is missing a carrier column.")
+
+        required_cols = {carrier_col, "ORIGIN", "DEST", "SEATS"}
+        missing = [col for col in required_cols if col not in columns]
+        if missing:
+            raise ValueError(f"T-100 segment file is missing columns: {', '.join(missing)}")
+
+        desired_cols = [
+            carrier_col,
+            "ORIGIN",
+            "DEST",
+            "SEATS",
+            "PASSENGERS",
+            "DISTANCE",
+            "AIRCRAFT_TYPE",
+            "YEAR",
+            "QUARTER",
+            "ORIGIN_STATE_ABR",
+            "DEST_STATE_ABR",
+        ]
+        usecols = [col for col in desired_cols if col in columns]
+        raw = pd.read_csv(path, usecols=usecols)
 
         # Map BTS aircraft type codes to readable labels when the lookup is available.
         lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_AIRCRAFT_TYPE.csv"
@@ -221,15 +166,6 @@ class DataStore:
                             aircraft_lookup[code.lstrip("0")] = desc
             except Exception:
                 aircraft_lookup = {}
-        carrier_col = "UNIQUE_CARRIER" if "UNIQUE_CARRIER" in raw.columns else "CARRIER"
-        if carrier_col is None or carrier_col not in raw.columns:
-            raise ValueError("T-100 segment file is missing a carrier column.")
-
-        required_cols = {carrier_col, "ORIGIN", "DEST"}
-        missing = [col for col in required_cols if col not in raw.columns]
-        if missing:
-            raise ValueError(f"T-100 segment file is missing columns: {', '.join(missing)}")
-
         def _clean_str(series):
             return series.astype(str).str.strip().str.upper()
 
@@ -240,9 +176,34 @@ class DataStore:
             mode = cleaned.mode()
             return mode.iloc[0] if not mode.empty else None
 
-        raw[carrier_col] = _clean_str(raw[carrier_col])
-        raw["ORIGIN"] = _clean_str(raw["ORIGIN"])
-        raw["DEST"] = _clean_str(raw["DEST"])
+        raw[carrier_col] = _clean_str(raw[carrier_col]).replace({"\\N": ""})
+        raw["ORIGIN"] = _clean_str(raw["ORIGIN"]).replace({"\\N": ""})
+        raw["DEST"] = _clean_str(raw["DEST"]).replace({"\\N": ""})
+
+        if rolling_quarters and "YEAR" in raw.columns and "QUARTER" in raw.columns:
+            years = pd.to_numeric(raw["YEAR"], errors="coerce")
+            quarters = pd.to_numeric(raw["QUARTER"], errors="coerce")
+            quarter_index = years * 4 + quarters
+            latest = quarter_index.max()
+            if pd.notna(latest) and latest > 0:
+                window = max(1, int(rolling_quarters))
+                min_index = latest - (window - 1)
+                raw = raw.loc[quarter_index >= min_index].copy()
+
+        if domestic_only and {"ORIGIN_STATE_ABR", "DEST_STATE_ABR"}.issubset(raw.columns):
+            region_map = self._load_region_country_map()
+            us_states = {code for code, country in region_map.items() if country == "United States"}
+            origin_state = _clean_str(raw["ORIGIN_STATE_ABR"]).str.strip('"')
+            dest_state = _clean_str(raw["DEST_STATE_ABR"]).str.strip('"')
+            raw = raw.loc[origin_state.isin(us_states) & dest_state.isin(us_states)].copy()
+
+        code_pattern = re.compile(r"^[A-Z0-9]{2,5}$")
+        valid_mask = (
+            raw[carrier_col].astype(str).str.match(code_pattern)
+            & raw["ORIGIN"].astype(str).str.match(code_pattern)
+            & raw["DEST"].astype(str).str.match(code_pattern)
+        )
+        raw = raw.loc[valid_mask].copy()
 
         for numeric in ("SEATS", "PASSENGERS", "DISTANCE"):
             if numeric in raw.columns:
@@ -278,7 +239,7 @@ class DataStore:
             grouped["Equipment"] = grouped["Equipment"].fillna("").astype(str)
         else:
             grouped["Equipment"] = ""
-        grouped["Seat Source"] = "bts_t100"
+        grouped["Seat Source"] = "t100_segments"
 
         grouped["Equipment Code"] = grouped["Equipment"]
         if aircraft_lookup:
@@ -311,40 +272,313 @@ class DataStore:
             return {}
         return mapping
 
+    def _load_airlines_from_bts_lookup(self, allowed_iata_codes: Optional[Set[str]] = None) -> pd.DataFrame:
+        """Load carrier names from BTS lookup tables into the OpenFlights-like schema."""
+        lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_UNIQUE_CARRIERS.csv"
+        columns = ["Airline", "Alias", "IATA", "ICAO", "Callsign", "Country", "Active"]
+
+        df = pd.DataFrame(columns=columns)
+        if lookup_path.exists():
+            try:
+                raw = pd.read_csv(lookup_path, dtype=str)
+                if {"Code", "Description"}.issubset(raw.columns):
+                    df = pd.DataFrame(
+                        {
+                            "Airline": raw["Description"].astype(str).str.strip().str.strip('"'),
+                            "Alias": pd.NA,
+                            "IATA": raw["Code"].astype(str).str.strip().str.strip('"').str.upper(),
+                            "ICAO": pd.NA,
+                            "Callsign": pd.NA,
+                            "Country": pd.NA,
+                            "Active": "Y",
+                        }
+                    )
+            except Exception:
+                df = pd.DataFrame(columns=columns)
+
+        if allowed_iata_codes:
+            allowed = {
+                str(code).strip().upper()
+                for code in allowed_iata_codes
+                if isinstance(code, str) and code.strip()
+            }
+            df = df[df["IATA"].isin(allowed)].copy()
+            missing = sorted(allowed - set(df["IATA"].astype(str)))
+            if missing:
+                extras = pd.DataFrame(
+                    {
+                        "Airline": missing,
+                        "Alias": pd.NA,
+                        "IATA": missing,
+                        "ICAO": pd.NA,
+                        "Callsign": pd.NA,
+                        "Country": pd.NA,
+                        "Active": "Y",
+                    }
+                )
+                df = pd.concat([df, extras], ignore_index=True)
+
+        if df.empty:
+            df = pd.DataFrame(columns=columns)
+
+        if "Airline" in df.columns:
+            df["Airline (Normalized)"] = df["Airline"].apply(normalize_name)
+        else:
+            df["Airline (Normalized)"] = pd.NA
+
+        df["IATA"] = df.get("IATA", pd.Series(dtype=str)).astype(str).str.strip().str.upper().replace({"\\N": ""})
+        df = df[df["IATA"].astype(str).str.len() > 0].copy()
+        df.reset_index(drop=True, inplace=True)
+        return df
+
+    def _load_region_country_map(self) -> Dict[str, str]:
+        """Map BTS state/province abbreviations to a country label."""
+        lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_STATE_ABR_AVIATION.csv"
+        mapping: Dict[str, str] = {}
+        if not lookup_path.exists():
+            return mapping
+        try:
+            df = pd.read_csv(lookup_path, dtype=str)
+        except Exception:
+            return mapping
+
+        if not {"Code", "Description"}.issubset(df.columns):
+            return mapping
+
+        for _, row in df.iterrows():
+            code = str(row.get("Code") or "").strip().strip('"').upper()
+            desc = str(row.get("Description") or "").strip()
+            if not code:
+                continue
+            lowered = desc.lower()
+            if "canada" in lowered:
+                mapping[code] = "Canada"
+            elif "mexico" in lowered:
+                mapping[code] = "Mexico"
+            else:
+                mapping[code] = "United States"
+        return mapping
+
+    def _load_airports_from_bts_lookup(self, required_codes: Optional[Set[str]] = None) -> pd.DataFrame:
+        """Load airport names from BTS lookup tables into the OpenFlights-like schema."""
+        lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_AIRPORT.csv"
+        columns = [
+            "Airport ID",
+            "Name",
+            "City",
+            "Country",
+            "IATA",
+            "ICAO",
+            "Latitude",
+            "Longitude",
+            "Altitude",
+            "Timezone",
+            "DST",
+            "Tz",
+            "Type",
+            "Source",
+        ]
+        if not lookup_path.exists():
+            return pd.DataFrame(columns=columns)
+
+        try:
+            raw = pd.read_csv(lookup_path, dtype=str)
+        except Exception:
+            return pd.DataFrame(columns=columns)
+
+        if not {"Code", "Description"}.issubset(raw.columns):
+            return pd.DataFrame(columns=columns)
+
+        raw_codes = raw["Code"].astype(str).str.strip().str.strip('"').str.upper()
+        raw_desc = raw["Description"].astype(str).str.strip()
+        tmp = pd.DataFrame({"IATA": raw_codes, "Description": raw_desc})
+        tmp = tmp[tmp["IATA"].astype(str).str.len() > 0].copy()
+
+        if required_codes:
+            required = {
+                str(code).strip().upper()
+                for code in required_codes
+                if isinstance(code, str) and code.strip()
+            }
+            tmp = tmp[tmp["IATA"].isin(required)].copy()
+
+        parts = tmp["Description"].astype(str).str.partition(":")
+        location = parts[0].astype(str).str.strip()
+        airport_name = parts[2].astype(str).str.strip()
+        airport_name = airport_name.where(airport_name != "", location)
+
+        city = location.astype(str).str.split(",", n=1).str[0].str.strip()
+        region = location.astype(str).str.split(",", n=1).str[1].fillna("").str.strip()
+        region_code = region.astype(str).str.upper()
+
+        region_country = self._load_region_country_map()
+        mapped_country = region_code.map(region_country)
+        fallback_country = region.where(region.astype(str).str.len() > 0, pd.NA)
+        country = mapped_country.where(mapped_country.notna(), fallback_country)
+
+        airports = pd.DataFrame(
+            {
+                "Airport ID": pd.NA,
+                "Name": airport_name.where(airport_name.astype(str).str.len() > 0, pd.NA),
+                "City": city.where(city.astype(str).str.len() > 0, pd.NA),
+                "Country": country,
+                "IATA": tmp["IATA"].astype(str).str.upper(),
+                "ICAO": pd.NA,
+                "Latitude": pd.NA,
+                "Longitude": pd.NA,
+                "Altitude": pd.NA,
+                "Timezone": pd.NA,
+                "DST": pd.NA,
+                "Tz": pd.NA,
+                "Type": "airport",
+                "Source": "BTS",
+            }
+        )
+
+        if required_codes:
+            required = {
+                str(code).strip().upper()
+                for code in required_codes
+                if isinstance(code, str) and code.strip()
+            }
+            missing = sorted(required - set(airports["IATA"].astype(str)))
+            if missing:
+                extras = pd.DataFrame(
+                    {
+                        "Airport ID": pd.NA,
+                        "Name": pd.NA,
+                        "City": pd.NA,
+                        "Country": pd.NA,
+                        "IATA": missing,
+                        "ICAO": pd.NA,
+                        "Latitude": pd.NA,
+                        "Longitude": pd.NA,
+                        "Altitude": pd.NA,
+                        "Timezone": pd.NA,
+                        "DST": pd.NA,
+                        "Tz": pd.NA,
+                        "Type": "airport",
+                        "Source": "BTS",
+                    }
+                )
+                airports = pd.concat([airports, extras], ignore_index=True)
+
+        airports.reset_index(drop=True, inplace=True)
+        return airports
+
+    def _load_airports_from_coordinate_source(self) -> Optional[pd.DataFrame]:
+        """Load airport coordinates from a local file if present (OurAirports CSV)."""
+        ourairports_path = self.data_dir / "airports.csv"
+        if ourairports_path.exists():
+            try:
+                raw = pd.read_csv(ourairports_path, dtype=str)
+            except Exception:
+                raw = None
+            if raw is not None and {"iata_code", "name", "latitude_deg", "longitude_deg", "iso_country"}.issubset(raw.columns):
+                iata = raw["iata_code"].fillna("").astype(str).str.strip().str.upper()
+                out = pd.DataFrame(
+                    {
+                        "Airport ID": pd.NA,
+                        "Name": raw["name"].astype(str).str.strip(),
+                        "City": raw.get("municipality", pd.Series([pd.NA] * len(raw))).astype(str).str.strip(),
+                        "Country": raw["iso_country"].astype(str).str.strip(),
+                        "IATA": iata,
+                        "ICAO": raw.get("ident", pd.Series([pd.NA] * len(raw))).astype(str).str.strip().str.upper(),
+                        "Latitude": pd.to_numeric(raw["latitude_deg"], errors="coerce"),
+                        "Longitude": pd.to_numeric(raw["longitude_deg"], errors="coerce"),
+                        "Altitude": pd.NA,
+                        "Timezone": pd.NA,
+                        "DST": pd.NA,
+                        "Tz": pd.NA,
+                        "Type": raw.get("type", pd.Series([pd.NA] * len(raw))).astype(str).str.strip(),
+                        "Source": "OurAirports",
+                    }
+                )
+                out = out[out["IATA"].astype(str).str.len() > 0].copy()
+                out.drop_duplicates(subset=["IATA"], inplace=True)
+                out.reset_index(drop=True, inplace=True)
+                # Normalise common ISO country codes for downstream CBSA filters.
+                out["Country"] = out["Country"].replace({"US": "United States"})
+                return out
+        return None
+
     def load_data(self):
-        """Load data from CSV files into DataFrames and preprocess them."""
+        """Load BTS T-100 routes plus supporting lookup tables."""
         t100_segments_path = Path(__file__).resolve().parents[1] / "T_T100_SEGMENT_ALL_CARRIER.csv"
-        t100_rollup_parquet = self.data_dir / "bts_t100.parquet"
-        t100_rollup_csv = self.data_dir / "bts_t100.csv"
         self.routes = None
-        using_bts_routes = False
         route_source_path = None
 
-        # Prefer the pre-aggregated T-100 rollup when available.
-        if t100_rollup_parquet.exists() or t100_rollup_csv.exists():
-            rollup_path = t100_rollup_parquet if t100_rollup_parquet.exists() else t100_rollup_csv
+        if t100_segments_path.exists():
             try:
-                self.routes = self._load_routes_from_t100_rollup(rollup_path)
-                using_bts_routes = True
-                route_source_path = rollup_path
-            except Exception:
-                self.routes = None
-
-        # Fallback to the raw T-100 segment export when a rollup is not present.
-        if self.routes is None and t100_segments_path.exists():
-            try:
-                self.routes = self._load_routes_from_t100_segments(t100_segments_path)
-                using_bts_routes = True
+                self.routes = self._load_routes_from_t100_segments(t100_segments_path, rolling_quarters=4, domestic_only=True)
                 route_source_path = t100_segments_path
             except Exception:
                 self.routes = None
 
         if self.routes is None:
-            self.routes = pd.read_csv(self.data_dir / "routes.dat", header=None)
-            using_bts_routes = False
+            raise FileNotFoundError(
+                "Missing BTS T-100 routes data. Provide `T_T100_SEGMENT_ALL_CARRIER.csv` in the repo root."
+            )
 
-        self.airlines = pd.read_csv(self.data_dir / "airlines.dat", header=None)
-        self.airports = pd.read_csv(self.data_dir / "airports.dat", header=None)
+        # Ensure expected columns exist for downstream processing.
+        for required in ["Airline Code", "Source airport", "Destination airport", "Equipment"]:
+            if required not in self.routes.columns:
+                self.routes[required] = "" if required == "Equipment" else pd.NA
+
+        for code_col in ["Airline Code", "Source airport", "Destination airport"]:
+            self.routes[code_col] = (
+                self.routes[code_col]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .str.upper()
+                .replace({"\\N": ""})
+            )
+
+        airline_codes = set(self.routes["Airline Code"].dropna().astype(str).str.strip().str.upper())
+        airport_codes = set(self.routes["Source airport"].dropna().astype(str).str.strip().str.upper())
+        airport_codes |= set(self.routes["Destination airport"].dropna().astype(str).str.strip().str.upper())
+
+        # Prefer BTS lookup tables for airlines/airports.
+        self.airlines = self._load_airlines_from_bts_lookup(allowed_iata_codes=airline_codes)
+        self.airports = self._load_airports_from_bts_lookup(required_codes=airport_codes)
+
+        # Optional coordinate enrichment from a local airport dataset (e.g., OurAirports CSV).
+        coord_source = self._load_airports_from_coordinate_source()
+        if coord_source is not None and not coord_source.empty:
+            coord_source = coord_source.copy()
+            for key_col in ("IATA", "ICAO"):
+                if key_col in coord_source.columns:
+                    coord_source[key_col] = (
+                        coord_source[key_col]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.upper()
+                        .replace({"\\N": ""})
+                    )
+            for numeric in ("Latitude", "Longitude"):
+                if numeric in coord_source.columns:
+                    coord_source[numeric] = pd.to_numeric(coord_source[numeric], errors="coerce")
+
+            def _build_map(field: str) -> Dict[str, object]:
+                mapping: Dict[str, object] = {}
+                if field not in coord_source.columns:
+                    return mapping
+                for _, row in coord_source.iterrows():
+                    value = row.get(field)
+                    for key in (row.get("IATA"), row.get("ICAO")):
+                        if isinstance(key, str) and key and key not in mapping and pd.notna(value):
+                            mapping[key] = value
+                return mapping
+
+            for field in ["Name", "City", "Country", "ICAO", "Latitude", "Longitude"]:
+                mapping = _build_map(field)
+                if not mapping or field not in self.airports.columns:
+                    continue
+                mapped = self.airports["IATA"].map(mapping)
+                self.airports[field] = self.airports[field].combine_first(mapped)
+
         self.cbsa = pd.read_csv(self.data_dir / "cbsa.csv", skiprows=2)
         self.cbsa_lookup = self.cbsa[[
             "CBSA Title",
@@ -355,39 +589,10 @@ class DataStore:
         self.cbsa_lookup["county_key"] = self.cbsa_lookup["County/County Equivalent"].astype(str).str.strip().str.lower()
         self.cbsa_lookup["state_key"] = self.cbsa_lookup["State Name"].astype(str).str.strip().str.lower()
 
-        
-        # Drop the first column which is not needed
-        self.airlines.drop(columns=[0], inplace=True) 
-
-        ## Add column names to each DataFrame
-        if not using_bts_routes:
-            self.routes.columns = [
-                "Airline Code", "IDK", "Source airport", "Source airport ID",
-                "Destination airport", "Destination airport ID", "Codeshare", "Stops", "Equipment"
-            ]
-            self.routes = filter_codeshare_routes(self.routes)
-        else:
-            # Ensure expected columns exist for downstream processing.
-            for required in ["Airline Code", "Source airport", "Destination airport", "Equipment"]:
-                if required not in self.routes.columns:
-                    self.routes[required] = "" if required == "Equipment" else pd.NA
-
-        self.airlines.columns = [
-            "Airline", "Alias", "IATA", "ICAO", "Callsign", "Country", "Active"
-        ]
-        self.airports.columns = [
-            "Airport ID", "Name", "City", "Country", "IATA", "ICAO",
-            "Latitude", "Longitude", "Altitude", "Timezone", "DST", "Tz", "Type", "Source"
-        ]
-
-        ## Normalize the airline names in the airlines DataFrame, 
-        ## creating a new column.
-        self.airlines["Airline (Normalized)"] = self.airlines["Airline"].apply(normalize_name)
-
         # Build airport metadata lazily to avoid excessive API calls
         self.airports_metadata = None
 
-        ## Remove rows with missing or empty IATA codes (Non-operational airlines)
+        # Remove rows with missing or empty codes.
         self.airlines = self.airlines[self.airlines["IATA"].apply(lambda x: isinstance(x, str) and x.strip() != "")]
         self.aircraft_config = self.convert_aircraft_config_to_df(AIRLINE_SEAT_CONFIG)
         self.equipment_capacity_lookup = self._build_equipment_capacity_lookup(self.aircraft_config)
@@ -395,19 +600,33 @@ class DataStore:
         self.airport_lookup = self._load_airport_lookup()
 
         # Opportunistically load BTS data if local caches exist (rolling 4Q, domestic).
-        default_t100 = self.data_dir / "bts_t100.parquet"
-        default_t100_csv = self.data_dir / "bts_t100.csv"
         default_db1b = self.data_dir / "db1b.parquet"
         default_db1b_csv = self.data_dir / "db1b.csv"
-        if route_source_path is not None:
-            t100_path = route_source_path
-        elif t100_segments_path.exists():
-            t100_path = t100_segments_path
-        else:
-            t100_path = default_t100 if default_t100.exists() else (default_t100_csv if default_t100_csv.exists() else None)
         db1b_path = default_db1b if default_db1b.exists() else (default_db1b_csv if default_db1b_csv.exists() else None)
-        if t100_path or db1b_path:
-            self.load_bts_sources(t100_path=t100_path, db1b_path=db1b_path, domestic_only=True, rolling_quarters=4)
+        if db1b_path:
+            try:
+                from .bts_ingest import load_db1b, build_profitability_table
+                self.bts_db1b = load_db1b(str(db1b_path), rolling_quarters=4, domestic_only=True)
+                if self.bts_db1b is not None and not self.bts_db1b.empty:
+                    t100_for_profit = pd.DataFrame(
+                        {
+                            "carrier": self.routes.get("Airline Code"),
+                            "origin": self.routes.get("Source airport"),
+                            "destination": self.routes.get("Destination airport"),
+                            "departures": 0.0,
+                            "seats": pd.to_numeric(self.routes.get("Total"), errors="coerce").fillna(0.0),
+                            "passengers": pd.to_numeric(self.routes.get("Passengers"), errors="coerce").fillna(0.0),
+                            "distance": pd.to_numeric(self.routes.get("Distance (reported)"), errors="coerce").fillna(0.0),
+                        }
+                    )
+                    self.t100_segments = t100_for_profit
+                    try:
+                        self.bts_profitability = build_profitability_table(self.t100_segments, self.bts_db1b)
+                    except Exception:
+                        self.bts_profitability = None
+            except Exception:
+                self.bts_db1b = None
+                self.bts_profitability = None
         
 
     def convert_aircraft_config_to_df(self, config_dict):
@@ -602,10 +821,10 @@ class DataStore:
             except Exception:
                 return None
 
-        self.bts_t100 = _safe_load(load_t100, str(t100_path) if t100_path else None)
+        self.t100_segments = _safe_load(load_t100, str(t100_path) if t100_path else None)
         self.bts_db1b = _safe_load(load_db1b, str(db1b_path) if db1b_path else None)
         try:
-            self.bts_profitability = build_profitability_table(self.bts_t100, self.bts_db1b)
+            self.bts_profitability = build_profitability_table(self.t100_segments, self.bts_db1b)
         except Exception:
             self.bts_profitability = None
 
@@ -1067,8 +1286,57 @@ class DataStore:
         hub_fit_label = hub_alignment["label"]
         top_hubs = hub_alignment["top_hubs"]
 
-        # Distance for proposed route
-        distance = geodesic((src_row["Latitude"], src_row["Longitude"]), (dst_row["Latitude"], dst_row["Longitude"])).miles
+        def _numeric(value):
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                return None
+            if pd.isna(numeric):
+                return None
+            return numeric
+
+        def _lookup_reported_distance(origin: str, destination: str) -> Optional[float]:
+            if self.routes is None or self.routes.empty or "Distance (reported)" not in self.routes.columns:
+                return None
+            subset = self.routes[
+                (self.routes["Source airport"] == origin)
+                & (self.routes["Destination airport"] == destination)
+            ]
+            if subset.empty:
+                subset = self.routes[
+                    (self.routes["Source airport"] == destination)
+                    & (self.routes["Destination airport"] == origin)
+                ]
+            if subset.empty:
+                return None
+            distances = pd.to_numeric(subset.get("Distance (reported)"), errors="coerce")
+            distances = distances[distances.notna() & (distances > 0)]
+            if distances.empty:
+                return None
+            return float(distances.median())
+
+        # Distance for proposed route (geodesic when coordinates exist; otherwise fall back to BTS-reported distance).
+        distance_source = "unknown"
+        distance = None
+        src_lat = _numeric(src_row.get("Latitude"))
+        src_lon = _numeric(src_row.get("Longitude"))
+        dst_lat = _numeric(dst_row.get("Latitude"))
+        dst_lon = _numeric(dst_row.get("Longitude"))
+        if src_lat is not None and src_lon is not None and dst_lat is not None and dst_lon is not None:
+            try:
+                distance = float(geodesic((src_lat, src_lon), (dst_lat, dst_lon)).miles)
+                distance_source = "geodesic"
+            except Exception:
+                distance = None
+
+        if distance is None or distance <= 0:
+            reported_distance = _lookup_reported_distance(source_airport, dest_airport)
+            if reported_distance is not None and reported_distance > 0:
+                distance = reported_distance
+                distance_source = "bts_reported"
+            else:
+                distance = median_distance or 0.0
+                distance_source = "median_stage_length"
 
         # Competition and market depth
         totals_lookup = self.get_route_total_asm([(source_airport, dest_airport)])
@@ -1155,6 +1423,8 @@ class DataStore:
             f"Distance fit vs. airline median: {distance_fit:.2f}",
         ]
         warnings: List[str] = []
+        if distance_source == "median_stage_length":
+            warnings.append("Route distance is unavailable; using the airline median stage length as a proxy.")
         if existing:
             rationale.append("Airline already serves this route.")
             warnings.append("Route already exists in the airline's network; treat this as a sanity check, not a greenfield pick.")
@@ -1253,6 +1523,7 @@ class DataStore:
             "source_display": (src_row["Name"] if src_row is not None and "Name" in src_row else None) or source_airport,
             "destination_display": (dst_row["Name"] if dst_row is not None and "Name" in dst_row else None) or dest_airport,
             "distance_miles": round(distance, 2),
+            "distance_source": distance_source,
             "market_asm": market_asm,
             "competition_count": competition_count,
             "competition_label": competition_label,

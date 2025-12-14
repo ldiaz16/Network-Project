@@ -1,9 +1,8 @@
 """
 Derive airline hubs and focus cities from a BTS T-100 export.
 
-This script reads the "T_T100_SEGMENT_ALL_CARRIER.csv" segment export (or a
-normalized rollup such as data/bts_t100.csv/.parquet), aggregates seat capacity
-by carrier + origin, and classifies each carrier's top origins into:
+This script reads the "T_T100_SEGMENT_ALL_CARRIER.csv" segment export, aggregates
+seat capacity by carrier + origin, and classifies each carrier's top origins into:
 - hubs: top origins until a cumulative seat-share target is met (capped)
 - focus_cities: next origins above a minimum seat-share threshold (capped)
 
@@ -376,8 +375,7 @@ def build_airline_bases(
         totals, by_origin, names = _aggregate_from_rollup(input_path, period=period)
     else:
         raise SystemExit(
-            "Unrecognized input schema. Provide a BTS segment export CSV (with UNIQUE_CARRIER/ORIGIN/DEST)\n"
-            "or a normalized rollup with columns: year, quarter, carrier, origin, seats."
+            "Unrecognized input schema. Provide a BTS segment export CSV (with UNIQUE_CARRIER/ORIGIN/DEST)."
         )
 
     carrier_to_origins: Dict[str, List[Tuple[str, float]]] = defaultdict(list)
@@ -421,7 +419,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--input",
         default=str(BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"),
-        help="Path to T_T100_SEGMENT_ALL_CARRIER.csv or a normalized T-100 rollup (csv/parquet).",
+        help="Path to T_T100_SEGMENT_ALL_CARRIER.csv.",
     )
     parser.add_argument(
         "--output",

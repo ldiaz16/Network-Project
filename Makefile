@@ -7,12 +7,24 @@ all: data report run
 
 # Step 1: Install Python dependencies
 
-# Step 2: Ensure data files exist (airlines, routes, airports)
+# Step 2: Ensure data files exist (BTS T-100 + lookup tables)
 data:
-	@mkdir -p data
-	@python3 -c "import os; f='data/airlines.dat'; print(f'Data check: {f}') if os.path.exists(f) else __import__('urllib.request').urlretrieve('https://raw.githubusercontent.com/jpatokal/openflights/master/data/airlines.dat', f)"
-	@python3 -c "import os; f='data/routes.dat'; print(f'Data check: {f}') if os.path.exists(f) else __import__('urllib.request').urlretrieve('https://raw.githubusercontent.com/jpatokal/openflights/master/data/routes.dat', f)"
-	@python3 -c "import os; f='data/airports.dat'; print(f'Data check: {f}') if os.path.exists(f) else __import__('urllib.request').urlretrieve('https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat', f)"
+	@python3 - <<'PY'
+from pathlib import Path
+
+required = [
+    Path("Lookup Tables/L_UNIQUE_CARRIERS.csv"),
+    Path("Lookup Tables/L_AIRPORT.csv"),
+    Path("data/cbsa.csv"),
+    Path("T_T100_SEGMENT_ALL_CARRIER.csv"),
+]
+
+missing = [str(p) for p in required if not p.exists()]
+if missing:
+    raise SystemExit("Missing required data files:\\n- " + "\\n- ".join(missing))
+
+print("Data check: ok")
+PY
 
 # Step 3: Run the main script
 run:

@@ -9,9 +9,11 @@ Decision-support toolkit for comparing airline networks, surfacing competing rou
 - Delivery options: CLI (`main.py`), FastAPI (`src/api.py`), Flask+Gunicorn (`backend/app.py`), and a static UI (`frontend/`).
 
 ## Data prerequisites
-- Preferred routes source: drop `T_T100_SEGMENT_ALL_CARRIER.csv` in the repo root. It becomes the primary routes table (carrier + O&D aggregated from BTS T-100). Legacy `data/routes.dat` is only used when this file is absent.
-- Required (OpenFlights): `data/airlines.dat`, `data/airports.dat`, plus CBSA lookup `data/cbsa.csv`. Run `make data` to fetch the OpenFlights files.
-- Optional BTS enrichments (drop into `data/`): `bts_t100.parquet` or `.csv`, `db1b.parquet` or `.csv`. These unlock market-share snapshots and profitability context when present.
+- Routes (required): `T_T100_SEGMENT_ALL_CARRIER.csv` in the repo root.
+- Lookup tables (required): `Lookup Tables/L_UNIQUE_CARRIERS.csv` and `Lookup Tables/L_AIRPORT.csv` (shipped in this repo).
+- CBSA lookup (required for CBSA simulation): `data/cbsa.csv`.
+- Optional (recommended): airport coordinates via `data/airports.csv` (OurAirports format with `iata_code`, `latitude_deg`, `longitude_deg`, etc.) to enable geodesic distances and CBSA lookups.
+- Optional BTS enrichments (drop into `data/`): `db1b.parquet` or `.csv`. These unlock profitability context when present.
 - Other helpers: fleet seating assumptions in `data/aircraft_config.py`, codeshare overrides in `data/codeshare_overrides.json`, cached CBSA lookups in `data/cbsa_cache.json`.
 
 ## Repository layout
@@ -28,7 +30,7 @@ Decision-support toolkit for comparing airline networks, surfacing competing rou
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-make data               # fetch OpenFlights core datasets
+make data               # validate BTS dataset presence
 ```
 
 ### Run options
@@ -65,7 +67,7 @@ pytest
 - API base injector for the static UI: `python scripts/set_frontend_api_base.py --api-base "..."`
 
 ## Make targets
-- `make data` – fetch OpenFlights data.
+- `make data` – validate BTS datasets are present.
 - `make api` – run FastAPI with reload.
 - `make report` – render demo report (writes to `reports/`).
 - `make asm-dashboard` / `make asm-check` – visualize or gate ASM data quality.
@@ -80,11 +82,11 @@ pytest
 - Flask-only extras: `POST /api/optimal-aircraft`, `POST /api/propose-route`.
 
 ## Performance & scale notes
-- Dataset sizes (local OpenFlights/CBSA): `routes.dat` 67,663 rows, `airlines.dat` 6,162 rows, `airports.dat` 7,698 rows, `cbsa.csv` 1,918 rows. Optional BTS rollups can add millions of rows but are loaded opportunistically when present.
+- BTS T-100 segment exports can be large; API startup parses and aggregates `T_T100_SEGMENT_ALL_CARRIER.csv` on boot.
 - Architecture: service-style domain layer (`src/backend_service.py`) behind adapters (FastAPI async endpoints with threadpool offloading; Flask + Gunicorn), with shared `DataStore` for preprocessing/scoring and request-level rate limiting/CORS.
 - Benchmarks: run `python scripts/load_test_runner.py --base-url http://localhost:8000 --requests 100 --concurrency 10` while the API is up to capture throughput and latency (p50/p95). Results are environment-dependent; record them in your deployment notes or CI artifacts if you need measurable improvements over time.
 
 ## Notes for production
-- Keep `data/` on a persistent volume; BTS rollups can be large and are loaded opportunistically.
+- Keep `data/` on a persistent volume; DB1B and CBSA caches are optional but benefit from persistence.
 - Set explicit CORS origins, tighten rate limits, and front Gunicorn/Uvicorn with a reverse proxy for TLS and buffering.
-- Use the Docker image as the deployable unit; mount `data/` read-only in runtimes that need OpenFlights/BTS files.
+- Use the Docker image as the deployable unit; mount `data/` read-only in runtimes that need BTS files.

@@ -10,7 +10,13 @@ This folder contains a lightweight browser UI that talks to the FastAPI backend 
    pip install fastapi uvicorn pydantic
    ```
 
-2. Ensure the dataset files (`data/airlines.dat`, `data/routes.dat`, `data/airports.dat`, `data/cbsa.csv`) are present. The existing `Makefile` target `data` can download them.
+2. Ensure the BTS datasets are present:
+   - Routes: `T_T100_SEGMENT_ALL_CARRIER.csv` in the repo root
+   - Lookup tables: `Lookup Tables/L_UNIQUE_CARRIERS.csv` and `Lookup Tables/L_AIRPORT.csv`
+   - CBSA lookup: `data/cbsa.csv`
+   - Optional (for CBSA + geodesic distance): `data/airports.csv` (OurAirports format with `iata_code`, `latitude_deg`, `longitude_deg`, etc.)
+
+   Run `make data` to validate the files are present.
 
 ## Run the backend
 

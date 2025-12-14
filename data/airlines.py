@@ -1,22 +1,14 @@
-import os
-import urllib.request
+"""Airline helpers shared across the project.
 
-# Ensure target directory
-DATA_DIR = "data"
-AIRLINES_PATH = os.path.join(DATA_DIR, "airlines.dat")
-
-# Only download if file does not exist
-if not os.path.exists(AIRLINES_PATH):
-    print(f"Downloading airlines.dat to {AIRLINES_PATH}...")
-    urllib.request.urlretrieve(
-        "https://raw.githubusercontent.com/jpatokal/openflights/master/data/airlines.dat",
-        AIRLINES_PATH
-    )
-else:
-    print(f"airlines.dat already exists at {AIRLINES_PATH}")
+The app no longer downloads OpenFlights data at import time. Data acquisition is handled
+via `Makefile`/scripts, and the runtime loaders in `src/load_data.py` prefer BTS T-100
+and related BTS lookup tables.
+"""
 
 def normalize_name(name):
-    name = name.lower()
-    for word in ["airlines", "airways", "air"]:
-        name = name.replace(word, "")
-    return ''.join(filter(str.isalnum, name)).strip()
+    if not isinstance(name, str):
+        return ""
+    lowered = name.lower()
+    for token in ["airlines", "airways", "air line", "airline", "air"]:
+        lowered = lowered.replace(token, " ")
+    return "".join(ch for ch in lowered if ch.isalnum()).strip()
