@@ -444,6 +444,15 @@ def run_analysis(data_store, payload: AnalysisRequest) -> Dict[str, Any]:
             return packages[normalized_key]
         package = _build_airline_package(data_store, query)
         packages[normalized_key] = package
+        metadata = package.get("metadata")
+        if hasattr(metadata, "to_dict"):
+            metadata = metadata.to_dict()
+        elif metadata is None:
+            metadata = {}
+        iata_code = metadata.get("IATA") or metadata.get("Airline Code") or "N/A"
+        routes_df = package.get("routes")
+        route_count = len(routes_df) if routes_df is not None else 0
+        messages.append(f"Matched '{query}' to {package.get('name')} (IATA {iata_code}) with {route_count} routes.")
         return package
 
     if payload.build_cbsa_cache:
