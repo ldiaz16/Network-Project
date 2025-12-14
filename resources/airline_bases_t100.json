@@ -1,0 +1,7386 @@
+{
+  "02Q": {
+    "aliases": [
+      "Titan Airways"
+    ],
+    "focus_cities": [
+      "PDL",
+      "MIA",
+      "IAD",
+      "RVN",
+      "KOA",
+      "MCO",
+      "MSY",
+      "ZLO"
+    ],
+    "hubs": [
+      "STN",
+      "CDG",
+      "JFK",
+      "PAE",
+      "ANC",
+      "SNN"
+    ],
+    "iata": "02Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "07Q": {
+    "aliases": [
+      "Flair Airlines Ltd.",
+      "Flair Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "LAX",
+      "YUL",
+      "PHX",
+      "JFK",
+      "YYC",
+      "YKF",
+      "YEG",
+      "YXU",
+      "PSP"
+    ],
+    "hubs": [
+      "YVR",
+      "YYZ",
+      "FLL",
+      "MCO",
+      "LAS"
+    ],
+    "iata": "07Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "0BQ": {
+    "aliases": [
+      "DCA"
+    ],
+    "focus_cities": [
+      "NAS",
+      "SAV",
+      "BWI",
+      "FRA",
+      "SJC"
+    ],
+    "hubs": [
+      "STR",
+      "OPF",
+      "TEB",
+      "GOA"
+    ],
+    "iata": "0BQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "0CQ": {
+    "aliases": [
+      "ACM AIR CHARTER GmbH"
+    ],
+    "focus_cities": [
+      "CIA",
+      "COD",
+      "CPR",
+      "DEN",
+      "FRA",
+      "HNL",
+      "HSH",
+      "IAD",
+      "IAH",
+      "OPF"
+    ],
+    "hubs": [
+      "ACK",
+      "SCL",
+      "BED",
+      "FKB",
+      "JFK",
+      "MCO",
+      "RNO",
+      "ANU",
+      "ASE",
+      "BRO"
+    ],
+    "iata": "0CQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "0J": {
+    "aliases": [
+      "JetClub AG"
+    ],
+    "focus_cities": [
+      "IAD",
+      "LTN",
+      "DUB",
+      "HPN",
+      "MIA",
+      "YYT"
+    ],
+    "hubs": [
+      "ZRH",
+      "KEF",
+      "TEB",
+      "RSW"
+    ],
+    "iata": "0J",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "0Q": {
+    "aliases": [
+      "Flying Service N.V."
+    ],
+    "focus_cities": [
+      "BRS",
+      "BUD",
+      "FAR",
+      "GIG",
+      "GSO",
+      "MSY",
+      "NCE",
+      "PGA",
+      "PVD",
+      "SJC"
+    ],
+    "hubs": [
+      "LBG",
+      "TEB",
+      "HOU",
+      "IAD",
+      "AMS",
+      "BGR",
+      "APA"
+    ],
+    "iata": "0Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "0QQ": {
+    "aliases": [
+      "TAG Aviation (UK) Ltd.",
+      "TAG Aviation (UK)"
+    ],
+    "focus_cities": [
+      "LTN"
+    ],
+    "hubs": [
+      "TEB",
+      "FAB"
+    ],
+    "iata": "0QQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "0UQ": {
+    "aliases": [
+      "Comlux Malta, Ltd.",
+      "Comlux Malta"
+    ],
+    "focus_cities": [
+      "YYR",
+      "GVA",
+      "SAV"
+    ],
+    "hubs": [
+      "ANC",
+      "HND",
+      "IAD",
+      "LAX",
+      "YQB"
+    ],
+    "iata": "0UQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "10Q": {
+    "aliases": [
+      "Swiss Air Ambulance"
+    ],
+    "focus_cities": [
+      "LAX",
+      "MUC",
+      "PIE",
+      "SNN",
+      "YHZ"
+    ],
+    "hubs": [
+      "MIA",
+      "ZRH",
+      "AMA",
+      "APF",
+      "BGR",
+      "BHX"
+    ],
+    "iata": "10Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "12Q": {
+    "aliases": [
+      "Unijet"
+    ],
+    "focus_cities": [
+      "BED",
+      "BNA",
+      "FAB",
+      "IAD",
+      "LCY",
+      "LTN",
+      "SEA",
+      "SFO"
+    ],
+    "hubs": [
+      "LBG",
+      "TEB",
+      "BOS",
+      "NCE"
+    ],
+    "iata": "12Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "13Q": {
+    "aliases": [
+      "Chartright Air Inc.",
+      "Chartright Air"
+    ],
+    "focus_cities": [
+      "SRQ",
+      "YOW",
+      "BUF",
+      "LAS",
+      "PSP",
+      "TPA",
+      "CLT",
+      "YVR",
+      "MDW",
+      "YUL"
+    ],
+    "hubs": [
+      "YYZ",
+      "TEB",
+      "APF",
+      "YKF",
+      "FXE",
+      "HPN",
+      "BCT",
+      "YYC",
+      "OPF",
+      "PBI"
+    ],
+    "iata": "13Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "15Q": {
+    "aliases": [
+      "Air Alsie A/S"
+    ],
+    "focus_cities": [
+      "JFK",
+      "RKE",
+      "SLC",
+      "LAS",
+      "SGD",
+      "IAD",
+      "PBI",
+      "BMA",
+      "HPN",
+      "CPH"
+    ],
+    "hubs": [
+      "TEB",
+      "NCE",
+      "BED",
+      "ARN",
+      "FOK",
+      "ZRH",
+      "PWK",
+      "BQH",
+      "FAB",
+      "GOT"
+    ],
+    "iata": "15Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "17Q": {
+    "aliases": [
+      "Albinati Aeronautics SA"
+    ],
+    "focus_cities": [
+      "TUS"
+    ],
+    "hubs": [
+      "GVA",
+      "BOS"
+    ],
+    "iata": "17Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1BQ": {
+    "aliases": [
+      "Eastern Airlines f/k/a Dynamic Airways, LLC",
+      "Eastern Airlines f/k/a Dynamic Airways"
+    ],
+    "focus_cities": [
+      "ELP",
+      "AFW",
+      "MAD",
+      "AEX",
+      "NAS",
+      "ALB",
+      "GPT",
+      "RZE",
+      "DTW",
+      "KTW"
+    ],
+    "hubs": [
+      "HRL",
+      "SJU",
+      "MCI",
+      "JFK",
+      "CCS",
+      "CMH",
+      "LRD",
+      "LIM",
+      "TLV",
+      "PHX"
+    ],
+    "iata": "1BQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1EQ": {
+    "aliases": [
+      "KaiserAir, Inc.",
+      "KaiserAir"
+    ],
+    "focus_cities": [
+      "SJC",
+      "LAX",
+      "LAS",
+      "HOU",
+      "MSP",
+      "BUR",
+      "MCO",
+      "ORD",
+      "SAN",
+      "SBA"
+    ],
+    "hubs": [
+      "OAK",
+      "KOA"
+    ],
+    "iata": "1EQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1HQ": {
+    "aliases": [
+      "International Jet Management GmbH"
+    ],
+    "focus_cities": [
+      "ARN",
+      "BGR",
+      "BNA",
+      "BOH",
+      "CNY",
+      "CPR",
+      "FOK",
+      "HEL",
+      "HUM",
+      "JFK"
+    ],
+    "hubs": [
+      "BUD",
+      "TEB",
+      "NCE",
+      "IAD",
+      "PBI",
+      "PMI",
+      "PSA",
+      "SRQ",
+      "ORD",
+      "APF"
+    ],
+    "iata": "1HQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1QQ": {
+    "aliases": [
+      "City Wings Inc dba Seaflight",
+      "City Wings Inc",
+      "Seaflight",
+      "City Wings"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "STT",
+      "STX"
+    ],
+    "iata": "1QQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1UQ": {
+    "aliases": [
+      "Gainjet Aviation SA"
+    ],
+    "focus_cities": [
+      "CVG",
+      "IAH",
+      "JFK",
+      "ORD",
+      "STN",
+      "TEB",
+      "TFS"
+    ],
+    "hubs": [
+      "KEF",
+      "BGR",
+      "BOS",
+      "ATL",
+      "BWI"
+    ],
+    "iata": "1UQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1XQ": {
+    "aliases": [
+      "Dassault Falcon Service"
+    ],
+    "focus_cities": [
+      "DKR",
+      "IAD",
+      "LAX",
+      "RAK",
+      "BOS",
+      "FAB",
+      "HAM",
+      "LIN",
+      "LTN",
+      "YUL"
+    ],
+    "hubs": [
+      "TEB",
+      "LBG",
+      "MIA"
+    ],
+    "iata": "1XQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "1ZQ": {
+    "aliases": [
+      "Comlux Aruba NV"
+    ],
+    "focus_cities": [
+      "JAX",
+      "LAX",
+      "SNN"
+    ],
+    "hubs": [
+      "LCA",
+      "TLC",
+      "TPA"
+    ],
+    "iata": "1ZQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "24Q": {
+    "aliases": [
+      "Jet Story"
+    ],
+    "focus_cities": [
+      "BOS",
+      "KRK",
+      "MAD",
+      "MEM",
+      "MUC",
+      "NAP",
+      "RDU",
+      "ZRH",
+      "ALY",
+      "BGY"
+    ],
+    "hubs": [
+      "TEB",
+      "IAD",
+      "WAW",
+      "GVA",
+      "DUB",
+      "MIA",
+      "NCE",
+      "OPF",
+      "RSW",
+      "AGP"
+    ],
+    "iata": "24Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "25Q": {
+    "aliases": [
+      "Mjet GmbH"
+    ],
+    "focus_cities": [
+      "LAS",
+      "LEX",
+      "OSL",
+      "SJC",
+      "SNN",
+      "YNG",
+      "YUL"
+    ],
+    "hubs": [
+      "TEB",
+      "ZRH",
+      "AGP",
+      "AHO",
+      "EWR"
+    ],
+    "iata": "25Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "26Q": {
+    "aliases": [
+      "Albinati aviation Limited"
+    ],
+    "focus_cities": [
+      "LAX",
+      "LIN",
+      "NCE",
+      "OPF"
+    ],
+    "hubs": [
+      "BCN",
+      "MIA",
+      "TEB",
+      "BNA",
+      "CTA",
+      "GOA",
+      "IAD"
+    ],
+    "iata": "26Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "27Q": {
+    "aliases": [
+      "Jet Aviation Flight Services, Inc.",
+      "Jet Aviation Flight Services"
+    ],
+    "focus_cities": [
+      "SFO",
+      "BUR",
+      "BFI",
+      "RIL",
+      "ASE",
+      "LAS",
+      "BED",
+      "MIA",
+      "FOK",
+      "PSP"
+    ],
+    "hubs": [
+      "TEB",
+      "MDW",
+      "IAD",
+      "UGN",
+      "HPN",
+      "OPF",
+      "PBI",
+      "PWK",
+      "DAL",
+      "LAX"
+    ],
+    "iata": "27Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2AQ": {
+    "aliases": [
+      "ABS JETS A.S"
+    ],
+    "focus_cities": [
+      "BED",
+      "HPN",
+      "SXM",
+      "SFO",
+      "PGA",
+      "TEB",
+      "CPS",
+      "GNB",
+      "GRU",
+      "APC"
+    ],
+    "hubs": [
+      "PRG",
+      "IAH",
+      "BOS",
+      "LAS",
+      "LAX",
+      "FLL",
+      "BTS",
+      "IAD",
+      "MIA",
+      "PLS"
+    ],
+    "iata": "2AQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2E": {
+    "aliases": [
+      "Smokey Bay Air Inc.",
+      "Smokey Bay Air"
+    ],
+    "focus_cities": [
+      "KEB",
+      "PGM",
+      "A72"
+    ],
+    "hubs": [
+      "HOM",
+      "SOV"
+    ],
+    "iata": "2E",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2K": {
+    "aliases": [
+      "Aerogal"
+    ],
+    "focus_cities": [
+      "UIO"
+    ],
+    "hubs": [
+      "JFK",
+      "GYE"
+    ],
+    "iata": "2K",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2NQ": {
+    "aliases": [
+      "LIMA NY Corp d/b/a Fly The Whale",
+      "LIMA NY Corp",
+      "Fly The Whale",
+      "LIMA NY"
+    ],
+    "focus_cities": [
+      "BID",
+      "WST",
+      "MTP",
+      "TEB",
+      "SJU"
+    ],
+    "hubs": [
+      "STX",
+      "STT"
+    ],
+    "iata": "2NQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2O": {
+    "aliases": [
+      "Island Air Service"
+    ],
+    "focus_cities": [
+      "KOZ",
+      "ORI",
+      "AKK",
+      "DGB",
+      "KYK",
+      "SYB",
+      "KKB",
+      "06A",
+      "AOS",
+      "KWP"
+    ],
+    "hubs": [
+      "ADQ",
+      "OLH",
+      "KLN",
+      "A43"
+    ],
+    "iata": "2O",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2OQ": {
+    "aliases": [
+      "Talofa Airways Limited"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "PPG",
+      "APW"
+    ],
+    "iata": "2OQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2T": {
+    "aliases": [
+      "BermudAir"
+    ],
+    "focus_cities": [
+      "HPN",
+      "BWI",
+      "MCO",
+      "RDU",
+      "RIC",
+      "CHS",
+      "BDL"
+    ],
+    "hubs": [
+      "BDA",
+      "BOS"
+    ],
+    "iata": "2T",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "2UQ": {
+    "aliases": [
+      "Svenskt Industriflyg AB"
+    ],
+    "focus_cities": [
+      "BER",
+      "GRS",
+      "MRS",
+      "OLB",
+      "PHL",
+      "RST"
+    ],
+    "hubs": [
+      "TEB",
+      "CIW",
+      "OXF"
+    ],
+    "iata": "2UQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "36Q": {
+    "aliases": [
+      "Air Hamburg Luftverkehrsgesellschaft mbH"
+    ],
+    "focus_cities": [
+      "BGR",
+      "BED",
+      "ZRH",
+      "OPF",
+      "AGP",
+      "NAS",
+      "PVD",
+      "PWK",
+      "SNN",
+      "CIA"
+    ],
+    "hubs": [
+      "TEB",
+      "LTN",
+      "HPN",
+      "LBG",
+      "BCT",
+      "FAB",
+      "AMS",
+      "IAD",
+      "EWR",
+      "NCE"
+    ],
+    "iata": "36Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "37Q": {
+    "aliases": [
+      "Eastern Air Express, LLC (EAX)",
+      "Eastern Air Express LLC (EAX)"
+    ],
+    "focus_cities": [
+      "ELP",
+      "HRL",
+      "YNG",
+      "SJU",
+      "CMW",
+      "PUJ",
+      "HOG",
+      "SCU",
+      "RSW",
+      "EWR"
+    ],
+    "hubs": [
+      "MIA",
+      "HAV",
+      "SAT",
+      "SNU",
+      "CAP",
+      "AEX"
+    ],
+    "iata": "37Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "3AQ": {
+    "aliases": [
+      "Maritime Helicopters, Inc.",
+      "Maritime Helicopters"
+    ],
+    "focus_cities": [
+      "HOM",
+      "SOV",
+      "MTX",
+      "PGM",
+      "PPC",
+      "ENA",
+      "KEB",
+      "DUT",
+      "GKN",
+      "SXQ"
+    ],
+    "hubs": [
+      "KQA",
+      "7AK"
+    ],
+    "iata": "3AQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "3EQ": {
+    "aliases": [
+      "Scott Aviation, LLC d/b/a Silver Air",
+      "Scott Aviation, LLC",
+      "Silver Air",
+      "Scott Aviation LLC d/b/a Silver Air",
+      "Scott Aviation"
+    ],
+    "focus_cities": [
+      "SCF",
+      "TRM",
+      "HSH",
+      "OGG",
+      "BUR",
+      "CSL",
+      "SJD",
+      "PSP",
+      "NUQ",
+      "CLD"
+    ],
+    "hubs": [
+      "VNY",
+      "LAS",
+      "SNA",
+      "SFO",
+      "SLC",
+      "TEB",
+      "LAX",
+      "SJC",
+      "SBA",
+      "OAK"
+    ],
+    "iata": "3EQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "3M": {
+    "aliases": [
+      "Silver Airways"
+    ],
+    "focus_cities": [
+      "TLH",
+      "PNS",
+      "STX",
+      "MCO",
+      "MHH",
+      "EIS",
+      "ELH",
+      "STT",
+      "GGT",
+      "BIM"
+    ],
+    "hubs": [
+      "FLL",
+      "TPA",
+      "SJU",
+      "EYW"
+    ],
+    "iata": "3M",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "3U": {
+    "aliases": [
+      "Sichuan Airlines Co Ltd.",
+      "Sichuan Airlines"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "TFU",
+      "LAX"
+    ],
+    "iata": "3U",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "4B": {
+    "aliases": [
+      "Boutique Air"
+    ],
+    "focus_cities": [
+      "BOS"
+    ],
+    "hubs": [
+      "PDT",
+      "PDX",
+      "MSS"
+    ],
+    "iata": "4B",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "4C": {
+    "aliases": [
+      "Aerovias de Intergracian Regional"
+    ],
+    "focus_cities": [
+      "MCO"
+    ],
+    "hubs": [
+      "BOG",
+      "MIA"
+    ],
+    "iata": "4C",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "4W": {
+    "aliases": [
+      "Warbelow"
+    ],
+    "focus_cities": [
+      "WBQ",
+      "RMP",
+      "MNT",
+      "MLY",
+      "CEM",
+      "IRC",
+      "HKB",
+      "SVS",
+      "FYU",
+      "SCC"
+    ],
+    "hubs": [
+      "FAI",
+      "CXF"
+    ],
+    "iata": "4W",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "4Y": {
+    "aliases": [
+      "Eurowings Discover GmbH"
+    ],
+    "focus_cities": [
+      "TPA",
+      "PHL",
+      "LAS",
+      "MUC",
+      "RSW",
+      "MSP",
+      "ANC"
+    ],
+    "hubs": [
+      "FRA",
+      "MCO"
+    ],
+    "iata": "4Y",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "5D": {
+    "aliases": [
+      "Aerolitoral"
+    ],
+    "focus_cities": [
+      "DTW",
+      "MFE",
+      "BJX",
+      "RDU",
+      "SAT",
+      "SLP",
+      "AUS",
+      "DFW",
+      "ZLO"
+    ],
+    "hubs": [
+      "ATL",
+      "MEX",
+      "NLU",
+      "MTY",
+      "IAH",
+      "QRO"
+    ],
+    "iata": "5D",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "5V": {
+    "aliases": [
+      "Tatonduk Outfitters Limited d/b/a Everts Air Alaska and Everts Air Cargo",
+      "Tatonduk Outfitters Limited",
+      "Everts Air Alaska and Everts Air Cargo"
+    ],
+    "focus_cities": [
+      "BTI",
+      "ARC",
+      "VEE",
+      "AKP",
+      "EAA",
+      "NUL",
+      "RBY",
+      "HSL",
+      "AET",
+      "KBC"
+    ],
+    "hubs": [
+      "FAI",
+      "GAL",
+      "FYU"
+    ],
+    "iata": "5V",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "5Y": {
+    "aliases": [
+      "Atlas Air Inc.",
+      "Atlas Air"
+    ],
+    "focus_cities": [
+      "CVG",
+      "OPF",
+      "LAX",
+      "MZJ",
+      "MSY",
+      "PIT",
+      "TPE",
+      "HHN",
+      "MEX",
+      "DTW"
+    ],
+    "hubs": [
+      "IAH",
+      "BWI",
+      "JAX",
+      "FLL",
+      "SEA",
+      "DEN",
+      "MIA",
+      "BUF"
+    ],
+    "iata": "5Y",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "6F": {
+    "aliases": [
+      "Fox Aircraft, LLC",
+      "Fox Aircraft"
+    ],
+    "focus_cities": [
+      "HPB",
+      "EMK",
+      "AUK",
+      "KLG",
+      "KWT",
+      "NME",
+      "OOK",
+      "KPN",
+      "WTL",
+      "WNA"
+    ],
+    "hubs": [
+      "BET",
+      "WWT",
+      "KSM",
+      "AKI",
+      "MOU",
+      "TLT",
+      "PQS",
+      "KKI",
+      "KUK",
+      "RSH"
+    ],
+    "iata": "6F",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "7C": {
+    "aliases": [
+      "Jeju Air Co Ltd.",
+      "Jeju Air"
+    ],
+    "focus_cities": [
+      "GUM",
+      "PUS"
+    ],
+    "hubs": [
+      "ICN",
+      "SPN"
+    ],
+    "iata": "7C",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "7H": {
+    "aliases": [
+      "NEW PACIFIC AIRLINES"
+    ],
+    "focus_cities": [
+      "BED",
+      "RDU",
+      "KSM",
+      "CPS",
+      "EWR",
+      "CMH",
+      "SMF",
+      "FRG",
+      "TPA",
+      "SCC"
+    ],
+    "hubs": [
+      "ANC",
+      "VDZ",
+      "HOM",
+      "FAI",
+      "BET",
+      "DAL",
+      "UNK",
+      "SNP"
+    ],
+    "iata": "7H",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "7S": {
+    "aliases": [
+      "Ryan Air f/k/a Arctic Transportation"
+    ],
+    "focus_cities": [
+      "SMK",
+      "HPB",
+      "KSM",
+      "WBB",
+      "SHX",
+      "ANV",
+      "OOK",
+      "PQS",
+      "OTZ",
+      "CKD"
+    ],
+    "hubs": [
+      "BET",
+      "ANI",
+      "UNK",
+      "KLG",
+      "ANC",
+      "RSH",
+      "HCR",
+      "EMK",
+      "KGX",
+      "VAK"
+    ],
+    "iata": "7S",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "8E": {
+    "aliases": [
+      "Bering Air Inc.",
+      "Bering Air"
+    ],
+    "focus_cities": [
+      "WBB",
+      "IAN",
+      "ELI",
+      "KVL",
+      "SHH",
+      "SKK",
+      "GAM",
+      "KKA",
+      "GLV",
+      "WMO"
+    ],
+    "hubs": [
+      "OTZ",
+      "OME",
+      "UNK",
+      "ORV",
+      "WLK",
+      "WTK",
+      "BKC",
+      "SMK",
+      "PHO",
+      "SVA"
+    ],
+    "iata": "8E",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "8R": {
+    "aliases": [
+      "Edelweiss Air Ag"
+    ],
+    "focus_cities": [
+      "LAS",
+      "DEN",
+      "SEA"
+    ],
+    "hubs": [
+      "ZRH",
+      "TPA"
+    ],
+    "iata": "8R",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "8V": {
+    "aliases": [
+      "Wright Air Service"
+    ],
+    "focus_cities": [
+      "BTT",
+      "AKP",
+      "NUL",
+      "RBY",
+      "AET",
+      "PIZ",
+      "BTI",
+      "VEE",
+      "TAL",
+      "ARC"
+    ],
+    "hubs": [
+      "FAI",
+      "BRW",
+      "GAL",
+      "AIN",
+      "SCC",
+      "NUI",
+      "FYU",
+      "ATK",
+      "HSL"
+    ],
+    "iata": "8V",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "9E": {
+    "aliases": [
+      "Endeavor Air Inc.",
+      "Endeavor Air"
+    ],
+    "focus_cities": [
+      "XNA",
+      "IND",
+      "DSM",
+      "RIC",
+      "ROC",
+      "SYR",
+      "CLT",
+      "BUF",
+      "CHA",
+      "BNA"
+    ],
+    "hubs": [
+      "ATL",
+      "LGA",
+      "JFK",
+      "DTW",
+      "MSP",
+      "CVG",
+      "RDU",
+      "YYZ",
+      "CLE",
+      "TYS"
+    ],
+    "iata": "9E",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "9K": {
+    "aliases": [
+      "Hyannis Air Service, Inc. dba Cape Air",
+      "Hyannis Air Service, Inc.",
+      "Cape Air",
+      "Hyannis Air Service Inc. dba Cape Air",
+      "Hyannis Air Service"
+    ],
+    "focus_cities": [
+      "STX",
+      "BIL",
+      "VQS",
+      "EIS",
+      "LEB",
+      "SDY",
+      "BHB",
+      "CPX",
+      "PVC",
+      "MAZ"
+    ],
+    "hubs": [
+      "BOS",
+      "SJU",
+      "STT",
+      "ACK",
+      "MVY",
+      "HYA"
+    ],
+    "iata": "9K",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "9X": {
+    "aliases": [
+      "Southern Airways Express, dba Mokulele Airlines",
+      "Southern Airways Express",
+      "Mokulele Airlines",
+      "Southern Airways Express dba Mokulele Airlines"
+    ],
+    "focus_cities": [
+      "PIT",
+      "DUJ",
+      "DFW",
+      "STL",
+      "UIN",
+      "LNS",
+      "LUP",
+      "BFD",
+      "IPL",
+      "LAF"
+    ],
+    "hubs": [
+      "MKK",
+      "HNL",
+      "OGG",
+      "LNY",
+      "IAD",
+      "ORD"
+    ],
+    "iata": "9X",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AA": {
+    "aliases": [
+      "American Airlines Inc.",
+      "American Airlines"
+    ],
+    "focus_cities": [
+      "LGA",
+      "BOS",
+      "LAS",
+      "TPA",
+      "LHR",
+      "SFO",
+      "AUS",
+      "RDU",
+      "SAN",
+      "DEN"
+    ],
+    "hubs": [
+      "DFW",
+      "CLT",
+      "MIA",
+      "ORD",
+      "PHX",
+      "PHL",
+      "LAX",
+      "DCA",
+      "JFK",
+      "MCO"
+    ],
+    "iata": "AA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AC": {
+    "aliases": [
+      "Air Canada"
+    ],
+    "focus_cities": [
+      "FLL",
+      "LAS",
+      "ORD",
+      "DEN",
+      "EWR",
+      "IAH",
+      "LGA",
+      "BOS",
+      "PHX",
+      "MCO"
+    ],
+    "hubs": [
+      "YYZ",
+      "YVR",
+      "YUL",
+      "LAX",
+      "SFO"
+    ],
+    "iata": "AC",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AD": {
+    "aliases": [
+      "Azul Linhas Aereas Brazileiras S A"
+    ],
+    "focus_cities": [
+      "REC",
+      "CNF",
+      "BEL",
+      "CUR",
+      "MAO"
+    ],
+    "hubs": [
+      "VCP",
+      "FLL",
+      "MCO"
+    ],
+    "iata": "AD",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AF": {
+    "aliases": [
+      "Compagnie Natl Air France"
+    ],
+    "focus_cities": [
+      "ATL",
+      "MIA",
+      "IAD",
+      "BOS",
+      "SFO",
+      "EWR",
+      "DTW",
+      "IAH",
+      "ORD",
+      "RDU"
+    ],
+    "hubs": [
+      "CDG",
+      "JFK",
+      "LAX"
+    ],
+    "iata": "AF",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AI": {
+    "aliases": [
+      "National Aviation Company of India Limited d/b/a Air India",
+      "National Aviation Company of India Limited",
+      "Air India"
+    ],
+    "focus_cities": [
+      "BOM",
+      "EWR",
+      "ORD",
+      "IAD",
+      "BLR"
+    ],
+    "hubs": [
+      "DEL",
+      "SFO",
+      "JFK"
+    ],
+    "iata": "AI",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ALQ": {
+    "aliases": [
+      "Alliance Executive Jets Ltd.",
+      "Alliance Executive Jets"
+    ],
+    "focus_cities": [
+      "TEB"
+    ],
+    "hubs": [
+      "APA",
+      "BCN"
+    ],
+    "iata": "ALQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AM": {
+    "aliases": [
+      "Aeromexico"
+    ],
+    "focus_cities": [
+      "JFK",
+      "MCO",
+      "SFO",
+      "ORD",
+      "LAS",
+      "IAH",
+      "DEN",
+      "SEA",
+      "SLC",
+      "IAD"
+    ],
+    "hubs": [
+      "MEX",
+      "LAX",
+      "GDL",
+      "MIA"
+    ],
+    "iata": "AM",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AMQ": {
+    "aliases": [
+      "Ameristar Air Cargo"
+    ],
+    "focus_cities": [
+      "AHN",
+      "CMI",
+      "COU",
+      "CSG",
+      "DAL",
+      "FTW",
+      "GTR",
+      "HOU",
+      "LAX",
+      "TCL"
+    ],
+    "hubs": [
+      "CLL",
+      "T8X",
+      "ADS",
+      "LAN",
+      "BTR",
+      "DTO"
+    ],
+    "iata": "AMQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AN": {
+    "aliases": [
+      "ADVANCED AIR, LLC",
+      "ADVANCED AIR"
+    ],
+    "focus_cities": [
+      "MCE",
+      "CNM",
+      "GUP",
+      "LAS",
+      "MMH",
+      "CLD",
+      "LRU",
+      "AXX",
+      "BIH"
+    ],
+    "hubs": [
+      "ABQ",
+      "CEC",
+      "HHR",
+      "PHX",
+      "OAK",
+      "SVC"
+    ],
+    "iata": "AN",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AOQ": {
+    "aliases": [
+      "Avcon Jet AG"
+    ],
+    "focus_cities": [
+      "LBG",
+      "DLH",
+      "HPN",
+      "MAD",
+      "RSW",
+      "BOS",
+      "BUD",
+      "AUS",
+      "MLH",
+      "CIA"
+    ],
+    "hubs": [
+      "TEB",
+      "OPF",
+      "NCE",
+      "FAB",
+      "LAX",
+      "PSA",
+      "VNY",
+      "LTN",
+      "JMK",
+      "LAS"
+    ],
+    "iata": "AOQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AQB": {
+    "aliases": [
+      "Scanwings Oy"
+    ],
+    "focus_cities": [
+      "STN"
+    ],
+    "hubs": [
+      "TEB",
+      "HEL"
+    ],
+    "iata": "AQB",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AQX": {
+    "aliases": [
+      "Axis Aviation GmbH"
+    ],
+    "focus_cities": [
+      "BEG",
+      "BUF",
+      "FAB",
+      "FRL",
+      "IAD",
+      "IBZ",
+      "JMK",
+      "LAX",
+      "LBG",
+      "MRY"
+    ],
+    "hubs": [
+      "OPF",
+      "NCE",
+      "CIA",
+      "HPN",
+      "FLL",
+      "MUC",
+      "TEB",
+      "TLV",
+      "ASE"
+    ],
+    "iata": "AQX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AR": {
+    "aliases": [
+      "Aerolineas Argentinas"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "EZE",
+      "MIA"
+    ],
+    "iata": "AR",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ARQ": {
+    "aliases": [
+      "Flightworx Aviation Ltd",
+      "Flightworx Aviation"
+    ],
+    "focus_cities": [
+      "PSM"
+    ],
+    "hubs": [
+      "LGG",
+      "MLI"
+    ],
+    "iata": "ARQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AS": {
+    "aliases": [
+      "Alaska Airlines Inc.",
+      "Alaska Airlines"
+    ],
+    "focus_cities": [
+      "SNA",
+      "JNU",
+      "JFK",
+      "EWR",
+      "ORD",
+      "SJC",
+      "SJD",
+      "MCO",
+      "FAI",
+      "BOS"
+    ],
+    "hubs": [
+      "SEA",
+      "PDX",
+      "ANC",
+      "LAX",
+      "SFO",
+      "SAN",
+      "LAS",
+      "PHX"
+    ],
+    "iata": "AS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AT": {
+    "aliases": [
+      "Royal Air Maroc"
+    ],
+    "focus_cities": [
+      "IAD",
+      "MIA"
+    ],
+    "hubs": [
+      "CMN",
+      "JFK"
+    ],
+    "iata": "AT",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ATQ": {
+    "aliases": [
+      "Bairline Fluggesellschaft"
+    ],
+    "focus_cities": [
+      "GVA",
+      "HPN",
+      "ISP",
+      "LBG",
+      "OPF"
+    ],
+    "hubs": [
+      "MXP",
+      "ACK",
+      "BUD",
+      "DAL",
+      "DUB",
+      "GOA",
+      "GSP"
+    ],
+    "iata": "ATQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AV": {
+    "aliases": [
+      "Aerovias Nacl De Colombia"
+    ],
+    "focus_cities": [
+      "JFK",
+      "MCO",
+      "SJU",
+      "FLL",
+      "IAD",
+      "ORD",
+      "CTG",
+      "CLO",
+      "BAQ",
+      "BOS"
+    ],
+    "hubs": [
+      "BOG",
+      "MIA",
+      "MDE"
+    ],
+    "iata": "AV",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AY": {
+    "aliases": [
+      "Finnair Oy"
+    ],
+    "focus_cities": [
+      "JFK",
+      "LAX",
+      "ORD",
+      "SEA",
+      "MIA"
+    ],
+    "hubs": [
+      "HEL",
+      "DFW"
+    ],
+    "iata": "AY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "AZ": {
+    "aliases": [
+      "Italia Transporto Aereo S.P.A DBA ITA S.P.A",
+      "Italia Transporto Aereo S.P.A",
+      "ITA S.P.A"
+    ],
+    "focus_cities": [
+      "MIA",
+      "LAX",
+      "BOS",
+      "SFO",
+      "IAD",
+      "ORD"
+    ],
+    "hubs": [
+      "FCO",
+      "JFK"
+    ],
+    "iata": "AZ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "B0": {
+    "aliases": [
+      "Dreamjet SAS Dba La Compagnie",
+      "Dreamjet SAS",
+      "La Compagnie"
+    ],
+    "focus_cities": [
+      "MXP",
+      "NCE"
+    ],
+    "hubs": [
+      "EWR",
+      "ORY"
+    ],
+    "iata": "B0",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "B6": {
+    "aliases": [
+      "JetBlue Airways"
+    ],
+    "focus_cities": [
+      "DCA",
+      "HPN",
+      "SDQ",
+      "STI",
+      "PUJ",
+      "LGA",
+      "CUN",
+      "RSW",
+      "SFO",
+      "BDL"
+    ],
+    "hubs": [
+      "JFK",
+      "BOS",
+      "FLL",
+      "MCO",
+      "SJU",
+      "PBI",
+      "LAX",
+      "EWR",
+      "TPA"
+    ],
+    "iata": "B6",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BA": {
+    "aliases": [
+      "British Airways Plc",
+      "British Airways"
+    ],
+    "focus_cities": [
+      "BOS",
+      "IAD",
+      "SFO",
+      "ORD",
+      "MIA",
+      "MCO",
+      "LAS",
+      "EWR",
+      "SEA",
+      "IAH"
+    ],
+    "hubs": [
+      "LHR",
+      "JFK",
+      "LGW",
+      "LAX"
+    ],
+    "iata": "BA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BAS": {
+    "aliases": [
+      "Baranautica Air Service LLC",
+      "Baranautica Air Service"
+    ],
+    "focus_cities": [
+      "PTL",
+      "LPW"
+    ],
+    "hubs": [
+      "SIT",
+      "PTD"
+    ],
+    "iata": "BAS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BCQ": {
+    "aliases": [
+      "Bradley Air Services Ltd.",
+      "Bradley Air Services"
+    ],
+    "focus_cities": [
+      "BFI",
+      "IAH",
+      "GEG"
+    ],
+    "hubs": [
+      "YYC",
+      "LAS",
+      "YEG"
+    ],
+    "iata": "BCQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BF": {
+    "aliases": [
+      "French bee"
+    ],
+    "focus_cities": [
+      "SFO",
+      "MIA",
+      "PPT",
+      "LAX"
+    ],
+    "hubs": [
+      "ORY",
+      "EWR"
+    ],
+    "iata": "BF",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BQJ": {
+    "aliases": [
+      "Brenzil Pty. Ltd. d/b/a Brenzil Jet Charter",
+      "Brenzil Pty. Ltd.",
+      "Brenzil Jet Charter",
+      "Brenzil Pty."
+    ],
+    "focus_cities": [
+      "OGG",
+      "PPT",
+      "PTK",
+      "SDL",
+      "TEB",
+      "VNY"
+    ],
+    "hubs": [
+      "AKL",
+      "HNL",
+      "BNE",
+      "FKB",
+      "GCM",
+      "GUM",
+      "KOA",
+      "LAS",
+      "LGA"
+    ],
+    "iata": "BQJ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BR": {
+    "aliases": [
+      "Eva Airways Corporation",
+      "Eva Airways"
+    ],
+    "focus_cities": [
+      "LAX",
+      "SEA",
+      "JFK",
+      "IAH",
+      "ORD"
+    ],
+    "hubs": [
+      "TPE",
+      "SFO"
+    ],
+    "iata": "BR",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BW": {
+    "aliases": [
+      "Caribbean Airlines Limited"
+    ],
+    "focus_cities": [
+      "KIN",
+      "MIA",
+      "GEO",
+      "MBJ",
+      "MCO",
+      "SJU",
+      "SVD",
+      "EIS",
+      "TAB"
+    ],
+    "hubs": [
+      "POS",
+      "JFK",
+      "FLL"
+    ],
+    "iata": "BW",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "BY": {
+    "aliases": [
+      "Britannia Airways Ltd.",
+      "Britannia Airways"
+    ],
+    "focus_cities": [
+      "MAN",
+      "GLA",
+      "BHX",
+      "NCL",
+      "BFS",
+      "AUS",
+      "PAE"
+    ],
+    "hubs": [
+      "MLB",
+      "LGW"
+    ],
+    "iata": "BY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "C5": {
+    "aliases": [
+      "CommuteAir LLC dba CommuteAir",
+      "CommuteAir LLC",
+      "CommuteAir"
+    ],
+    "focus_cities": [
+      "LFT",
+      "BRO",
+      "HRL",
+      "CRP",
+      "LRD",
+      "CHO",
+      "GPT",
+      "BTR",
+      "LBB",
+      "MFE"
+    ],
+    "hubs": [
+      "IAH",
+      "IAD",
+      "TYS",
+      "HSV",
+      "MOB",
+      "ALB",
+      "JAN"
+    ],
+    "iata": "C5",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "CA": {
+    "aliases": [
+      "Air China"
+    ],
+    "focus_cities": [
+      "JFK",
+      "SFO",
+      "IAD",
+      "SZX"
+    ],
+    "hubs": [
+      "PEK",
+      "LAX"
+    ],
+    "iata": "CA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "CI": {
+    "aliases": [
+      "China Airlines Ltd.",
+      "China Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "ONT",
+      "SEA",
+      "JFK"
+    ],
+    "hubs": [
+      "TPE",
+      "LAX"
+    ],
+    "iata": "CI",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "CM": {
+    "aliases": [
+      "Compania Panamena (Copa)"
+    ],
+    "focus_cities": [
+      "MCO",
+      "JFK",
+      "LAX",
+      "IAD",
+      "SJU",
+      "ORD",
+      "BOS",
+      "SFO",
+      "TPA",
+      "DEN"
+    ],
+    "hubs": [
+      "PTY",
+      "MIA"
+    ],
+    "iata": "CM",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "CRV": {
+    "aliases": [
+      "Acropolis Aviation Ltd.",
+      "Acropolis Aviation"
+    ],
+    "focus_cities": [
+      "BFI",
+      "FTW",
+      "ANU",
+      "CLE",
+      "DBV",
+      "LEX",
+      "NRN",
+      "OPF",
+      "PBI",
+      "SXM"
+    ],
+    "hubs": [
+      "HNL",
+      "SYD",
+      "EWR",
+      "FAB",
+      "JFK",
+      "ORK",
+      "SNN"
+    ],
+    "iata": "CRV",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "CX": {
+    "aliases": [
+      "Cathay Pacific Airways Ltd.",
+      "Cathay Pacific Airways"
+    ],
+    "focus_cities": [
+      "LAX",
+      "SFO",
+      "ORD",
+      "BOS",
+      "DFW"
+    ],
+    "hubs": [
+      "HKG",
+      "JFK"
+    ],
+    "iata": "CX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "CZ": {
+    "aliases": [
+      "China Southern Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "WUH",
+      "JFK"
+    ],
+    "hubs": [
+      "CAN",
+      "LAX"
+    ],
+    "iata": "CZ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "DE": {
+    "aliases": [
+      "Condor Flugdienst"
+    ],
+    "focus_cities": [
+      "SEA",
+      "MIA",
+      "LAX",
+      "SFO",
+      "BOS",
+      "LAS",
+      "PDX",
+      "ANC"
+    ],
+    "hubs": [
+      "FRA",
+      "JFK"
+    ],
+    "iata": "DE",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "DL": {
+    "aliases": [
+      "Delta Air Lines Inc.",
+      "Delta Air Lines"
+    ],
+    "focus_cities": [
+      "LAS",
+      "TPA",
+      "FLL",
+      "SFO",
+      "MIA",
+      "PHX",
+      "DEN",
+      "AUS",
+      "RDU",
+      "SAN"
+    ],
+    "hubs": [
+      "ATL",
+      "MSP",
+      "DTW",
+      "SLC",
+      "JFK",
+      "LAX",
+      "SEA",
+      "BOS",
+      "LGA",
+      "MCO"
+    ],
+    "iata": "DL",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "DM": {
+    "aliases": [
+      "Arajet S.A."
+    ],
+    "focus_cities": [
+      "SJU",
+      "EWR"
+    ],
+    "hubs": [
+      "SDQ",
+      "MIA",
+      "PUJ"
+    ],
+    "iata": "DM",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "E9": {
+    "aliases": [
+      "Evelop Airlines SL"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "MCO"
+    ],
+    "iata": "E9",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "EAU": {
+    "aliases": [
+      "Elitavia Malta Limited"
+    ],
+    "focus_cities": [
+      "TLC",
+      "GVA",
+      "LGG",
+      "LIN"
+    ],
+    "hubs": [
+      "TEB",
+      "BUD",
+      "OLB",
+      "SSH"
+    ],
+    "iata": "EAU",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "EDQ": {
+    "aliases": [
+      "Air Charter Scotland Ltd.",
+      "Air Charter Scotland"
+    ],
+    "focus_cities": [
+      "TEB",
+      "YQX",
+      "BWI",
+      "LAX",
+      "ORD",
+      "PDX",
+      "ANU",
+      "FLL",
+      "IAD",
+      "YYT"
+    ],
+    "hubs": [
+      "BGR",
+      "LTN",
+      "BCT",
+      "BOS",
+      "OPF",
+      "STN"
+    ],
+    "iata": "EDQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "EI": {
+    "aliases": [
+      "Aer Lingus Plc",
+      "Aer Lingus"
+    ],
+    "focus_cities": [
+      "MAN",
+      "MCO",
+      "SNN",
+      "IAD",
+      "SFO",
+      "LAX",
+      "SEA",
+      "EWR",
+      "DEN",
+      "PHL"
+    ],
+    "hubs": [
+      "DUB",
+      "JFK",
+      "BOS",
+      "ORD"
+    ],
+    "iata": "EI",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "EK": {
+    "aliases": [
+      "Emirates"
+    ],
+    "focus_cities": [
+      "IAH",
+      "LAX",
+      "MXP",
+      "SFO",
+      "ATH",
+      "BOS",
+      "DFW",
+      "EWR",
+      "ORD",
+      "SEA"
+    ],
+    "hubs": [
+      "DXB",
+      "JFK",
+      "MIA",
+      "IAD"
+    ],
+    "iata": "EK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ELL": {
+    "aliases": [
+      "Ellis Air Taxi Inc.",
+      "Ellis Air Taxi"
+    ],
+    "focus_cities": [
+      "MYK"
+    ],
+    "hubs": [
+      "GKN",
+      "MXY"
+    ],
+    "iata": "ELL",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "EMO": {
+    "aliases": [
+      "Skyemotion GmbH"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "TEB",
+      "YUL"
+    ],
+    "iata": "EMO",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ET": {
+    "aliases": [
+      "Ethiopian Airlines"
+    ],
+    "focus_cities": [
+      "ORD",
+      "JFK",
+      "EWR",
+      "LFW",
+      "ATL"
+    ],
+    "hubs": [
+      "ADD",
+      "IAD"
+    ],
+    "iata": "ET",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "EY": {
+    "aliases": [
+      "Etihad Airways"
+    ],
+    "focus_cities": [
+      "ORD",
+      "IAD",
+      "BOS",
+      "ATL"
+    ],
+    "hubs": [
+      "AUH",
+      "JFK"
+    ],
+    "iata": "EY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "F4": {
+    "aliases": [
+      "Air Charter, Inc d/b/a Air Flamenco",
+      "Air Charter, Inc",
+      "Air Flamenco",
+      "Air Charter Inc d/b/a Air Flamenco",
+      "Air Charter"
+    ],
+    "focus_cities": [
+      "JRV"
+    ],
+    "hubs": [
+      "CPX",
+      "SIG"
+    ],
+    "iata": "F4",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "F9": {
+    "aliases": [
+      "Frontier Airlines Inc.",
+      "Frontier Airlines"
+    ],
+    "focus_cities": [
+      "LAX",
+      "MIA",
+      "ORD",
+      "IAH",
+      "SFO",
+      "CVG",
+      "RDU",
+      "JFK",
+      "BWI",
+      "SLC"
+    ],
+    "hubs": [
+      "DEN",
+      "MCO",
+      "ATL",
+      "LAS",
+      "PHL",
+      "DFW",
+      "TPA",
+      "PHX",
+      "CLE",
+      "SJU"
+    ],
+    "iata": "F9",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "FI": {
+    "aliases": [
+      "Icelandair"
+    ],
+    "focus_cities": [
+      "JFK",
+      "ORD",
+      "IAD",
+      "EWR",
+      "DEN",
+      "BWI",
+      "RDU",
+      "MSP",
+      "MCO",
+      "PDX"
+    ],
+    "hubs": [
+      "KEF",
+      "BOS",
+      "SEA"
+    ],
+    "iata": "FI",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "FJ": {
+    "aliases": [
+      "Air Pacific Ltd.",
+      "Air Pacific"
+    ],
+    "focus_cities": [
+      "DFW",
+      "SFO",
+      "HNL",
+      "APW",
+      "CXI"
+    ],
+    "hubs": [
+      "NAN",
+      "LAX"
+    ],
+    "iata": "FJ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "FK": {
+    "aliases": [
+      "Flightcraft Air Charter Ltd dba KF Aeroflyer",
+      "Flightcraft Air Charter Ltd",
+      "KF Aeroflyer",
+      "Flightcraft Air Charter"
+    ],
+    "focus_cities": [
+      "YVR",
+      "YWG"
+    ],
+    "hubs": [
+      "LIR",
+      "SJO",
+      "YEG"
+    ],
+    "iata": "FK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "FYQ": {
+    "aliases": [
+      "Flying Group Lux S.A."
+    ],
+    "focus_cities": [
+      "NCE"
+    ],
+    "hubs": [
+      "ANR",
+      "HPN"
+    ],
+    "iata": "FYQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "G3": {
+    "aliases": [
+      "VRG Linhas Aereas S A"
+    ],
+    "focus_cities": [
+      "MCO",
+      "FOR",
+      "BEL",
+      "MAO"
+    ],
+    "hubs": [
+      "BSB",
+      "MIA"
+    ],
+    "iata": "G3",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "G4": {
+    "aliases": [
+      "Allegiant Air"
+    ],
+    "focus_cities": [
+      "VPS",
+      "GRR",
+      "BNA",
+      "DSM",
+      "ABE",
+      "PVU",
+      "PIT",
+      "FNT",
+      "IND",
+      "MYR"
+    ],
+    "hubs": [
+      "SFB",
+      "PIE",
+      "PGD",
+      "LAS",
+      "AZA",
+      "FLL",
+      "CVG",
+      "SRQ",
+      "TYS",
+      "AVL"
+    ],
+    "iata": "G4",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "G7": {
+    "aliases": [
+      "GoJet Airlines LLC d/b/a United Express",
+      "GoJet Airlines LLC",
+      "United Express",
+      "GoJet Airlines"
+    ],
+    "focus_cities": [
+      "YOW",
+      "GSO",
+      "CVG",
+      "BUF",
+      "TVC",
+      "DAY",
+      "XNA",
+      "PHL",
+      "SCE",
+      "LIT"
+    ],
+    "hubs": [
+      "ORD",
+      "EWR",
+      "IAD",
+      "RIC",
+      "DCA",
+      "STL"
+    ],
+    "iata": "G7",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GCA": {
+    "aliases": [
+      "Global Crossing Airlines, Inc.",
+      "Global Crossing Airlines"
+    ],
+    "focus_cities": [
+      "OPF",
+      "YNG",
+      "SAN",
+      "JAX",
+      "VSA",
+      "CAP",
+      "CSG",
+      "HAV",
+      "SAL",
+      "EWR"
+    ],
+    "hubs": [
+      "AEX",
+      "HRL",
+      "MIA",
+      "CUR",
+      "ELP",
+      "SAP",
+      "GUA",
+      "AZA"
+    ],
+    "iata": "GCA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GCH": {
+    "aliases": [
+      "Grand Canyon Helicopters"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "BLD"
+    ],
+    "iata": "GCH",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GCQ": {
+    "aliases": [
+      "Glock Aviation GmbH"
+    ],
+    "focus_cities": [
+      "SRQ",
+      "TMB",
+      "BGR",
+      "BLK",
+      "BRN",
+      "CLE",
+      "CPH",
+      "DAL",
+      "DEN",
+      "EDI"
+    ],
+    "hubs": [
+      "KLU",
+      "FTY",
+      "OPF",
+      "PRG",
+      "TEB",
+      "YYT",
+      "AGP",
+      "IAD",
+      "OLB"
+    ],
+    "iata": "GCQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GEQ": {
+    "aliases": [
+      "Gestair, S.A.",
+      "Gestair S.A."
+    ],
+    "focus_cities": [
+      "IAD",
+      "SJC",
+      "BFI",
+      "HOU",
+      "SFO",
+      "AIK",
+      "ZAZ",
+      "DTW",
+      "CHA",
+      "LEN"
+    ],
+    "hubs": [
+      "MAD",
+      "TEB",
+      "SCQ",
+      "SAV",
+      "BOS",
+      "RST",
+      "MDW",
+      "AGS",
+      "MIA",
+      "TLC"
+    ],
+    "iata": "GEQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GJQ": {
+    "aliases": [
+      "GainJet Ireland Ltd",
+      "GainJet Ireland"
+    ],
+    "focus_cities": [
+      "PIT",
+      "RST",
+      "SFB",
+      "TEB",
+      "EDI",
+      "FCO",
+      "HOU",
+      "LIN",
+      "LUX",
+      "MOL"
+    ],
+    "hubs": [
+      "YYT",
+      "ATH",
+      "BGR",
+      "BOS",
+      "IAD",
+      "KEF",
+      "BDA",
+      "CIA",
+      "CUN"
+    ],
+    "iata": "GJQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GV": {
+    "aliases": [
+      "Grant Aviation"
+    ],
+    "focus_cities": [
+      "KOT",
+      "KWN",
+      "KPN",
+      "TOG",
+      "CYF",
+      "SCM",
+      "EEK",
+      "OOK",
+      "DUT",
+      "KNW"
+    ],
+    "hubs": [
+      "BET",
+      "ANC",
+      "ENA",
+      "DLG",
+      "EMK",
+      "AKN",
+      "HPB",
+      "VAK",
+      "AUK"
+    ],
+    "iata": "GV",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "GWQ": {
+    "aliases": [
+      "Golden Wings Charter, Ltd",
+      "Golden Wings Charter"
+    ],
+    "focus_cities": [
+      "FXE"
+    ],
+    "hubs": [
+      "NAS",
+      "CCZ"
+    ],
+    "iata": "GWQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "H8": {
+    "aliases": [
+      "Sky Airline Peru"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "MIA",
+      "LIM"
+    ],
+    "iata": "H8",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "HA": {
+    "aliases": [
+      "Hawaiian Airlines Inc.",
+      "Hawaiian Airlines"
+    ],
+    "focus_cities": [
+      "KOA",
+      "ITO",
+      "LAX",
+      "SEA",
+      "LAS",
+      "SMF",
+      "SFO",
+      "OAK",
+      "HND",
+      "SAN"
+    ],
+    "hubs": [
+      "HNL",
+      "OGG",
+      "LIH"
+    ],
+    "iata": "HA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "HAQ": {
+    "aliases": [
+      "Hamilton Jetport Limited"
+    ],
+    "focus_cities": [
+      "SCF",
+      "AGS",
+      "BNA",
+      "HPN",
+      "IAH",
+      "UVF",
+      "LAX",
+      "PIE",
+      "RSW",
+      "MCO"
+    ],
+    "hubs": [
+      "YHM",
+      "APF",
+      "YYZ",
+      "TEB",
+      "BCT",
+      "BUF",
+      "BED",
+      "FLL",
+      "SRQ"
+    ],
+    "iata": "HAQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "HUQ": {
+    "aliases": [
+      "Haute Aviation"
+    ],
+    "focus_cities": [
+      "SNN",
+      "SWF",
+      "BCN",
+      "BCT",
+      "BJC",
+      "BLM",
+      "BNA",
+      "BQH",
+      "CLT",
+      "DAL"
+    ],
+    "hubs": [
+      "TEB",
+      "OPF",
+      "NAS",
+      "HPN",
+      "IAD",
+      "LTN",
+      "MCO",
+      "NCE",
+      "BED",
+      "PEG"
+    ],
+    "iata": "HUQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "HX": {
+    "aliases": [
+      "Hong Kong Airlines Limited"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "HKG",
+      "SPN"
+    ],
+    "iata": "HX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "HY": {
+    "aliases": [
+      "Uzbekistan Airways"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "JFK",
+      "TAS"
+    ],
+    "iata": "HY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "HYP": {
+    "aliases": [
+      "Hyperion Aviation Ltd. dba Hyperion",
+      "Hyperion Aviation Ltd.",
+      "Hyperion",
+      "Hyperion Aviation"
+    ],
+    "focus_cities": [
+      "OPF",
+      "ORL",
+      "RTM",
+      "TEB",
+      "ZRH"
+    ],
+    "hubs": [
+      "IAH",
+      "MDW",
+      "TLS",
+      "YUL",
+      "BGR",
+      "LAX",
+      "LTN",
+      "MAD"
+    ],
+    "iata": "HYP",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "I4": {
+    "aliases": [
+      "Scott Air LLC dba Island Air Express",
+      "Scott Air LLC",
+      "Island Air Express",
+      "Scott Air"
+    ],
+    "focus_cities": [
+      "JNU",
+      "KAE",
+      "SIT",
+      "HNH"
+    ],
+    "hubs": [
+      "KLW",
+      "KTN"
+    ],
+    "iata": "I4",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "IB": {
+    "aliases": [
+      "Iberia Air Lines Of Spain"
+    ],
+    "focus_cities": [
+      "MIA",
+      "BOS",
+      "LAX",
+      "SJU",
+      "ORD",
+      "DFW",
+      "SFO",
+      "IAD"
+    ],
+    "hubs": [
+      "MAD",
+      "BCN",
+      "JFK"
+    ],
+    "iata": "IB",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "IFQ": {
+    "aliases": [
+      "FAI rent-a-jet AG"
+    ],
+    "focus_cities": [
+      "IAD",
+      "DUB",
+      "IBZ",
+      "MDW",
+      "QSR",
+      "MEM",
+      "MOT",
+      "YYR",
+      "LBG",
+      "PBI"
+    ],
+    "hubs": [
+      "TEB",
+      "LTN",
+      "KEF",
+      "OPF",
+      "BOS",
+      "FAB",
+      "LAX",
+      "MXP",
+      "ZRH",
+      "BCT"
+    ],
+    "iata": "IFQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "IGA": {
+    "aliases": [
+      "Global Jet Austria, GmbH",
+      "Global Jet Austria GmbH"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "OPF"
+    ],
+    "iata": "IGA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "IWQ": {
+    "aliases": [
+      "Island Wings Ltd. Dba Island Wings Charter",
+      "Island Wings Ltd.",
+      "Island Wings Charter",
+      "Island Wings"
+    ],
+    "focus_cities": [
+      "FLL",
+      "SML",
+      "MIA",
+      "GGT",
+      "OPF",
+      "PBI",
+      "ELH",
+      "FPO",
+      "ORL",
+      "BIM"
+    ],
+    "hubs": [
+      "NAS",
+      "FXE"
+    ],
+    "iata": "IWQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "J5": {
+    "aliases": [
+      "Kalinin Aviation LLC d/b/a Alaska Seaplanes",
+      "Kalinin Aviation LLC",
+      "Alaska Seaplanes",
+      "Kalinin Aviation"
+    ],
+    "focus_cities": [
+      "HNH",
+      "SIT",
+      "KAE",
+      "AGN",
+      "KLW",
+      "PEC",
+      "TKE",
+      "ELV",
+      "GST",
+      "PBK"
+    ],
+    "hubs": [
+      "JNU",
+      "HNS",
+      "SGY"
+    ],
+    "iata": "J5",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JCO": {
+    "aliases": [
+      "Concierge U Ltd. d/b/a Jet Concierge Club",
+      "Concierge U Ltd.",
+      "Jet Concierge Club",
+      "Concierge U"
+    ],
+    "focus_cities": [
+      "DAL",
+      "COU",
+      "OLB",
+      "SJC",
+      "STL",
+      "ANC",
+      "BED",
+      "BGR",
+      "CHS",
+      "EDI"
+    ],
+    "hubs": [
+      "LTN",
+      "TEB",
+      "FAB",
+      "IAD",
+      "OPF",
+      "BOS",
+      "EMA",
+      "LAX"
+    ],
+    "iata": "JCO",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JEQ": {
+    "aliases": [
+      "Jetflite Oy"
+    ],
+    "focus_cities": [
+      "TEB",
+      "TPA",
+      "UXP",
+      "YLW",
+      "KEF"
+    ],
+    "hubs": [
+      "LAS",
+      "LTN",
+      "ARN",
+      "HPN",
+      "MIA",
+      "OPF"
+    ],
+    "iata": "JEQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JJ": {
+    "aliases": [
+      "TAM Linhas Aereas SA dba Latam Airlines Brasil",
+      "TAM Linhas Aereas SA",
+      "Latam Airlines Brasil"
+    ],
+    "focus_cities": [
+      "MCO",
+      "JFK",
+      "LAX",
+      "BOS",
+      "FOR"
+    ],
+    "hubs": [
+      "GRU",
+      "MIA"
+    ],
+    "iata": "JJ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JL": {
+    "aliases": [
+      "Japan Air Lines Co. Ltd.",
+      "Japan Air Lines"
+    ],
+    "focus_cities": [
+      "JFK",
+      "SFO",
+      "KIX",
+      "ORD",
+      "DFW",
+      "GUM",
+      "BOS",
+      "SEA",
+      "NGO",
+      "SAN"
+    ],
+    "hubs": [
+      "HND",
+      "NRT",
+      "HNL",
+      "LAX"
+    ],
+    "iata": "JL",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JML": {
+    "aliases": [
+      "Jet Aviation Flight Services (Malta) Limited (JBJM)"
+    ],
+    "focus_cities": [
+      "HPN",
+      "MRY",
+      "MXP",
+      "QSR"
+    ],
+    "hubs": [
+      "PIT",
+      "BTS",
+      "EWR",
+      "FTW",
+      "GGT",
+      "GVA"
+    ],
+    "iata": "JML",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JN": {
+    "aliases": [
+      "J&M Alaska Air Tours, Inc. d/b/a Alaska Air Transit",
+      "J&M Alaska Air Tours, Inc.",
+      "Alaska Air Transit",
+      "J&M Alaska Air Tours Inc. d/b/a Alaska Air Transit",
+      "J&M Alaska Air Tours"
+    ],
+    "focus_cities": [
+      "NIB",
+      "TCT",
+      "TEK",
+      "NCN",
+      "TLJ"
+    ],
+    "hubs": [
+      "MRI",
+      "MCG"
+    ],
+    "iata": "JN",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JQ": {
+    "aliases": [
+      "Jetstar Airways Pty Limited"
+    ],
+    "focus_cities": [
+      "MEL"
+    ],
+    "hubs": [
+      "HNL",
+      "SYD"
+    ],
+    "iata": "JQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JTH": {
+    "aliases": [
+      "JetHouse"
+    ],
+    "focus_cities": [
+      "LGA"
+    ],
+    "hubs": [
+      "FAB",
+      "IAD",
+      "LBG"
+    ],
+    "iata": "JTH",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JU": {
+    "aliases": [
+      "Air Serbia"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "JFK",
+      "BEG"
+    ],
+    "iata": "JU",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JWQ": {
+    "aliases": [
+      "Global Jet Aruba V.B.A. d/b/a Global Jet Aruba",
+      "Global Jet Aruba V.B.A.",
+      "Global Jet Aruba"
+    ],
+    "focus_cities": [
+      "PMI",
+      "SAN",
+      "SFO",
+      "SYD"
+    ],
+    "hubs": [
+      "JFK",
+      "ABE",
+      "BGR",
+      "KOA",
+      "MCO",
+      "NCE",
+      "OKC"
+    ],
+    "iata": "JWQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "JX": {
+    "aliases": [
+      "STARLUX AIRLINES"
+    ],
+    "focus_cities": [
+      "SFO",
+      "SEA",
+      "ONT"
+    ],
+    "hubs": [
+      "TPE",
+      "LAX"
+    ],
+    "iata": "JX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "K2": {
+    "aliases": [
+      "Paklook Air, Inc d/b/a/ Airlift Alaska d/b/a/ Yute Commuter Service",
+      "Paklook Air, Inc",
+      "/ Airlift Alaska d/b/a/ Yute Commuter Service",
+      "Paklook Air Inc d/b/a/ Airlift Alaska d/b/a/ Yute Commuter Service",
+      "Paklook Air"
+    ],
+    "focus_cities": [
+      "GNU",
+      "AKI",
+      "AUK",
+      "KKH",
+      "ATT",
+      "NUP",
+      "PKA",
+      "WTL",
+      "EMK",
+      "KOT"
+    ],
+    "hubs": [
+      "BET",
+      "ANI",
+      "PQS",
+      "KSM",
+      "RSH",
+      "KLG",
+      "KUK",
+      "WNA",
+      "TLT",
+      "MLL"
+    ],
+    "iata": "K2",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "K3": {
+    "aliases": [
+      "Venture Travel LLC d/b/a Taquan Air Service",
+      "Venture Travel LLC",
+      "Taquan Air Service",
+      "Venture Travel"
+    ],
+    "focus_cities": [
+      "KTB",
+      "CGA",
+      "HYL",
+      "EDA",
+      "KCC",
+      "PPV",
+      "WWP",
+      "NKI",
+      "HYG",
+      "KXA"
+    ],
+    "hubs": [
+      "WFB",
+      "MTM"
+    ],
+    "iata": "K3",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KAT": {
+    "aliases": [
+      "Katmai Air"
+    ],
+    "focus_cities": [
+      "ANC",
+      "LKK",
+      "DLG"
+    ],
+    "hubs": [
+      "AKN",
+      "RBH"
+    ],
+    "iata": "KAT",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KE": {
+    "aliases": [
+      "Korean Air Lines Co. Ltd.",
+      "Korean Air Lines"
+    ],
+    "focus_cities": [
+      "GUM",
+      "ATL",
+      "HNL",
+      "SEA",
+      "LAS",
+      "SFO",
+      "ORD",
+      "IAD",
+      "BOS",
+      "DFW"
+    ],
+    "hubs": [
+      "ICN",
+      "LAX",
+      "JFK"
+    ],
+    "iata": "KE",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KFQ": {
+    "aliases": [
+      "Skyfirst Limited"
+    ],
+    "focus_cities": [
+      "BOS",
+      "EWR",
+      "GSO",
+      "GVA",
+      "HPN",
+      "MLA",
+      "NAP"
+    ],
+    "hubs": [
+      "IAD",
+      "LBG",
+      "TEB",
+      "VNY"
+    ],
+    "iata": "KFQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KG": {
+    "aliases": [
+      "Key Lime Air Corp dba Denver Air Connection",
+      "Key Lime Air Corp",
+      "Denver Air Connection",
+      "Key Lime Air"
+    ],
+    "focus_cities": [
+      "IWD",
+      "ATY",
+      "PIR",
+      "TVF",
+      "DBQ",
+      "TEX",
+      "ATL",
+      "PHX",
+      "DFW",
+      "PUB"
+    ],
+    "hubs": [
+      "DEN",
+      "ORD",
+      "MKL",
+      "MSP",
+      "MKG",
+      "CVN",
+      "ALS"
+    ],
+    "iata": "KG",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KL": {
+    "aliases": [
+      "Klm Royal Dutch Airlines"
+    ],
+    "focus_cities": [
+      "ATL",
+      "IAH",
+      "SFO",
+      "ORD",
+      "IAD",
+      "LAS",
+      "PDX",
+      "BOS",
+      "AUS",
+      "SLC"
+    ],
+    "hubs": [
+      "AMS",
+      "JFK",
+      "LAX"
+    ],
+    "iata": "KL",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KO": {
+    "aliases": [
+      "Alaska Central Express"
+    ],
+    "focus_cities": [
+      "SDP",
+      "AKN",
+      "BRW",
+      "CDB",
+      "DLG",
+      "GAL",
+      "PHO",
+      "SNP",
+      "BET",
+      "AKP"
+    ],
+    "hubs": [
+      "ANC",
+      "DUT"
+    ],
+    "iata": "KO",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KQ": {
+    "aliases": [
+      "Kenya Airways PLC",
+      "Kenya Airways"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "JFK",
+      "NBO"
+    ],
+    "iata": "KQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KU": {
+    "aliases": [
+      "Kuwait Airways Corp.",
+      "Kuwait Airways"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "KWI",
+      "JFK"
+    ],
+    "iata": "KU",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "KX": {
+    "aliases": [
+      "Cayman Airways Limited"
+    ],
+    "focus_cities": [
+      "TPA",
+      "JFK",
+      "LAX",
+      "DEN"
+    ],
+    "hubs": [
+      "GCM",
+      "MIA"
+    ],
+    "iata": "KX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LA": {
+    "aliases": [
+      "LATAM Airlines Group SA dba Lan Airlines",
+      "LATAM Airlines Group SA",
+      "Lan Airlines"
+    ],
+    "focus_cities": [
+      "JFK",
+      "LAX",
+      "PUJ",
+      "MCO",
+      "LIM",
+      "BOG"
+    ],
+    "hubs": [
+      "SCL",
+      "MIA"
+    ],
+    "iata": "LA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LDQ": {
+    "aliases": [
+      "Sparfell Luftfahrt GmbH"
+    ],
+    "focus_cities": [
+      "DAB",
+      "FRG",
+      "LTN",
+      "NAS",
+      "PBI",
+      "VRN",
+      "ATH",
+      "ATL",
+      "AZI",
+      "BGR"
+    ],
+    "hubs": [
+      "TEB",
+      "EWR",
+      "VIE",
+      "OPF",
+      "NCE",
+      "MIA",
+      "ZRH",
+      "JFK",
+      "LBG",
+      "VNY"
+    ],
+    "iata": "LDQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LF": {
+    "aliases": [
+      "CFM Inc d/b/a Contour Airlines d/b/a One Jet Shuttle",
+      "CFM Inc",
+      "Contour Airlines d/b/a One Jet Shuttle",
+      "CFM"
+    ],
+    "focus_cities": [
+      "CNY",
+      "OWB",
+      "SOW",
+      "CGI",
+      "PAH",
+      "SHD",
+      "VEL",
+      "CKB",
+      "MWA",
+      "AOO"
+    ],
+    "hubs": [
+      "CLT",
+      "ORD",
+      "PHX",
+      "BKW",
+      "DFW",
+      "TUP",
+      "IAD",
+      "MSL",
+      "MCN",
+      "PGA"
+    ],
+    "iata": "LF",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LH": {
+    "aliases": [
+      "Lufthansa German Airlines"
+    ],
+    "focus_cities": [
+      "ORD",
+      "BOS",
+      "IAD",
+      "EWR",
+      "DEN",
+      "SFO",
+      "MIA",
+      "SEA",
+      "IAH",
+      "CLT"
+    ],
+    "hubs": [
+      "FRA",
+      "MUC",
+      "JFK",
+      "LAX"
+    ],
+    "iata": "LH",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LJ": {
+    "aliases": [
+      "Jin Air Co Ltd.",
+      "Jin Air"
+    ],
+    "focus_cities": [
+      "PUS"
+    ],
+    "hubs": [
+      "GUM",
+      "ICN"
+    ],
+    "iata": "LJ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LMQ": {
+    "aliases": [
+      "Luxaviation EA"
+    ],
+    "focus_cities": [
+      "SFO",
+      "AMS",
+      "BCN",
+      "FLL",
+      "IAD",
+      "OAK",
+      "OPO",
+      "ORD",
+      "RNO",
+      "STL"
+    ],
+    "hubs": [
+      "LBG",
+      "TEB",
+      "LTN",
+      "LAX",
+      "MIA"
+    ],
+    "iata": "LMQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LNY": {
+    "aliases": [
+      "Western Aircraft, dba Lanai Air",
+      "Western Aircraft",
+      "Lanai Air",
+      "Western Aircraft dba Lanai Air"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "LNY",
+      "HNL"
+    ],
+    "iata": "LNY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LO": {
+    "aliases": [
+      "Polskie Linie Lotnicze"
+    ],
+    "focus_cities": [
+      "JFK",
+      "EWR",
+      "LAX",
+      "MIA",
+      "KRK",
+      "RZE"
+    ],
+    "hubs": [
+      "WAW",
+      "ORD"
+    ],
+    "iata": "LO",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LP": {
+    "aliases": [
+      "Lan Peru Airlines"
+    ],
+    "focus_cities": [
+      "LAX",
+      "JFK",
+      "ATL"
+    ],
+    "hubs": [
+      "LIM",
+      "MIA"
+    ],
+    "iata": "LP",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LR": {
+    "aliases": [
+      "Lacsa"
+    ],
+    "focus_cities": [
+      "SJO",
+      "IAD",
+      "JFK",
+      "MGA",
+      "SJU",
+      "ORD",
+      "SAP"
+    ],
+    "hubs": [
+      "GUA",
+      "LAX",
+      "MIA",
+      "SAL"
+    ],
+    "iata": "LR",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LX": {
+    "aliases": [
+      "Swiss International Airlines"
+    ],
+    "focus_cities": [
+      "ORD",
+      "BOS",
+      "SFO",
+      "LAX",
+      "GVA",
+      "EWR",
+      "IAD"
+    ],
+    "hubs": [
+      "ZRH",
+      "JFK",
+      "MIA"
+    ],
+    "iata": "LX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "LY": {
+    "aliases": [
+      "El Al Israel Airlines Ltd.",
+      "El Al Israel Airlines"
+    ],
+    "focus_cities": [
+      "EWR",
+      "LAX",
+      "MIA",
+      "BOS",
+      "FLL"
+    ],
+    "hubs": [
+      "TLV",
+      "JFK"
+    ],
+    "iata": "LY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "M5": {
+    "aliases": [
+      "Kenmore Air Harbor"
+    ],
+    "focus_cities": [
+      "YWH",
+      "ESD",
+      "RCE",
+      "LPS",
+      "DHB",
+      "RSJ",
+      "ZNA",
+      "PAE",
+      "WSX",
+      "YYJ"
+    ],
+    "hubs": [
+      "LKE",
+      "KEH",
+      "BFI",
+      "FRD",
+      "FBS"
+    ],
+    "iata": "M5",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "MF": {
+    "aliases": [
+      "Xiamen Airlines Co., Ltd.",
+      "Xiamen Airlines"
+    ],
+    "focus_cities": [
+      "JFK"
+    ],
+    "hubs": [
+      "LAX",
+      "XMN",
+      "FOC"
+    ],
+    "iata": "MF",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "MQ": {
+    "aliases": [
+      "Envoy Air"
+    ],
+    "focus_cities": [
+      "CRP",
+      "CVG",
+      "MTY",
+      "BHM",
+      "BNA",
+      "AMA",
+      "FAR",
+      "MAF",
+      "OKC",
+      "CID"
+    ],
+    "hubs": [
+      "DFW",
+      "ORD",
+      "MIA",
+      "PHX",
+      "CLT",
+      "XNA",
+      "DCA",
+      "SGF",
+      "LIT",
+      "CMH"
+    ],
+    "iata": "MQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "MS": {
+    "aliases": [
+      "Egyptair"
+    ],
+    "focus_cities": [
+      "IAD",
+      "EWR"
+    ],
+    "hubs": [
+      "CAI",
+      "JFK"
+    ],
+    "iata": "MS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "MU": {
+    "aliases": [
+      "China Eastern Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "JFK"
+    ],
+    "hubs": [
+      "PVG",
+      "LAX"
+    ],
+    "iata": "MU",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "MX": {
+    "aliases": [
+      "Breeze Aviation Group DBA Breeze",
+      "Breeze Aviation Group",
+      "Breeze"
+    ],
+    "focus_cities": [
+      "CAK",
+      "VRB",
+      "HPN",
+      "PIT",
+      "LAS",
+      "JAX",
+      "HVN",
+      "SNA",
+      "MYR",
+      "MSY"
+    ],
+    "hubs": [
+      "MCO",
+      "CHS",
+      "PVD",
+      "RDU",
+      "TPA",
+      "BDL",
+      "RSW",
+      "ORF",
+      "PVU",
+      "RIC"
+    ],
+    "iata": "MX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "N0": {
+    "aliases": [
+      "Norse Atlantic Airways,AS",
+      "Norse Atlantic Airways AS"
+    ],
+    "focus_cities": [
+      "CDG",
+      "ATH",
+      "BER",
+      "MIA",
+      "OSL"
+    ],
+    "hubs": [
+      "JFK",
+      "LAX",
+      "FCO"
+    ],
+    "iata": "N0",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "N3": {
+    "aliases": [
+      "Vuela EL Salvador S.A. de C.V."
+    ],
+    "focus_cities": [
+      "LAX",
+      "MIA",
+      "SAP",
+      "OAK",
+      "IAH",
+      "JFK",
+      "SJO",
+      "EWR"
+    ],
+    "hubs": [
+      "SAL",
+      "IAD"
+    ],
+    "iata": "N3",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "N8": {
+    "aliases": [
+      "National Air Cargo Group Inc d/ba National Airlines"
+    ],
+    "focus_cities": [
+      "RIV",
+      "ONT",
+      "AUS",
+      "BWI",
+      "GIG",
+      "LAX",
+      "LCK",
+      "SDF",
+      "SVN",
+      "IND"
+    ],
+    "hubs": [
+      "MCO",
+      "ATL",
+      "MIA",
+      "CMH",
+      "ELP",
+      "JFK",
+      "MAO",
+      "MDT",
+      "BIF",
+      "GOH"
+    ],
+    "iata": "N8",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "NEW": {
+    "aliases": [
+      "New England Airlines Inc.",
+      "New England Airlines"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "WST",
+      "BID"
+    ],
+    "iata": "NEW",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "NH": {
+    "aliases": [
+      "All Nippon Airways Co.",
+      "All Nippon Airways"
+    ],
+    "focus_cities": [
+      "LAX",
+      "SFO",
+      "ORD",
+      "JFK",
+      "SEA",
+      "IAH",
+      "IAD"
+    ],
+    "hubs": [
+      "HND",
+      "NRT",
+      "HNL"
+    ],
+    "iata": "NH",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "NIQ": {
+    "aliases": [
+      "AVCON JET MALTA LTD",
+      "AVCON JET MALTA"
+    ],
+    "focus_cities": [
+      "MCO",
+      "OPF",
+      "PLS",
+      "VRN",
+      "HPN",
+      "IAH",
+      "MIA",
+      "MSY",
+      "OTP",
+      "PBI"
+    ],
+    "hubs": [
+      "TEB",
+      "FLL",
+      "RAK",
+      "FOK",
+      "PMI",
+      "DUB",
+      "TLV",
+      "BOS",
+      "IAD",
+      "LBG"
+    ],
+    "iata": "NIQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "NK": {
+    "aliases": [
+      "Spirit Air Lines"
+    ],
+    "focus_cities": [
+      "BWI",
+      "MSY",
+      "LGA",
+      "TPA",
+      "BOS",
+      "MIA",
+      "PHL",
+      "SJU",
+      "MYR",
+      "CLT"
+    ],
+    "hubs": [
+      "FLL",
+      "MCO",
+      "LAS",
+      "DTW",
+      "ATL",
+      "EWR",
+      "IAH",
+      "LAX",
+      "DFW",
+      "ORD"
+    ],
+    "iata": "NK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "NOS": {
+    "aliases": [
+      "Neos S.P.A"
+    ],
+    "focus_cities": [
+      "PMO",
+      "BRI"
+    ],
+    "hubs": [
+      "JFK",
+      "MXP"
+    ],
+    "iata": "NOS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "NZ": {
+    "aliases": [
+      "Air New Zealand"
+    ],
+    "focus_cities": [
+      "IAH",
+      "SFO",
+      "HNL",
+      "JFK"
+    ],
+    "hubs": [
+      "AKL",
+      "LAX"
+    ],
+    "iata": "NZ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "OG": {
+    "aliases": [
+      "Fly PLAY ehf"
+    ],
+    "focus_cities": [
+      "BOS",
+      "SWF"
+    ],
+    "hubs": [
+      "KEF",
+      "BWI"
+    ],
+    "iata": "OG",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "OH": {
+    "aliases": [
+      "PSA Airlines Inc.",
+      "PSA Airlines"
+    ],
+    "focus_cities": [
+      "TYS",
+      "CVG",
+      "LEX",
+      "PNS",
+      "HSV",
+      "YYZ",
+      "HPN",
+      "BNA",
+      "MYR",
+      "MHT"
+    ],
+    "hubs": [
+      "CLT",
+      "DCA",
+      "DFW",
+      "PHL",
+      "DAY",
+      "BHM",
+      "GSP",
+      "SAV",
+      "ATL",
+      "ORF"
+    ],
+    "iata": "OH",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "OO": {
+    "aliases": [
+      "SkyWest Airlines Inc.",
+      "SkyWest Airlines"
+    ],
+    "focus_cities": [
+      "SAN",
+      "IAH",
+      "PDX",
+      "BOI",
+      "SMF",
+      "TUS",
+      "ATL",
+      "OKC",
+      "SJC",
+      "FAT"
+    ],
+    "hubs": [
+      "DEN",
+      "ORD",
+      "LAX",
+      "SLC",
+      "SEA",
+      "SFO",
+      "DTW",
+      "PHX",
+      "DFW",
+      "MSP"
+    ],
+    "iata": "OO",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "OS": {
+    "aliases": [
+      "Austrian Airlines"
+    ],
+    "focus_cities": [
+      "ORD",
+      "JFK",
+      "IAD",
+      "LAX",
+      "BOS"
+    ],
+    "hubs": [
+      "VIE",
+      "EWR"
+    ],
+    "iata": "OS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "OZ": {
+    "aliases": [
+      "Asiana Airlines Inc.",
+      "Asiana Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "JFK",
+      "SEA",
+      "HNL"
+    ],
+    "hubs": [
+      "ICN",
+      "LAX"
+    ],
+    "iata": "OZ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "P3": {
+    "aliases": [
+      "Porter Airlines Inc. (PAI)"
+    ],
+    "focus_cities": [
+      "BOS",
+      "YOW",
+      "MDW",
+      "IAD",
+      "YUL"
+    ],
+    "hubs": [
+      "YTZ",
+      "EWR"
+    ],
+    "iata": "P3",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PAF": {
+    "aliases": [
+      "Pathfinder Aviation"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "DIO",
+      "OME"
+    ],
+    "iata": "PAF",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PD": {
+    "aliases": [
+      "Porter Airlines Limited (PACL)"
+    ],
+    "focus_cities": [
+      "LAS",
+      "LGA",
+      "LAX",
+      "RSW",
+      "TPA",
+      "PHX",
+      "SFO",
+      "YUL",
+      "YHZ",
+      "MIA"
+    ],
+    "hubs": [
+      "YYZ",
+      "YOW",
+      "FLL",
+      "MCO"
+    ],
+    "iata": "PD",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PP": {
+    "aliases": [
+      "Jet Aviation Business Jets AG"
+    ],
+    "focus_cities": [
+      "SGN",
+      "SJO"
+    ],
+    "hubs": [
+      "ANC",
+      "IAD",
+      "PWK",
+      "ZRH"
+    ],
+    "iata": "PP",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PR": {
+    "aliases": [
+      "Philippine Airlines Inc.",
+      "Philippine Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "HNL",
+      "GUM",
+      "SEA",
+      "JFK"
+    ],
+    "hubs": [
+      "MNL",
+      "LAX"
+    ],
+    "iata": "PR",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PT": {
+    "aliases": [
+      "Piedmont Airlines"
+    ],
+    "focus_cities": [
+      "FAY",
+      "TRI",
+      "SBY",
+      "CHA",
+      "ALB",
+      "ROC",
+      "RIC",
+      "LYH",
+      "OAJ",
+      "PHF"
+    ],
+    "hubs": [
+      "CLT",
+      "PHL",
+      "ORD",
+      "MDT",
+      "ROA",
+      "CHO",
+      "CAE",
+      "TYS",
+      "GSO"
+    ],
+    "iata": "PT",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PTQ": {
+    "aliases": [
+      "Pontair Ltd.",
+      "Pontair"
+    ],
+    "focus_cities": [
+      "AFW",
+      "ATH",
+      "BED",
+      "EZE",
+      "GSO",
+      "MKE",
+      "SBN",
+      "BWI",
+      "CIA",
+      "LEX"
+    ],
+    "hubs": [
+      "TEB",
+      "LTN",
+      "MAD",
+      "IAD",
+      "MIA",
+      "OPF",
+      "LIM",
+      "YYZ",
+      "EWR",
+      "TWF"
+    ],
+    "iata": "PTQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "PY": {
+    "aliases": [
+      "Surinam Airways Limited"
+    ],
+    "focus_cities": [
+      "CUR",
+      "AUA"
+    ],
+    "hubs": [
+      "MIA",
+      "GEO"
+    ],
+    "iata": "PY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "Q5": {
+    "aliases": [
+      "40-Mile Air"
+    ],
+    "focus_cities": [
+      "FAI",
+      "CKX",
+      "EAA",
+      "A63",
+      "ORT",
+      "ANC",
+      "TEH"
+    ],
+    "hubs": [
+      "TKJ",
+      "CZN"
+    ],
+    "iata": "Q5",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "Q6": {
+    "aliases": [
+      "Vuela Aviacion, S.A.",
+      "Vuela Aviacion S.A."
+    ],
+    "focus_cities": [
+      "SJO",
+      "MCO",
+      "MIA",
+      "SAL",
+      "IAD"
+    ],
+    "hubs": [
+      "GUA",
+      "LAX"
+    ],
+    "iata": "Q6",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "QF": {
+    "aliases": [
+      "Qantas Airways Ltd.",
+      "Qantas Airways"
+    ],
+    "focus_cities": [
+      "DFW",
+      "HNL",
+      "BNE",
+      "AKL",
+      "JFK",
+      "SFO"
+    ],
+    "hubs": [
+      "SYD",
+      "LAX",
+      "MEL"
+    ],
+    "iata": "QF",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "QFX": {
+    "aliases": [
+      "Sparfell Malta Ltd",
+      "Sparfell Malta"
+    ],
+    "focus_cities": [
+      "LIR",
+      "MIA",
+      "MXP",
+      "NCE",
+      "ORF",
+      "PHL",
+      "RKE",
+      "TEB",
+      "VIP",
+      "IAD"
+    ],
+    "hubs": [
+      "OPF",
+      "GFK",
+      "LBG",
+      "IAH",
+      "AGS",
+      "ANC",
+      "BPS",
+      "EWR",
+      "LAS",
+      "LAX"
+    ],
+    "iata": "QFX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "QK": {
+    "aliases": [
+      "Jazz Aviation LP"
+    ],
+    "focus_cities": [
+      "DCA",
+      "BOS",
+      "ORD",
+      "SEA",
+      "PDX",
+      "JFK",
+      "PHL",
+      "RDU",
+      "ATL",
+      "IAD"
+    ],
+    "hubs": [
+      "YYZ",
+      "YUL",
+      "YVR",
+      "LGA",
+      "EWR"
+    ],
+    "iata": "QK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "QR": {
+    "aliases": [
+      "Qatar Airways (Q.C.S.C)"
+    ],
+    "focus_cities": [
+      "IAD",
+      "MIA",
+      "SEA",
+      "ORD",
+      "LAX",
+      "SFO",
+      "ATL",
+      "IAH",
+      "BOS"
+    ],
+    "hubs": [
+      "DOH",
+      "JFK",
+      "DFW"
+    ],
+    "iata": "QR",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "QX": {
+    "aliases": [
+      "Horizon Air"
+    ],
+    "focus_cities": [
+      "PAE",
+      "RDM",
+      "LAS",
+      "FAI",
+      "SJC",
+      "RNO",
+      "SAN",
+      "FCA",
+      "OAK",
+      "BZN"
+    ],
+    "hubs": [
+      "SEA",
+      "PDX",
+      "LAX",
+      "BOI",
+      "ANC",
+      "GEG",
+      "SFO",
+      "MFR"
+    ],
+    "iata": "QX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "RJ": {
+    "aliases": [
+      "Alia-(The) Royal Jordanian"
+    ],
+    "focus_cities": [
+      "JFK",
+      "DTW",
+      "IAD"
+    ],
+    "hubs": [
+      "AMM",
+      "ORD"
+    ],
+    "iata": "RJ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "RV": {
+    "aliases": [
+      "Air Canada rouge LP"
+    ],
+    "focus_cities": [
+      "MIA",
+      "FLL",
+      "TPA",
+      "RSW",
+      "LAS",
+      "PHX",
+      "BNA",
+      "YOW",
+      "MSY",
+      "PSP"
+    ],
+    "hubs": [
+      "YYZ",
+      "YUL",
+      "MCO"
+    ],
+    "iata": "RV",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "RVQ": {
+    "aliases": [
+      "Reeve Air Alaska, LLC",
+      "Reeve Air Alaska"
+    ],
+    "focus_cities": [
+      "GKN"
+    ],
+    "hubs": [
+      "ANC",
+      "MCG"
+    ],
+    "iata": "RVQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "S2": {
+    "aliases": [
+      "Star Marianas Air Inc.",
+      "Star Marianas Air"
+    ],
+    "focus_cities": [
+      "ROP",
+      "GUM"
+    ],
+    "hubs": [
+      "SPN",
+      "TIQ"
+    ],
+    "iata": "S2",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "S4": {
+    "aliases": [
+      "Sata Internacional"
+    ],
+    "focus_cities": [
+      "JFK",
+      "TER"
+    ],
+    "hubs": [
+      "PDL",
+      "BOS"
+    ],
+    "iata": "S4",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SK": {
+    "aliases": [
+      "Scandinavian Airlines Sys."
+    ],
+    "focus_cities": [
+      "ARN",
+      "IAD",
+      "SFO",
+      "OSL",
+      "BOS",
+      "ORD",
+      "ATL",
+      "SEA",
+      "MIA"
+    ],
+    "hubs": [
+      "CPH",
+      "EWR",
+      "JFK",
+      "LAX"
+    ],
+    "iata": "SK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SN": {
+    "aliases": [
+      "Brussels Airlines N.V."
+    ],
+    "focus_cities": [
+      "IAD"
+    ],
+    "hubs": [
+      "BRU",
+      "JFK"
+    ],
+    "iata": "SN",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SNK": {
+    "aliases": [
+      "Spernak Airways Inc.",
+      "Spernak Airways"
+    ],
+    "focus_cities": [
+      "BVU",
+      "SKW"
+    ],
+    "hubs": [
+      "MRI",
+      "TYE"
+    ],
+    "iata": "SNK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SQ": {
+    "aliases": [
+      "Singapore Airlines Ltd.",
+      "Singapore Airlines"
+    ],
+    "focus_cities": [
+      "SFO",
+      "NRT",
+      "FRA",
+      "EWR",
+      "SEA",
+      "IAH",
+      "MAN"
+    ],
+    "hubs": [
+      "SIN",
+      "LAX",
+      "JFK"
+    ],
+    "iata": "SQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SV": {
+    "aliases": [
+      "Saudi Arabian Airlines Corp",
+      "Saudi Arabian Airlines"
+    ],
+    "focus_cities": [
+      "RUH",
+      "LAX"
+    ],
+    "hubs": [
+      "JED",
+      "JFK",
+      "IAD"
+    ],
+    "iata": "SV",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SVW": {
+    "aliases": [
+      "Global Jet Luxembourg, Sa",
+      "Global Jet Luxembourg Sa"
+    ],
+    "focus_cities": [
+      "BNA",
+      "CMH",
+      "HOU",
+      "FOK",
+      "CIA",
+      "SRQ",
+      "VNY",
+      "BOS",
+      "BRN",
+      "PBI"
+    ],
+    "hubs": [
+      "OPF",
+      "TEB",
+      "NCE",
+      "ZRH",
+      "JFK",
+      "LTN",
+      "LBG",
+      "IAD",
+      "PSA",
+      "AUS"
+    ],
+    "iata": "SVW",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SWQ": {
+    "aliases": [
+      "Swiss Private Jet S.A."
+    ],
+    "focus_cities": [
+      "BUD",
+      "DFW",
+      "DUB",
+      "EWR",
+      "HNL",
+      "MAN",
+      "MDE",
+      "NCE",
+      "OGG",
+      "PRB"
+    ],
+    "hubs": [
+      "TEB",
+      "IAD",
+      "VNY",
+      "GVA",
+      "LTN",
+      "GRS",
+      "ADL",
+      "AGP",
+      "BED",
+      "BGR"
+    ],
+    "iata": "SWQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "SY": {
+    "aliases": [
+      "Sun Country Airlines d/b/a MN Airlines",
+      "Sun Country Airlines",
+      "MN Airlines"
+    ],
+    "focus_cities": [
+      "ACY",
+      "SEA",
+      "TPA",
+      "SFO",
+      "MKE",
+      "DEN",
+      "SAN",
+      "BNA",
+      "PDX",
+      "BOS"
+    ],
+    "hubs": [
+      "MSP",
+      "MCO",
+      "RSW",
+      "CUN",
+      "GPT",
+      "LAS",
+      "LAX",
+      "PHX",
+      "IFP",
+      "DFW"
+    ],
+    "iata": "SY",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TA": {
+    "aliases": [
+      "Taca International Airlines"
+    ],
+    "focus_cities": [
+      "JFK",
+      "MGA",
+      "SFO",
+      "IAH",
+      "DFW",
+      "GUA",
+      "BOS",
+      "ONT",
+      "FLL",
+      "MCO"
+    ],
+    "hubs": [
+      "SAL",
+      "IAD",
+      "MIA",
+      "LAX"
+    ],
+    "iata": "TA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TEQ": {
+    "aliases": [
+      "TAG Aviation (Malta) Ltd.",
+      "TAG Aviation (Malta)"
+    ],
+    "focus_cities": [
+      "BOS",
+      "NCE",
+      "OAK",
+      "RIL",
+      "SAN",
+      "FOK",
+      "AUS",
+      "ORL"
+    ],
+    "hubs": [
+      "FAB",
+      "TEB",
+      "NAS",
+      "AVN",
+      "BER"
+    ],
+    "iata": "TEQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TI": {
+    "aliases": [
+      "Tropic Ocean Airways LLC",
+      "Tropic Ocean Airways"
+    ],
+    "focus_cities": [
+      "HTO",
+      "CXY",
+      "CDW",
+      "MHH",
+      "PBI",
+      "NAS",
+      "BS3",
+      "ELH",
+      "TMB",
+      "MIA"
+    ],
+    "hubs": [
+      "FLL",
+      "NSB",
+      "NYS"
+    ],
+    "iata": "TI",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TIQ": {
+    "aliases": [
+      "Tyrolean Jet Service"
+    ],
+    "focus_cities": [
+      "LCQ",
+      "RWI"
+    ],
+    "hubs": [
+      "BGR",
+      "INN"
+    ],
+    "iata": "TIQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TJ": {
+    "aliases": [
+      "Tradewind Aviation"
+    ],
+    "focus_cities": [
+      "MVY",
+      "SUA",
+      "VIJ",
+      "MHH",
+      "HTO",
+      "BED",
+      "BOS",
+      "ELH",
+      "PBI",
+      "NAS"
+    ],
+    "hubs": [
+      "SJU",
+      "SBH",
+      "ACK",
+      "HPN",
+      "TEB"
+    ],
+    "iata": "TJ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TK": {
+    "aliases": [
+      "Turk Hava Yollari A.O."
+    ],
+    "focus_cities": [
+      "ORD",
+      "IAD",
+      "MIA",
+      "SFO",
+      "IAH",
+      "ATL",
+      "DFW",
+      "SEA",
+      "DTW",
+      "BOS"
+    ],
+    "hubs": [
+      "IST",
+      "JFK",
+      "LAX"
+    ],
+    "iata": "TK",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TN": {
+    "aliases": [
+      "Air Tahiti Nui"
+    ],
+    "focus_cities": [
+      "CDG",
+      "SEA"
+    ],
+    "hubs": [
+      "LAX",
+      "PPT"
+    ],
+    "iata": "TN",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TP": {
+    "aliases": [
+      "TAP-TAP Air Portugal"
+    ],
+    "focus_cities": [
+      "BOS",
+      "IAD",
+      "JFK",
+      "OPO",
+      "SFO",
+      "ORD",
+      "LAX",
+      "TER"
+    ],
+    "hubs": [
+      "LIS",
+      "EWR",
+      "MIA"
+    ],
+    "iata": "TP",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "TS": {
+    "aliases": [
+      "Air Transat"
+    ],
+    "focus_cities": [
+      "MCO",
+      "YQB",
+      "YHZ",
+      "YQM",
+      "SJU"
+    ],
+    "hubs": [
+      "YUL",
+      "FLL"
+    ],
+    "iata": "TS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "UA": {
+    "aliases": [
+      "United Air Lines Inc.",
+      "United Air Lines"
+    ],
+    "focus_cities": [
+      "SAN",
+      "PHX",
+      "HNL",
+      "SEA",
+      "TPA",
+      "AUS",
+      "LHR",
+      "CLE",
+      "LGA",
+      "FLL"
+    ],
+    "hubs": [
+      "DEN",
+      "ORD",
+      "EWR",
+      "IAH",
+      "SFO",
+      "IAD",
+      "LAX",
+      "MCO",
+      "LAS",
+      "BOS"
+    ],
+    "iata": "UA",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "UX": {
+    "aliases": [
+      "Air Europa"
+    ],
+    "focus_cities": [
+      "JFK"
+    ],
+    "hubs": [
+      "MAD",
+      "MIA"
+    ],
+    "iata": "UX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "V8": {
+    "aliases": [
+      "Iliamna Air Taxi"
+    ],
+    "focus_cities": [
+      "NNL",
+      "PTA",
+      "PDB",
+      "KLN",
+      "IGG",
+      "DLG",
+      "EGX",
+      "PML",
+      "ENA",
+      "AKN"
+    ],
+    "hubs": [
+      "ILI",
+      "ANC",
+      "KNK"
+    ],
+    "iata": "V8",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "VB": {
+    "aliases": [
+      "Aeroenlaces Nacionales, S.A. de C.V. d/b/a VivaAerobus",
+      "Aeroenlaces Nacionales, S.A. de C.V.",
+      "VivaAerobus",
+      "Aeroenlaces Nacionales S.A. de C.V. d/b/a VivaAerobus",
+      "Aeroenlaces Nacionales S.A. de C.V."
+    ],
+    "focus_cities": [
+      "ORD",
+      "LAS",
+      "DFW",
+      "BJX",
+      "OAK",
+      "JFK",
+      "MIA",
+      "MCO",
+      "QRO",
+      "MID"
+    ],
+    "hubs": [
+      "MTY",
+      "MEX",
+      "GDL",
+      "IAH",
+      "SAT",
+      "LAX"
+    ],
+    "iata": "VB",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "VC": {
+    "aliases": [
+      "Via Airlines d/b/a Sterling Airways",
+      "Via Airlines",
+      "Sterling Airways"
+    ],
+    "focus_cities": [
+      "DUT",
+      "ENA",
+      "AKN",
+      "CDB",
+      "SDP",
+      "DLG"
+    ],
+    "hubs": [
+      "ANC",
+      "HOM"
+    ],
+    "iata": "VC",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "VD": {
+    "aliases": [
+      "Vieques Air Link Inc.",
+      "Vieques Air Link"
+    ],
+    "focus_cities": [
+      "SIG",
+      "CPX"
+    ],
+    "hubs": [
+      "VQS",
+      "JRV"
+    ],
+    "iata": "VD",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "VJT": {
+    "aliases": [
+      "VistaJet Limited"
+    ],
+    "focus_cities": [
+      "FAB",
+      "OPF",
+      "SFO",
+      "BED",
+      "BOS",
+      "LIN",
+      "ANC",
+      "GMP",
+      "GVA",
+      "FLL"
+    ],
+    "hubs": [
+      "TEB",
+      "LTN",
+      "LAX",
+      "LBG",
+      "HPN",
+      "NCE",
+      "EWR",
+      "MIA",
+      "IAD",
+      "SJC"
+    ],
+    "iata": "VJT",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "VS": {
+    "aliases": [
+      "Virgin Atlantic Airways"
+    ],
+    "focus_cities": [
+      "MAN",
+      "LAX",
+      "ATL",
+      "MIA",
+      "BOS",
+      "SFO",
+      "LAS",
+      "TPA",
+      "SEA",
+      "IAD"
+    ],
+    "hubs": [
+      "LHR",
+      "JFK",
+      "MCO"
+    ],
+    "iata": "VS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "VXQ": {
+    "aliases": [
+      "Voluxis Limited"
+    ],
+    "focus_cities": [
+      "FAB",
+      "HPN"
+    ],
+    "hubs": [
+      "OPF",
+      "PRG"
+    ],
+    "iata": "VXQ",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "W2": {
+    "aliases": [
+      "FlexFlight AsP"
+    ],
+    "focus_cities": [
+      "SKB",
+      "STT",
+      "YOW",
+      "DAB",
+      "GSP",
+      "ORF",
+      "YYR",
+      "YYT"
+    ],
+    "hubs": [
+      "SXM",
+      "KEF",
+      "TEB",
+      "BED",
+      "CUN",
+      "DPA",
+      "FOK",
+      "OPF",
+      "SGR"
+    ],
+    "iata": "W2",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "W7": {
+    "aliases": [
+      "Nealco Air Charter Services, Inc. d/b/a Watermakers Air",
+      "Nealco Air Charter Services, Inc.",
+      "Watermakers Air",
+      "Nealco Air Charter Services Inc. d/b/a Watermakers Air",
+      "Nealco Air Charter Services"
+    ],
+    "focus_cities": [
+      "TZN",
+      "ASD",
+      "CCZ",
+      "TBI",
+      "TYM"
+    ],
+    "hubs": [
+      "FXE",
+      "SAQ"
+    ],
+    "iata": "W7",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WG": {
+    "aliases": [
+      "Sunwing Airlines Inc.",
+      "Sunwing Airlines"
+    ],
+    "focus_cities": [
+      "BUF",
+      "CVG",
+      "EWR"
+    ],
+    "hubs": [
+      "PUJ",
+      "DTW",
+      "CUN"
+    ],
+    "iata": "WG",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WGT": {
+    "aliases": [
+      "Volkswagen AirSevice GmbH dba Volkswagon",
+      "Volkswagen AirSevice GmbH",
+      "Volkswagon"
+    ],
+    "focus_cities": [
+      "BGR",
+      "BUD",
+      "DAL",
+      "DUS",
+      "FOK",
+      "GTF",
+      "HAM",
+      "MNZ",
+      "MRY",
+      "NAS"
+    ],
+    "hubs": [
+      "BWE",
+      "PBI",
+      "SZG",
+      "ZRH",
+      "TEB",
+      "CHA",
+      "SFO",
+      "IAD",
+      "SNN",
+      "AHN"
+    ],
+    "iata": "WGT",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WL": {
+    "aliases": [
+      "Caribbean Sun Airlines, Inc. d/b/a World Atlantic Airlines",
+      "Caribbean Sun Airlines, Inc.",
+      "World Atlantic Airlines",
+      "Caribbean Sun Airlines Inc. d/b/a World Atlantic Airlines",
+      "Caribbean Sun Airlines"
+    ],
+    "focus_cities": [
+      "SNU",
+      "TPA",
+      "HOG",
+      "CMW",
+      "CUR",
+      "SCU",
+      "VRA",
+      "CAP"
+    ],
+    "hubs": [
+      "MIA",
+      "HAV"
+    ],
+    "iata": "WL",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WN": {
+    "aliases": [
+      "Southwest Airlines Co.",
+      "Southwest Airlines"
+    ],
+    "focus_cities": [
+      "AUS",
+      "SAN",
+      "SMF",
+      "OAK",
+      "SJC",
+      "TPA",
+      "LAX",
+      "MCI",
+      "ATL",
+      "MSY"
+    ],
+    "hubs": [
+      "DEN",
+      "LAS",
+      "BWI",
+      "MDW",
+      "DAL",
+      "PHX",
+      "BNA",
+      "HOU",
+      "MCO",
+      "STL"
+    ],
+    "iata": "WN",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WS": {
+    "aliases": [
+      "Westjet"
+    ],
+    "focus_cities": [
+      "ATL",
+      "MCO",
+      "PSP",
+      "MSP",
+      "SFO",
+      "HNL",
+      "SEA",
+      "YWG",
+      "BNA",
+      "IAH"
+    ],
+    "hubs": [
+      "YYC",
+      "YVR",
+      "LAS",
+      "LAX",
+      "YYZ",
+      "YEG",
+      "PHX"
+    ],
+    "iata": "WS",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WST": {
+    "aliases": [
+      "Friday Harbor Seaplanes"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "FRD",
+      "RNT"
+    ],
+    "iata": "WST",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "WU": {
+    "aliases": [
+      "Western Air Ltd",
+      "Western Air"
+    ],
+    "focus_cities": [
+      "NAS"
+    ],
+    "hubs": [
+      "FLL",
+      "FPO"
+    ],
+    "iata": "WU",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "X4": {
+    "aliases": [
+      "Air Excursions LLC",
+      "Air Excursions"
+    ],
+    "focus_cities": [
+      "BFI"
+    ],
+    "hubs": [
+      "JNU",
+      "GST",
+      "PDX"
+    ],
+    "iata": "X4",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "X5": {
+    "aliases": [
+      "Junipogo, LLC",
+      "Junipogo"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "SCC",
+      "NUI"
+    ],
+    "iata": "X5",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "X9": {
+    "aliases": [
+      "Omni Air International LLC",
+      "Omni Air International"
+    ],
+    "focus_cities": [
+      "FOE",
+      "FLL",
+      "ELP",
+      "CCS",
+      "MIA",
+      "IAD",
+      "CLT",
+      "NLU",
+      "DSS",
+      "BFI"
+    ],
+    "hubs": [
+      "AFW",
+      "HRL",
+      "BWI",
+      "AEX",
+      "SJU",
+      "BOS",
+      "KEF",
+      "AZA",
+      "ANC",
+      "XPL"
+    ],
+    "iata": "X9",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "XE": {
+    "aliases": [
+      "Delux Public Charters d/b/a JSX",
+      "Delux Public Charters",
+      "JSX"
+    ],
+    "focus_cities": [
+      "OAK",
+      "CLD",
+      "HPN",
+      "BJC",
+      "HOU",
+      "SLC",
+      "LAX",
+      "OPF",
+      "RNO",
+      "CCR"
+    ],
+    "hubs": [
+      "LAS",
+      "BUR",
+      "DAL",
+      "SCF",
+      "SNA"
+    ],
+    "iata": "XE",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "XL": {
+    "aliases": [
+      "Lan Ecuador"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "MIA",
+      "UIO"
+    ],
+    "iata": "XL",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "XP": {
+    "aliases": [
+      "TEM Enterprises dba Avelo Airlines",
+      "TEM Enterprises",
+      "Avelo Airlines"
+    ],
+    "focus_cities": [
+      "STS",
+      "TPA",
+      "BDL",
+      "BNA",
+      "ROC",
+      "MYR",
+      "SJU",
+      "MHT",
+      "PBI",
+      "RDM"
+    ],
+    "hubs": [
+      "HVN",
+      "ILG",
+      "RDU",
+      "ILM",
+      "BUR",
+      "MCO",
+      "LAL",
+      "USA",
+      "FLL",
+      "RSW"
+    ],
+    "iata": "XP",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "Y4": {
+    "aliases": [
+      "Concesionaria Vuela Compania De Aviacion SA de CV (Volaris)"
+    ],
+    "focus_cities": [
+      "BJX",
+      "LAS",
+      "FAT",
+      "SAT",
+      "SJC",
+      "DFW",
+      "IAH",
+      "SMF",
+      "DEN",
+      "ONT"
+    ],
+    "hubs": [
+      "GDL",
+      "MEX",
+      "LAX",
+      "OAK",
+      "MLM",
+      "ORD",
+      "MDW"
+    ],
+    "iata": "Y4",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "YB": {
+    "aliases": [
+      "HARBOUR AIR LTD. D/B/A HARBOUR AIR SEAPLANES, WHISTLER AIR AND SALTSPRING AIR",
+      "HARBOUR AIR LTD.",
+      "HARBOUR AIR SEAPLANES, WHISTLER AIR AND SALTSPRING AIR",
+      "HARBOUR AIR LTD. D/B/A HARBOUR AIR SEAPLANES WHISTLER AIR AND SALTSPRING AIR",
+      "HARBOUR AIR",
+      "HARBOUR AIR SEAPLANES WHISTLER AIR AND SALTSPRING AIR"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "CXH",
+      "LKE"
+    ],
+    "iata": "YB",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "YP": {
+    "aliases": [
+      "Air Premia"
+    ],
+    "focus_cities": [
+      "EWR",
+      "SFO",
+      "HNL"
+    ],
+    "hubs": [
+      "ICN",
+      "LAX"
+    ],
+    "iata": "YP",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "YR": {
+    "aliases": [
+      "Grand Canyon Airlines, Inc. d/b/a Grand Canyon Airlines d/b/a Scenic Airlines",
+      "Grand Canyon Airlines, Inc.",
+      "Grand Canyon Airlines d/b/a Scenic Airlines",
+      "Grand Canyon Airlines Inc. d/b/a Grand Canyon Airlines d/b/a Scenic Airlines",
+      "Grand Canyon Airlines"
+    ],
+    "focus_cities": [
+      "PGA",
+      "SAD",
+      "PHX",
+      "GCN",
+      "NV5",
+      "RNO",
+      "UXR",
+      "KNB",
+      "AZ1",
+      "SGU"
+    ],
+    "hubs": [
+      "BLD",
+      "1G4",
+      "DQS"
+    ],
+    "iata": "YR",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "YV": {
+    "aliases": [
+      "Mesa Airlines Inc.",
+      "Mesa Airlines"
+    ],
+    "focus_cities": [
+      "CLT",
+      "OKC",
+      "JAX",
+      "IND",
+      "LGA",
+      "MSP",
+      "CHS",
+      "DFW",
+      "ORF",
+      "ABQ"
+    ],
+    "hubs": [
+      "IAH",
+      "IAD",
+      "ELP",
+      "SAV",
+      "MCI",
+      "SDF",
+      "MAF",
+      "DTW"
+    ],
+    "iata": "YV",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "YX": {
+    "aliases": [
+      "Republic Airline"
+    ],
+    "focus_cities": [
+      "PIT",
+      "PHL",
+      "YYZ",
+      "RDU",
+      "BNA",
+      "DTW",
+      "SDF",
+      "CVG",
+      "CLE",
+      "ORF"
+    ],
+    "hubs": [
+      "LGA",
+      "ORD",
+      "BOS",
+      "DCA",
+      "EWR",
+      "JFK",
+      "IND",
+      "CMH",
+      "IAD"
+    ],
+    "iata": "YX",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "Z0": {
+    "aliases": [
+      "Norse Atlantic UK Ltd",
+      "Norse Atlantic UK"
+    ],
+    "focus_cities": [
+      "MCO",
+      "MIA",
+      "LAX",
+      "LAS",
+      "BER",
+      "OSL"
+    ],
+    "hubs": [
+      "LGW",
+      "JFK"
+    ],
+    "iata": "Z0",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "Z3Q": {
+    "aliases": [
+      "PM Air, LLC",
+      "PM Air"
+    ],
+    "focus_cities": [],
+    "hubs": [
+      "EYW",
+      "RBN"
+    ],
+    "iata": "Z3Q",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ZG": {
+    "aliases": [
+      "ZIPAIR Tokyo Inc.",
+      "ZIPAIR Tokyo"
+    ],
+    "focus_cities": [
+      "SFO",
+      "SJC",
+      "IAH",
+      "HNL"
+    ],
+    "hubs": [
+      "NRT",
+      "LAX"
+    ],
+    "iata": "ZG",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  },
+  "ZW": {
+    "aliases": [
+      "Air Wisconsin Airlines Corp",
+      "Air Wisconsin Airlines"
+    ],
+    "focus_cities": [
+      "CVG",
+      "FNT",
+      "AZO",
+      "BMI",
+      "MHK",
+      "SPI",
+      "CWA",
+      "MLI",
+      "LIT",
+      "MCI"
+    ],
+    "hubs": [
+      "ORD",
+      "MKE",
+      "DAY",
+      "ATW",
+      "RST",
+      "GRB"
+    ],
+    "iata": "ZW",
+    "meta": {
+      "latest_quarter": 3,
+      "latest_year": 2025,
+      "metric": "seats",
+      "rolling_quarters": 4
+    },
+    "off_points": []
+  }
+}

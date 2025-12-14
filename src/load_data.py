@@ -652,44 +652,53 @@ class DataStore:
 
     def _load_airline_bases(self):
         """
-        Load manual hub/focus/off-point definitions for airlines.
+        Load hub/focus/off-point definitions for airlines.
 
-        The file (resources/airline_bases.json) is expected to map airline labels or
-        codes to lists of hubs, focus cities, and off-points.
+        Sources (merged, later wins):
+        - `resources/airline_bases_t100.json` (auto-derived from BTS T-100, optional)
+        - `resources/airline_bases.json` (manual overrides, optional)
+
+        Each file is expected to map airline labels or codes to lists of hubs,
+        focus cities, and off-points.
         """
-        bases_path = self.resources_dir / "airline_bases.json"
-        if not bases_path.exists():
-            return {}
-        try:
-            with bases_path.open("r", encoding="utf-8") as handle:
-                raw = json.load(handle)
-        except Exception:
-            return {}
+        def _load_file(bases_path: Path, source: str) -> dict:
+            if not bases_path.exists():
+                return {}
+            try:
+                with bases_path.open("r", encoding="utf-8") as handle:
+                    raw = json.load(handle)
+            except Exception:
+                return {}
 
-        normalized = {}
-        for airline_label, payload in raw.items():
-            if not isinstance(payload, dict):
-                continue
-            entry = {
-                "hubs": self._normalize_airport_list(payload.get("hubs")),
-                "focus_cities": self._normalize_airport_list(payload.get("focus_cities")),
-                "off_points": self._normalize_airport_list(payload.get("off_points")),
-                "source": "manual",
-            }
-            normalized_name = normalize_name(airline_label)
-            normalized[normalized_name] = entry
-
-            iata = payload.get("iata")
-            if isinstance(iata, str) and iata.strip():
-                normalized[iata.strip().lower()] = entry
-
-            aliases = payload.get("aliases") or []
-            for alias in aliases:
-                if not isinstance(alias, str):
+            normalized = {}
+            for airline_label, payload in (raw or {}).items():
+                if not isinstance(payload, dict):
                     continue
-                normalized[normalize_name(alias)] = entry
+                entry = {
+                    "hubs": self._normalize_airport_list(payload.get("hubs")),
+                    "focus_cities": self._normalize_airport_list(payload.get("focus_cities")),
+                    "off_points": self._normalize_airport_list(payload.get("off_points")),
+                    "source": source,
+                }
+                normalized_name = normalize_name(airline_label)
+                normalized[normalized_name] = entry
 
-        return normalized
+                iata = payload.get("iata")
+                if isinstance(iata, str) and iata.strip():
+                    normalized[iata.strip().lower()] = entry
+
+                aliases = payload.get("aliases") or []
+                for alias in aliases:
+                    if not isinstance(alias, str):
+                        continue
+                    normalized[normalize_name(alias)] = entry
+
+            return normalized
+
+        merged = {}
+        merged.update(_load_file(self.resources_dir / "airline_bases_t100.json", source="t100"))
+        merged.update(_load_file(self.resources_dir / "airline_bases.json", source="manual"))
+        return merged
 
     def _compute_auto_bases(
         self,
@@ -773,8 +782,18 @@ class DataStore:
             "focus_cities": manual.get("focus_cities") or auto_bases.get("focus_cities") or [],
             "off_points": manual.get("off_points") or auto_bases.get("off_points") or [],
         }
-        manual_present = any(len(merged[key]) and merged[key] == manual.get(key, []) for key in merged)
-        merged["source"] = "manual" if manual_present and not auto_bases else "manual+auto"
+        manual_source = manual.get("source") or "manual"
+        used_manual = any(bool(manual.get(key)) for key in ("hubs", "focus_cities", "off_points"))
+        used_auto = any(
+            (not manual.get(key)) and bool(auto_bases.get(key))
+            for key in ("hubs", "focus_cities", "off_points")
+        )
+        if used_manual and used_auto:
+            merged["source"] = f"{manual_source}+auto"
+        elif used_manual:
+            merged["source"] = manual_source
+        else:
+            merged["source"] = "auto"
         return merged
 
     def _summarize_base_airports(self, bases):
