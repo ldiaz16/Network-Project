@@ -2387,6 +2387,16 @@ class DataStore:
         yield_proxy = self._compute_route_yield_proxy(df)
         df["Yield Proxy Score"] = yield_proxy.reindex(df.index).fillna(0.5)
 
+        # Ensure equipment metadata columns exist even when the upstream dataset is sparse.
+        if "Equipment" not in df.columns:
+            df["Equipment"] = ""
+        if "Equipment Code" not in df.columns:
+            df["Equipment Code"] = df["Equipment"]
+        if "Equipment Description" not in df.columns:
+            df["Equipment Description"] = df["Equipment Code"]
+        if "Equipment Display" not in df.columns:
+            df["Equipment Display"] = df["Equipment Description"].fillna(df["Equipment"])
+
         columns = [
             "Airline",
             "Airline (Normalized)",
