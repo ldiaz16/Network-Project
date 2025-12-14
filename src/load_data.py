@@ -112,6 +112,90 @@ class DataStore:
         self.bts_profitability = None
         self.airport_lookup = {}
 
+    def _load_routes_from_t100_rollup(self, path: Path) -> pd.DataFrame:
+        """
+        Load a pre-aggregated BTS T-100 rollup (data/bts_t100.*) into the canonical routes schema.
+
+        The rollup is expected to contain carrier, origin, destination, seats, passengers, distance,
+        and departure counts across recent quarters.
+        """
+        if path.suffix.lower() == ".parquet":
+            df = pd.read_parquet(path)
+        else:
+            df = pd.read_csv(path)
+
+        def _rename_columns(frame: pd.DataFrame) -> pd.DataFrame:
+            cols = {col.lower(): col for col in frame.columns}
+            rename = {}
+
+            def _pick(target, candidates):
+                for cand in candidates:
+                    key = cand.lower()
+                    if key in cols:
+                        rename[cols[key]] = target
+                        return
+
+            _pick("year", ["year"])
+            _pick("quarter", ["quarter"])
+            _pick("carrier", ["carrier", "unique_carrier", "unique_carrier_code"])
+            _pick("origin", ["origin", "origin_airport", "origin_iata"])
+            _pick("destination", ["destination", "dest", "destination_airport", "dest_airport"])
+            _pick("seats", ["seats"])
+            _pick("passengers", ["passengers", "pax"])
+            _pick("departures", ["departures", "departures_performed", "departures_scheduled"])
+            _pick("distance", ["distance"])
+            return frame.rename(columns=rename)
+
+        df = _rename_columns(df)
+        required = {"carrier", "origin", "destination", "seats"}
+        missing = [col for col in required if col not in df.columns]
+        if missing:
+            raise ValueError(f"T-100 rollup missing columns: {', '.join(missing)}")
+
+        df["carrier"] = df["carrier"].astype(str).str.strip().str.upper()
+        df["origin"] = df["origin"].astype(str).str.strip().str.upper()
+        df["destination"] = df["destination"].astype(str).str.strip().str.upper()
+
+        for numeric in ("seats", "passengers", "departures", "distance", "year", "quarter"):
+            if numeric in df.columns:
+                df[numeric] = pd.to_numeric(df[numeric], errors="coerce").fillna(0.0)
+
+        agg_map = {"Total": ("seats", "sum")}
+        if "passengers" in df.columns:
+            agg_map["Passengers"] = ("passengers", "sum")
+        if "departures" in df.columns:
+            agg_map["Departures"] = ("departures", "sum")
+        if "distance" in df.columns:
+            agg_map["Distance (reported)"] = ("distance", "mean")
+
+        grouped = (
+            df.groupby(["carrier", "origin", "destination"], dropna=False)
+            .agg(**agg_map)
+            .reset_index()
+        )
+
+        grouped.rename(
+            columns={
+                "carrier": "Airline Code",
+                "origin": "Source airport",
+                "destination": "Destination airport",
+            },
+            inplace=True,
+        )
+        grouped["Seat Source"] = "bts_t100"
+        grouped["Equipment"] = ""
+        grouped["Equipment Code"] = grouped["Equipment"]
+
+        mask = (
+            grouped["Airline Code"].astype(str).str.len() > 0
+        ) & (
+            grouped["Source airport"].astype(str).str.len() > 0
+        ) & (
+            grouped["Destination airport"].astype(str).str.len() > 0
+        )
+        grouped = grouped.loc[mask].reset_index(drop=True)
+        return grouped
+
     def _load_routes_from_t100_segments(self, path: Path) -> pd.DataFrame:
         """
         Convert a raw BTS T-100 segment CSV into the canonical routes schema.
@@ -230,18 +314,34 @@ class DataStore:
     def load_data(self):
         """Load data from CSV files into DataFrames and preprocess them."""
         t100_segments_path = Path(__file__).resolve().parents[1] / "T_T100_SEGMENT_ALL_CARRIER.csv"
+        t100_rollup_parquet = self.data_dir / "bts_t100.parquet"
+        t100_rollup_csv = self.data_dir / "bts_t100.csv"
         self.routes = None
-        using_t100_segments = False
-        if t100_segments_path.exists():
+        using_bts_routes = False
+        route_source_path = None
+
+        # Prefer the pre-aggregated T-100 rollup when available.
+        if t100_rollup_parquet.exists() or t100_rollup_csv.exists():
+            rollup_path = t100_rollup_parquet if t100_rollup_parquet.exists() else t100_rollup_csv
+            try:
+                self.routes = self._load_routes_from_t100_rollup(rollup_path)
+                using_bts_routes = True
+                route_source_path = rollup_path
+            except Exception:
+                self.routes = None
+
+        # Fallback to the raw T-100 segment export when a rollup is not present.
+        if self.routes is None and t100_segments_path.exists():
             try:
                 self.routes = self._load_routes_from_t100_segments(t100_segments_path)
-                using_t100_segments = True
+                using_bts_routes = True
+                route_source_path = t100_segments_path
             except Exception:
                 self.routes = None
 
         if self.routes is None:
             self.routes = pd.read_csv(self.data_dir / "routes.dat", header=None)
-            using_t100_segments = False
+            using_bts_routes = False
 
         self.airlines = pd.read_csv(self.data_dir / "airlines.dat", header=None)
         self.airports = pd.read_csv(self.data_dir / "airports.dat", header=None)
@@ -260,7 +360,7 @@ class DataStore:
         self.airlines.drop(columns=[0], inplace=True) 
 
         ## Add column names to each DataFrame
-        if not using_t100_segments:
+        if not using_bts_routes:
             self.routes.columns = [
                 "Airline Code", "IDK", "Source airport", "Source airport ID",
                 "Destination airport", "Destination airport ID", "Codeshare", "Stops", "Equipment"
@@ -299,7 +399,9 @@ class DataStore:
         default_t100_csv = self.data_dir / "bts_t100.csv"
         default_db1b = self.data_dir / "db1b.parquet"
         default_db1b_csv = self.data_dir / "db1b.csv"
-        if t100_segments_path.exists():
+        if route_source_path is not None:
+            t100_path = route_source_path
+        elif t100_segments_path.exists():
             t100_path = t100_segments_path
         else:
             t100_path = default_t100 if default_t100.exists() else (default_t100_csv if default_t100_csv.exists() else None)
