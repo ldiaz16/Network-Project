@@ -1,7 +1,11 @@
+import logging
+import time
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
+from fastapi.concurrency import run_in_threadpool
 
 from src.backend_service import (
     AnalysisError,
@@ -17,6 +21,11 @@ from src.backend_service import (
 )
 from src.load_data import DataStore
 from src.cors_config import combine_regex_patterns, get_cors_settings
+from src.logging_setup import setup_logging
+from src.security import RateLimiter
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Airline Route Optimizer API",
@@ -38,40 +47,70 @@ app.add_middleware(
 
 data_store = DataStore()
 data_store.load_data()
+rate_limiter = RateLimiter.from_env()
+
+
+@app.middleware("http")
+async def add_timing_and_rate_limit(request: Request, call_next):
+    client_host = request.client.host if request.client else "unknown"
+    if not rate_limiter.is_allowed(client_host):
+        return JSONResponse({"detail": "Too many requests"}, status_code=429)
+
+    start = time.perf_counter()
+    response: Response = await call_next(request)
+    latency_ms = (time.perf_counter() - start) * 1000
+    response.headers["X-Request-Latency-ms"] = f"{latency_ms:.2f}"
+
+    logger.info(
+        "request",
+        extra={
+            "request_path": request.url.path,
+            "method": request.method,
+            "status_code": response.status_code,
+            "latency_ms": round(latency_ms, 2),
+            "client": client_host,
+        },
+    )
+    return response
+
+
+@app.get("/health")
+async def health() -> Dict[str, str]:
+    return {"status": "ok"}
 
 
 @app.get("/api/airlines", response_model=List[AirlineSearchResponse])
-def list_airlines(query: Optional[str] = Query(default=None, description="Filter airlines by case-insensitive substring match.")) -> List[Dict[str, Any]]:
-    return list_airlines_logic(data_store, query)
+async def list_airlines(query: Optional[str] = Query(default=None, description="Filter airlines by case-insensitive substring match.")) -> List[Dict[str, Any]]:
+    return await run_in_threadpool(list_airlines_logic, data_store, query)
 
 
 @app.post("/api/run")
-def run_analysis(payload: AnalysisRequest) -> Dict[str, Any]:
+async def run_analysis(payload: AnalysisRequest) -> Dict[str, Any]:
     try:
-        return run_analysis_logic(data_store, payload)
+        return await run_in_threadpool(run_analysis_logic, data_store, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @app.get("/api/fleet")
-def get_fleet_profile(airline: str = Query(..., description="Airline name, alias, or code to profile.")) -> Dict[str, Any]:
+async def get_fleet_profile(airline: str = Query(..., description="Airline name, alias, or code to profile.")) -> Dict[str, Any]:
     try:
-        return get_airline_fleet_profile(data_store, airline)
+        return await run_in_threadpool(get_airline_fleet_profile, data_store, airline)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @app.post("/api/fleet-assignment")
-def run_fleet_assignment(payload: FleetAssignmentRequest) -> Dict[str, Any]:
+async def run_fleet_assignment(payload: FleetAssignmentRequest) -> Dict[str, Any]:
     try:
-        return simulate_live_assignment(data_store, payload)
+        return await run_in_threadpool(simulate_live_assignment, data_store, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @app.post("/api/route-share")
-def get_route_market_share(payload: RouteShareRequest) -> Dict[str, Any]:
+async def get_route_market_share(payload: RouteShareRequest) -> Dict[str, Any]:
     try:
-        return analyze_route_market_share(data_store, payload)
+        return await run_in_threadpool(analyze_route_market_share, data_store, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

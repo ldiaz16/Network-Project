@@ -10,9 +10,19 @@ def _dataframe_to_records(df: Optional[pd.DataFrame]) -> List[Dict[str, Any]]:
     """Convert a DataFrame to a list of JSON-serialisable records."""
     if df is None or df.empty:
         return []
+    mapped = df.copy()
+    # Prefer display-friendly labels when present.
+    if {"Source airport", "Source airport Display"}.issubset(mapped.columns):
+        mapped["Source airport"] = mapped["Source airport Display"].where(mapped["Source airport Display"].notna(), mapped["Source airport"])
+    if {"Destination airport", "Destination airport Display"}.issubset(mapped.columns):
+        mapped["Destination airport"] = mapped["Destination airport Display"].where(
+            mapped["Destination airport Display"].notna(), mapped["Destination airport"]
+        )
+    if {"Equipment", "Equipment Display"}.issubset(mapped.columns):
+        mapped["Equipment"] = mapped["Equipment Display"].where(mapped["Equipment Display"].notna(), mapped["Equipment"])
     return (
-        df.astype(object)
-        .where(pd.notna(df), None)
+        mapped.astype(object)
+        .where(pd.notna(mapped), None)
         .to_dict(orient="records")
     )
 
@@ -238,6 +248,13 @@ def _prepare_top_routes(cost_df: Optional[pd.DataFrame], limit: int = 15) -> Lis
         .loc[:, available_columns]
         .copy()
     )
+    # Prefer human-readable labels when available.
+    if "Source airport Display" in cost_df.columns:
+        snapshot["Source airport"] = cost_df.loc[snapshot.index, "Source airport Display"]
+    if "Destination airport Display" in cost_df.columns:
+        snapshot["Destination airport"] = cost_df.loc[snapshot.index, "Destination airport Display"]
+    if "Equipment Display" in cost_df.columns:
+        snapshot["Equipment"] = cost_df.loc[snapshot.index, "Equipment Display"]
     rename_map = {
         "Source airport": "Source",
         "Destination airport": "Destination",
@@ -385,15 +402,22 @@ def _run_cbsa_simulation(data_store, package: Dict[str, Any], args: AnalysisRequ
     }
 
 
+_AIRLINE_CACHE: Dict[str, List[Dict[str, Any]]] = {}
+
+
 def list_airlines(data_store, query: Optional[str]) -> List[Dict[str, Any]]:
-    """Return airline metadata filtered by optional substring query."""
+    """Return airline metadata filtered by optional substring query, with a small in-memory cache."""
+    cache_key = (query or "").strip().lower()
+    if cache_key in _AIRLINE_CACHE:
+        return _AIRLINE_CACHE[cache_key]
+
     airlines_df = data_store.airlines.copy()
     if query:
         mask = airlines_df["Airline"].str.contains(query, case=False, na=False) | airlines_df["Alias"].str.contains(query, case=False, na=False)
         airlines_df = airlines_df[mask]
     subset = airlines_df.head(50)[["Airline", "Alias", "IATA", "Country"]]
     subset = subset.astype(object).where(pd.notna(subset), None)
-    return [
+    results = [
         {
             "airline": row["Airline"],
             "alias": row.get("Alias"),
@@ -402,6 +426,8 @@ def list_airlines(data_store, query: Optional[str]) -> List[Dict[str, Any]]:
         }
         for _, row in subset.iterrows()
     ]
+    _AIRLINE_CACHE[cache_key] = results
+    return results
 
 
 def run_analysis(data_store, payload: AnalysisRequest) -> Dict[str, Any]:

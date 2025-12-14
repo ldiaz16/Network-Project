@@ -107,11 +107,142 @@ class DataStore:
         self.codeshare_overrides = self._load_codeshare_overrides()
         self.operational_metrics = self._load_operational_metrics()
         self.airline_bases = self._load_airline_bases()
+        self.bts_t100 = None
+        self.bts_db1b = None
+        self.bts_profitability = None
+        self.airport_lookup = {}
+
+    def _load_routes_from_t100_segments(self, path: Path) -> pd.DataFrame:
+        """
+        Convert a raw BTS T-100 segment CSV into the canonical routes schema.
+
+        The T-100 file carries monthly/quarterly seats and passengers. We aggregate
+        by carrier + O&D to produce a single row per directional route, carrying
+        total seats (seat-miles proxy) and a best-effort equipment hint.
+        """
+        raw = pd.read_csv(path)
+
+        # Map BTS aircraft type codes to readable labels when the lookup is available.
+        lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_AIRCRAFT_TYPE.csv"
+        aircraft_lookup = {}
+        if lookup_path.exists():
+            try:
+                lookup_df = pd.read_csv(lookup_path, dtype=str)
+                if {"Code", "Description"}.issubset(lookup_df.columns):
+                    for _, row in lookup_df.iterrows():
+                        code = str(row.get("Code") or "").strip().strip('"')
+                        desc = str(row.get("Description") or "").strip()
+                        if code:
+                            aircraft_lookup[code] = desc
+                            aircraft_lookup[code.lstrip("0")] = desc
+            except Exception:
+                aircraft_lookup = {}
+        carrier_col = "UNIQUE_CARRIER" if "UNIQUE_CARRIER" in raw.columns else "CARRIER"
+        if carrier_col is None or carrier_col not in raw.columns:
+            raise ValueError("T-100 segment file is missing a carrier column.")
+
+        required_cols = {carrier_col, "ORIGIN", "DEST"}
+        missing = [col for col in required_cols if col not in raw.columns]
+        if missing:
+            raise ValueError(f"T-100 segment file is missing columns: {', '.join(missing)}")
+
+        def _clean_str(series):
+            return series.astype(str).str.strip().str.upper()
+
+        def _most_common(series: pd.Series):
+            cleaned = series.dropna().astype(str)
+            if cleaned.empty:
+                return None
+            mode = cleaned.mode()
+            return mode.iloc[0] if not mode.empty else None
+
+        raw[carrier_col] = _clean_str(raw[carrier_col])
+        raw["ORIGIN"] = _clean_str(raw["ORIGIN"])
+        raw["DEST"] = _clean_str(raw["DEST"])
+
+        for numeric in ("SEATS", "PASSENGERS", "DISTANCE"):
+            if numeric in raw.columns:
+                raw[numeric] = pd.to_numeric(raw[numeric], errors="coerce").fillna(0.0)
+
+        agg_kwargs = {
+            "Total": ("SEATS", "sum"),
+        }
+        if "PASSENGERS" in raw.columns:
+            agg_kwargs["Passengers"] = ("PASSENGERS", "sum")
+        if "DISTANCE" in raw.columns:
+            agg_kwargs["Distance (reported)"] = ("DISTANCE", "mean")
+        if "AIRCRAFT_TYPE" in raw.columns:
+            agg_kwargs["Equipment"] = ("AIRCRAFT_TYPE", _most_common)
+
+        grouped = (
+            raw.groupby([carrier_col, "ORIGIN", "DEST"], dropna=False)
+            .agg(**agg_kwargs)
+            .reset_index()
+        )
+
+        grouped.rename(
+            columns={
+                carrier_col: "Airline Code",
+                "ORIGIN": "Source airport",
+                "DEST": "Destination airport",
+            },
+            inplace=True,
+        )
+        grouped["Total"] = pd.to_numeric(grouped.get("Total"), errors="coerce").fillna(0.0)
+        grouped["Passengers"] = pd.to_numeric(grouped.get("Passengers"), errors="coerce").fillna(0.0)
+        if "Equipment" in grouped.columns:
+            grouped["Equipment"] = grouped["Equipment"].fillna("").astype(str)
+        else:
+            grouped["Equipment"] = ""
+        grouped["Seat Source"] = "bts_t100"
+
+        grouped["Equipment Code"] = grouped["Equipment"]
+        if aircraft_lookup:
+            grouped["Equipment Description"] = grouped["Equipment Code"].map(aircraft_lookup)
+        else:
+            grouped["Equipment Description"] = None
+
+        mask = grouped["Airline Code"].astype(str).str.len() > 0
+        mask &= grouped["Source airport"].astype(str).str.len() > 0
+        mask &= grouped["Destination airport"].astype(str).str.len() > 0
+        grouped = grouped.loc[mask].reset_index(drop=True)
+
+        return grouped
+
+    def _load_airport_lookup(self):
+        """Load BTS airport code -> description mapping if available."""
+        lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_AIRPORT.csv"
+        mapping = {}
+        if not lookup_path.exists():
+            return mapping
+        try:
+            df = pd.read_csv(lookup_path, dtype=str)
+            if {"Code", "Description"}.issubset(df.columns):
+                for _, row in df.iterrows():
+                    code = str(row.get("Code") or "").strip().strip('"').upper()
+                    desc = str(row.get("Description") or "").strip()
+                    if code:
+                        mapping[code] = desc
+        except Exception:
+            return {}
+        return mapping
 
     def load_data(self):
         """Load data from CSV files into DataFrames and preprocess them."""
-        ## Create DataFrames for each dataset
-        self.routes = pd.read_csv(self.data_dir / "routes.dat", header=None)
+        t100_segments_path = Path(__file__).resolve().parents[1] / "T_T100_SEGMENT_ALL_CARRIER.csv"
+        self.routes = None
+        using_t100_segments = False
+        if t100_segments_path.exists():
+            try:
+                self.routes = self._load_routes_from_t100_segments(t100_segments_path)
+                using_t100_segments = True
+            except Exception:
+                self.routes = None
+
+        if self.routes is None:
+            self.routes = pd.read_csv(self.data_dir / "routes.dat", header=None)
+            using_t100_segments = False
+
         self.airlines = pd.read_csv(self.data_dir / "airlines.dat", header=None)
         self.airports = pd.read_csv(self.data_dir / "airports.dat", header=None)
         self.cbsa = pd.read_csv(self.data_dir / "cbsa.csv", skiprows=2)
@@ -129,11 +260,18 @@ class DataStore:
         self.airlines.drop(columns=[0], inplace=True) 
 
         ## Add column names to each DataFrame
-        self.routes.columns = [
-            "Airline Code", "IDK", "Source airport", "Source airport ID",
-            "Destination airport", "Destination airport ID", "Codeshare", "Stops", "Equipment"
-        ]
-        self.routes = filter_codeshare_routes(self.routes)
+        if not using_t100_segments:
+            self.routes.columns = [
+                "Airline Code", "IDK", "Source airport", "Source airport ID",
+                "Destination airport", "Destination airport ID", "Codeshare", "Stops", "Equipment"
+            ]
+            self.routes = filter_codeshare_routes(self.routes)
+        else:
+            # Ensure expected columns exist for downstream processing.
+            for required in ["Airline Code", "Source airport", "Destination airport", "Equipment"]:
+                if required not in self.routes.columns:
+                    self.routes[required] = "" if required == "Equipment" else pd.NA
+
         self.airlines.columns = [
             "Airline", "Alias", "IATA", "ICAO", "Callsign", "Country", "Active"
         ]
@@ -154,6 +292,20 @@ class DataStore:
         self.aircraft_config = self.convert_aircraft_config_to_df(AIRLINE_SEAT_CONFIG)
         self.equipment_capacity_lookup = self._build_equipment_capacity_lookup(self.aircraft_config)
         ## print(self.aircraft_config.head())
+        self.airport_lookup = self._load_airport_lookup()
+
+        # Opportunistically load BTS data if local caches exist (rolling 4Q, domestic).
+        default_t100 = self.data_dir / "bts_t100.parquet"
+        default_t100_csv = self.data_dir / "bts_t100.csv"
+        default_db1b = self.data_dir / "db1b.parquet"
+        default_db1b_csv = self.data_dir / "db1b.csv"
+        if t100_segments_path.exists():
+            t100_path = t100_segments_path
+        else:
+            t100_path = default_t100 if default_t100.exists() else (default_t100_csv if default_t100_csv.exists() else None)
+        db1b_path = default_db1b if default_db1b.exists() else (default_db1b_csv if default_db1b_csv.exists() else None)
+        if t100_path or db1b_path:
+            self.load_bts_sources(t100_path=t100_path, db1b_path=db1b_path, domestic_only=True, rolling_quarters=4)
         
 
     def convert_aircraft_config_to_df(self, config_dict):
@@ -323,6 +475,65 @@ class DataStore:
             entry["airline_label"] = airline_label
             normalized[normalized_name] = entry
         return normalized
+
+    def _resolve_airline_iata(self, airline_normalized: str):
+        if self.airlines is None or self.airlines.empty or not airline_normalized:
+            return None
+        matches = self.airlines[self.airlines["Airline (Normalized)"] == airline_normalized]
+        if matches.empty:
+            return None
+        return matches.iloc[0].get("IATA")
+
+    def load_bts_sources(self, t100_path=None, db1b_path=None, domestic_only=True, rolling_quarters=4):
+        """
+        Load BTS T-100 and DB1B data (if provided) and build profitability aggregates.
+        Paths can be CSV or Parquet. If a path is missing or unreadable, the corresponding
+        dataset is skipped to avoid breaking the pipeline.
+        """
+        from .bts_ingest import load_t100, load_db1b, build_profitability_table
+
+        def _safe_load(func, path):
+            if not path:
+                return None
+            try:
+                return func(path, rolling_quarters=rolling_quarters, domestic_only=domestic_only)
+            except Exception:
+                return None
+
+        self.bts_t100 = _safe_load(load_t100, str(t100_path) if t100_path else None)
+        self.bts_db1b = _safe_load(load_db1b, str(db1b_path) if db1b_path else None)
+        try:
+            self.bts_profitability = build_profitability_table(self.bts_t100, self.bts_db1b)
+        except Exception:
+            self.bts_profitability = None
+
+    def get_profitability_insight(self, airline_normalized: str, origin: str, destination: str):
+        """
+        Return profitability metrics for a carrier/OD if BTS datasets are loaded.
+        """
+        if self.bts_profitability is None or self.bts_profitability.empty:
+            return None
+        iata = self._resolve_airline_iata(airline_normalized)
+        if not iata:
+            return None
+        df = self.bts_profitability
+        mask = (df["carrier"].astype(str).str.upper() == str(iata).upper()) & \
+               (df["origin"].astype(str).str.upper() == str(origin).upper()) & \
+               (df["destination"].astype(str).str.upper() == str(destination).upper())
+        subset = df.loc[mask]
+        if subset.empty:
+            return None
+        row = subset.iloc[0].to_dict()
+        return {
+            "carrier": iata,
+            "revenue": float(row.get("revenue") or 0.0),
+            "rasm": float(row.get("rasm") or 0.0),
+            "casm_proxy": float(row.get("casm_proxy") or 0.0),
+            "profit_score": float(row.get("profit_score") or 0.0),
+            "avg_fare": float(row.get("avg_fare") or 0.0),
+            "pdews": float(row.get("pdews") or 0.0),
+            "distance": float(row.get("distance") or 0.0),
+        }
 
     def _normalize_airport_list(self, codes):
         """Normalize a list of airport codes to upper-case IATA strings."""
@@ -816,6 +1027,15 @@ class DataStore:
         if seat_demand:
             rationale.append(f"Seat demand provided: {seat_demand}")
 
+        profitability = self.get_profitability_insight(airline_normalized, source_airport, dest_airport)
+        if profitability:
+            profit_score = profitability.get("profit_score")
+            if profit_score is not None:
+                rationale.append(f"BTS profit proxy (RASM-CASM): {profit_score:.3f}")
+            revenue = profitability.get("revenue")
+            if revenue:
+                rationale.append(f"BTS revenue (rolling 4Q): ${revenue:,.0f}")
+
         # Aircraft recommendations (restricted to airline fleet and observed stage lengths)
         optimal_aircraft = []
         try:
@@ -896,6 +1116,8 @@ class DataStore:
             "airline_normalized": airline_meta.get("Airline (Normalized)") if isinstance(airline_meta, dict) else normalize_name(airline_query),
             "source": source_airport,
             "destination": dest_airport,
+            "source_display": (src_row["Name"] if src_row is not None and "Name" in src_row else None) or source_airport,
+            "destination_display": (dst_row["Name"] if dst_row is not None and "Name" in dst_row else None) or dest_airport,
             "distance_miles": round(distance, 2),
             "market_asm": market_asm,
             "competition_count": competition_count,
@@ -923,6 +1145,7 @@ class DataStore:
             "playbook": playbook,
             "warnings": warnings,
             "optimal_aircraft": optimal_aircraft,
+            "profitability": profitability,
         }
 
 
@@ -1333,7 +1556,27 @@ class DataStore:
             how="left"
         )
 
-        seat_metadata = routes_df["Equipment"].apply(self._estimate_seat_capacity)
+        # Reconcile seat columns after the merge to preserve values from the active source.
+        if "Total_x" in routes_df.columns or "Total_y" in routes_df.columns:
+            total_x = routes_df["Total_x"] if "Total_x" in routes_df.columns else None
+            total_y = routes_df["Total_y"] if "Total_y" in routes_df.columns else None
+            if total_x is not None and total_y is not None:
+                routes_df["Total"] = total_x.combine_first(total_y)
+            elif total_x is not None:
+                routes_df["Total"] = total_x
+            else:
+                routes_df["Total"] = total_y
+            routes_df.drop(columns=[col for col in ["Total_x", "Total_y"] if col in routes_df.columns], inplace=True)
+        elif "Total" not in routes_df.columns:
+            routes_df["Total"] = pd.NA
+
+        if "Seat Source" in routes_df.columns:
+            routes_df["Seat Source"] = routes_df["Seat Source"].fillna("unknown")
+        else:
+            routes_df["Seat Source"] = "unknown"
+
+        equipment_for_capacity = routes_df["Equipment Code"] if "Equipment Code" in routes_df.columns else routes_df["Equipment"]
+        seat_metadata = equipment_for_capacity.apply(self._estimate_seat_capacity)
         seat_estimates = seat_metadata.apply(
             lambda record: record.get("seats") if isinstance(record, dict) else None
         )
@@ -1342,13 +1585,9 @@ class DataStore:
         )
         seat_estimates = pd.to_numeric(seat_estimates, errors="coerce")
 
-        routes_df["Seat Source"] = "unknown"
-        if "Total" in routes_df.columns:
-            routes_df["Total"] = pd.to_numeric(routes_df["Total"], errors="coerce")
-            config_mask = routes_df["Total"].notna()
-            routes_df.loc[config_mask, "Seat Source"] = "airline_config"
-        else:
-            routes_df["Total"] = pd.NA
+        routes_df["Total"] = pd.to_numeric(routes_df.get("Total"), errors="coerce")
+        config_mask = routes_df["Total"].notna() & routes_df["Seat Source"].eq("unknown")
+        routes_df.loc[config_mask, "Seat Source"] = "airline_config"
 
         estimate_mask = routes_df["Total"].isna() & seat_estimates.notna()
         routes_df.loc[estimate_mask, "Total"] = seat_estimates[estimate_mask]
@@ -1365,6 +1604,20 @@ class DataStore:
         enriched_df = routes_df.merge(source_airports, on="Source airport", how="left")
         enriched_df = enriched_df.merge(dest_airports, on="Destination airport", how="left")
 
+        # Fill missing airport names using BTS lookup descriptions when available.
+        if getattr(self, "airport_lookup", None):
+            for side in ("Source", "Destination"):
+                name_col = f"{side} Name"
+                code_col = f"{side} airport"
+                missing_mask = enriched_df[name_col].isna() | (enriched_df[name_col] == "")
+                enriched_df.loc[missing_mask, name_col] = enriched_df.loc[missing_mask, code_col].map(self.airport_lookup)
+
+        # Provide display-friendly airport labels while keeping raw codes.
+        enriched_df["Source airport Code"] = enriched_df["Source airport"]
+        enriched_df["Destination airport Code"] = enriched_df["Destination airport"]
+        enriched_df["Source airport Display"] = enriched_df["Source Name"].fillna(enriched_df["Source airport"])
+        enriched_df["Destination airport Display"] = enriched_df["Destination Name"].fillna(enriched_df["Destination airport"])
+
         # Drop unnecessary columns
         if 'Airline_x' in enriched_df.columns and 'Airline_y' in enriched_df.columns:
             enriched_df = enriched_df.drop(columns=['Airline_y'])
@@ -1380,6 +1633,19 @@ class DataStore:
         )
 
         enriched_df["Distance (km)"] = enriched_df["Distance (miles)"] * 1.60934
+
+        # Fallback to BTS-reported distance when geodesic is missing or zero.
+        if "Distance (reported)" in enriched_df.columns:
+            reported = pd.to_numeric(enriched_df["Distance (reported)"], errors="coerce")
+            missing_distance = enriched_df["Distance (miles)"].isna() | (pd.to_numeric(enriched_df["Distance (miles)"], errors="coerce").fillna(0.0) <= 0)
+            enriched_df.loc[missing_distance, "Distance (miles)"] = reported.loc[missing_distance]
+            enriched_df["Distance (km)"] = enriched_df["Distance (miles)"] * 1.60934
+
+        # Provide a display-friendly equipment label.
+        if "Equipment Description" in enriched_df.columns:
+            enriched_df["Equipment Display"] = enriched_df["Equipment Description"].fillna(enriched_df["Equipment"])
+        else:
+            enriched_df["Equipment Display"] = enriched_df["Equipment"]
 
         # Temporarily set display options
         pd.set_option('display.max_rows', None)       # Show all rows
@@ -1487,6 +1753,27 @@ class DataStore:
         summary["Seat Capacity"] = summary["Equipment"].apply(_seat_capacity)
         summary["Distance Fit"] = summary["Average Distance"].apply(_distance_fit)
         summary["Seat Fit"] = summary["Seat Capacity"].apply(_seat_fit)
+
+        allowed_equipment = set(seat_lookup.keys())
+        if allowed_equipment:
+            summary = summary[summary["Equipment"].isin(allowed_equipment)].copy()
+            if summary.empty:
+                return pd.DataFrame(
+                    columns=[
+                        "Airline",
+                        "Equipment",
+                        "Route Count",
+                        "Average Distance",
+                        "Total Distance",
+                        "Utilization Score",
+                        "Seat Capacity",
+                        "Distance Fit",
+                        "Seat Fit",
+                        "Airline Load Factor",
+                        "Load Factor Pressure",
+                        "Optimal Score",
+                    ]
+                )
 
         load_factor_meta = self.operational_metrics.get(normalized_name or "", {})
         load_factor_value = load_factor_meta.get("load_factor") if isinstance(load_factor_meta, dict) else None
@@ -1894,6 +2181,12 @@ class DataStore:
                 summary = route_payload.get(route_pair)
                 if summary is None:
                     continue
+                if "Source airport Display" in route_group:
+                    summary["source_display"] = summary.get("source_display") or _pick_mode(route_group["Source airport Display"])
+                if "Destination airport Display" in route_group:
+                    summary["destination_display"] = summary.get("destination_display") or _pick_mode(
+                        route_group["Destination airport Display"]
+                    )
                 summary["distance_miles"] = _mean(route_group["Distance (miles)"]) or summary["distance_miles"]
                 competitor_counts = route_group.get("Competitor Count")
                 if competitor_counts is not None:
@@ -1929,7 +2222,15 @@ class DataStore:
                         else None
                     )
                     equipment_values = []
-                    if "Equipment" in airline_slice:
+                    if "Equipment Display" in airline_slice:
+                        equipment_values = sorted(
+                            {
+                                str(value).strip()
+                                for value in airline_slice["Equipment Display"].dropna()
+                                if isinstance(value, str) and value.strip()
+                            }
+                        )
+                    elif "Equipment" in airline_slice:
                         equipment_values = sorted(
                             {
                                 str(value).strip().upper()
@@ -2090,7 +2391,14 @@ class DataStore:
             "Airline",
             "Airline (Normalized)",
             "Source airport",
+            "Source airport Code",
+            "Source airport Display",
             "Destination airport",
+            "Destination airport Code",
+            "Destination airport Display",
+            "Equipment Code",
+            "Equipment Description",
+            "Equipment Display",
             "Distance (miles)",
             "Total Seats",
             "Seats per Mile",
@@ -2924,8 +3232,8 @@ class DataStore:
 
         long_format = pd.DataFrame([
             {
-                "Source": row["Source airport"],
-                "Dest": row["Destination airport"],
+                "Source": row.get("Source airport Display_x") or row["Source airport"],
+                "Dest": row.get("Destination airport Display_x") or row["Destination airport"],
                 _airline_label(row, "Airline_x", "Airline (Normalized)_x"): row["ASM_x"],
                 _airline_label(row, "Airline_y", "Airline (Normalized)_y"): row["ASM_y"],
             }
@@ -2934,10 +3242,10 @@ class DataStore:
         
         aircraft_info = pd.DataFrame([
             {
-                "Source": row["Source airport"],
-                "Dest": row["Destination airport"],
-                f"{_airline_label(row, 'Airline_x', 'Airline (Normalized)_x')}_Aircraft": row["Equipment_x"],
-                f"{_airline_label(row, 'Airline_y', 'Airline (Normalized)_y')}_Aircraft": row["Equipment_y"],
+                "Source": row.get("Source airport Display_x") or row["Source airport"],
+                "Dest": row.get("Destination airport Display_x") or row["Destination airport"],
+                f"{_airline_label(row, 'Airline_x', 'Airline (Normalized)_x')}_Aircraft": row.get("Equipment Display_x") or row["Equipment_x"],
+                f"{_airline_label(row, 'Airline_y', 'Airline (Normalized)_y')}_Aircraft": row.get("Equipment Display_y") or row["Equipment_y"],
             }
             for _, row in competing_routes.iterrows()
         ])

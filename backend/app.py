@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -22,6 +24,8 @@ from src.backend_service import (
 )
 from src.cors_config import get_cors_settings
 from src.load_data import DataStore
+from src.logging_setup import setup_logging
+from src.security import RateLimiter
 
 FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
 
@@ -43,11 +47,44 @@ if explicit_origins == ["*"]:
 else:
     cors_origins = _dedupe([*explicit_origins, *regex_origins])
 
+setup_logging()
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
 
 data_store = DataStore()
 data_store.load_data()
+rate_limiter = RateLimiter.from_env()
+
+
+@app.before_request
+def _rate_limit_and_track_start():
+    client = request.remote_addr or "unknown"
+    if not rate_limiter.is_allowed(client):
+        return jsonify({"detail": "Too many requests"}), 429
+    request.start_time = time.perf_counter()
+
+
+@app.after_request
+def _log_request(response):
+    start = getattr(request, "start_time", None)
+    latency_ms = 0.0
+    if start is not None:
+        latency_ms = (time.perf_counter() - start) * 1000
+        response.headers["X-Request-Latency-ms"] = f"{latency_ms:.2f}"
+
+    logger.info(
+        "request",
+        extra={
+            "request_path": request.path,
+            "method": request.method,
+            "status_code": response.status_code,
+            "latency_ms": round(latency_ms, 2),
+            "client": request.remote_addr,
+        },
+    )
+    return response
 
 
 @app.get("/")

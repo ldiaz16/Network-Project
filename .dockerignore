@@ -1,0 +1,30 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.venv
+env
+build
+dist
+*.log
+*.csv
+*.parquet
+*.dat
+*.pdf
+*.md~
+frontend/node_modules
+reports
+notebooks
+.mypy_cache
+.pytest_cache
+
+# Large raw datasets and logs; mounted at runtime if needed
+BTS DATA
+Data Bank 20 - Monthly U.S. Air Carrier Capacity and Traffic Data
+Form 41 Financial DB10 Data
+Fuel Data
+US Passenger Data (All airlines)
+ASC References
+*.asc
+frontend_server.log
+backend_server.log

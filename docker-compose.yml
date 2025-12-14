@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    command: gunicorn backend.app:app --bind 0.0.0.0:8000 --workers 4 --timeout 90
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CORS_ALLOW_ORIGINS=http://localhost:5173
+    volumes:
+      - ./data:/app/data:ro
+    depends_on:
+      - frontend
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "5173:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=1

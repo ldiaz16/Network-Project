@@ -566,6 +566,48 @@ def test_load_factor_metrics_adjust_scoring(datastore):
     assert high_pressure.loc["A320", "Optimal Score"] > low_pressure.loc["A320", "Optimal Score"]
 
 
+def test_find_best_aircraft_filters_to_airline_fleet(datastore):
+    seed_sample_airline(datastore)
+    # Inject an out-of-fleet equipment into routes; config does not include it.
+    datastore.routes = pd.concat(
+        [
+            datastore.routes,
+            pd.DataFrame(
+                [
+                    {
+                        "Airline Code": "SA",
+                        "IDK": None,
+                        "Source airport": "AAA",
+                        "Source airport ID": None,
+                        "Destination airport": "EEE",
+                        "Destination airport ID": None,
+                        "Codeshare": None,
+                        "Stops": 0,
+                        "Equipment": "A346",
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    datastore.airports = pd.concat(
+        [
+            datastore.airports,
+            pd.DataFrame([{"IATA": "EEE", "Name": "Airport E", "Latitude": 25.0, "Longitude": 35.0}]),
+        ],
+        ignore_index=True,
+    )
+
+    recommendations = datastore.find_best_aircraft_for_route(
+        "Sample Airways",
+        route_distance=2000,
+        seat_demand=250,
+        top_n=5,
+    )
+
+    assert "A346" not in recommendations["Equipment"].tolist()
+
+
 def test_cbsa_simulation_filters_international_and_rounds(datastore):
     datastore.airports = pd.DataFrame(
         [
