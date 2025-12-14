@@ -777,6 +777,19 @@ class DataStore:
         merged["source"] = "manual" if manual_present and not auto_bases else "manual+auto"
         return merged
 
+    def _summarize_base_airports(self, bases):
+        """
+        Return a simplified base summary for presentation purposes.
+        Off-points are omitted to focus on hubs/focus cities.
+        """
+        if not isinstance(bases, dict):
+            return {}
+        return {
+            "hubs": self._normalize_airport_list(bases.get("hubs")),
+            "focus_cities": self._normalize_airport_list(bases.get("focus_cities")),
+            "source": bases.get("source", "auto"),
+        }
+
     def get_airline_bases(self, airline_identifier):
         """
         Retrieve manual base data (hubs/focus/off-points) for an airline.
@@ -1597,9 +1610,9 @@ class DataStore:
             "Top 5 Hubs": top_hubs,
         }
         if base_overrides:
-            stats["Base Overrides"] = base_overrides
+            stats["Base Overrides"] = self._summarize_base_airports(base_overrides)
         if derived_bases:
-            stats["Base Airports"] = derived_bases
+            stats["Base Airports"] = self._summarize_base_airports(derived_bases)
         return stats
 
     def draw_network(self, G, layout='spring'):
