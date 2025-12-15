@@ -118,16 +118,22 @@ def route_analysis(data_store, payload: RouteAnalysisRequest) -> Dict[str, Any]:
         processed_routes=processed,
     )
 
-    equipment_counts = (
-        processed["Equipment Display" if "Equipment Display" in processed.columns else "Equipment"]
-        .fillna("Unknown")
-        .astype(str)
-        .str.strip()
-        .replace({"": "Unknown"})
-        .value_counts()
-        .head(5)
-        .to_dict()
-    )
+    airline_code = (metadata.get("IATA") if metadata is not None else "") or ""
+    airline_code = str(airline_code).strip().upper()
+    equipment_counts = {}
+    if airline_code and hasattr(data_store, "top_equipment_by_departures"):
+        equipment_counts = data_store.top_equipment_by_departures(airline_code, top_n=5)
+    if not equipment_counts:
+        equipment_counts = (
+            processed["Equipment Display" if "Equipment Display" in processed.columns else "Equipment"]
+            .fillna("Unknown")
+            .astype(str)
+            .str.strip()
+            .replace({"": "Unknown"})
+            .value_counts()
+            .head(5)
+            .to_dict()
+        )
 
     top_routes = (
         processed.sort_values("ASM", ascending=False)

@@ -110,6 +110,8 @@ class DataStore:
         self.bts_db1b = None
         self.bts_profitability = None
         self.airport_lookup = {}
+        self.t100_equipment_usage = None
+        self.t100_equipment_usage_metric = None
 
     def _load_routes_from_t100_segments(
         self,
@@ -141,7 +143,11 @@ class DataStore:
             "DEST",
             "SEATS",
             "PASSENGERS",
+            "DEPARTURES_PERFORMED",
+            "DEPARTURES_SCHEDULED",
             "DISTANCE",
+            "AIR_TIME",
+            "RAMP_TO_RAMP",
             "AIRCRAFT_TYPE",
             "YEAR",
             "QUARTER",
@@ -205,9 +211,19 @@ class DataStore:
         )
         raw = raw.loc[valid_mask].copy()
 
-        for numeric in ("SEATS", "PASSENGERS", "DISTANCE"):
+        for numeric in (
+            "SEATS",
+            "PASSENGERS",
+            "DEPARTURES_PERFORMED",
+            "DEPARTURES_SCHEDULED",
+            "DISTANCE",
+            "AIR_TIME",
+            "RAMP_TO_RAMP",
+        ):
             if numeric in raw.columns:
                 raw[numeric] = pd.to_numeric(raw[numeric], errors="coerce").fillna(0.0)
+
+        self._cache_t100_equipment_usage(raw, carrier_col=carrier_col, aircraft_lookup=aircraft_lookup)
 
         agg_kwargs = {
             "Total": ("SEATS", "sum"),
@@ -253,6 +269,108 @@ class DataStore:
         grouped = grouped.loc[mask].reset_index(drop=True)
 
         return grouped
+
+    def _cache_t100_equipment_usage(self, raw: pd.DataFrame, carrier_col: str, aircraft_lookup: Dict[str, str]) -> None:
+        """Cache equipment usage aggregates (departures) for fleet signal cards."""
+        if raw is None or raw.empty or carrier_col not in raw.columns or "AIRCRAFT_TYPE" not in raw.columns:
+            self.t100_equipment_usage = None
+            self.t100_equipment_usage_metric = None
+            return
+
+        equipment_code = raw["AIRCRAFT_TYPE"].astype(str).str.strip().str.strip('"')
+        airline_code = raw[carrier_col].astype(str).str.strip().str.upper()
+        seats = pd.to_numeric(raw["SEATS"], errors="coerce").fillna(0.0) if "SEATS" in raw.columns else pd.Series(0.0, index=raw.index)
+        distance = (
+            pd.to_numeric(raw["DISTANCE"], errors="coerce").fillna(0.0) if "DISTANCE" in raw.columns else pd.Series(0.0, index=raw.index)
+        )
+
+        departures_series = None
+        metric = None
+        for candidate in ("DEPARTURES_PERFORMED", "DEPARTURES_SCHEDULED"):
+            if candidate in raw.columns:
+                departures_series = pd.to_numeric(raw[candidate], errors="coerce").fillna(0.0)
+                metric = candidate
+                break
+
+        if departures_series is None:
+            # Best-effort estimate from time totals when explicit departures are not present.
+            speed_mph = 500.0
+            min_air_minutes = 20.0
+            taxi_minutes = 25.0
+            min_block_minutes = 30.0
+
+            airborne_minutes = (distance / speed_mph) * 60.0
+            airborne_minutes = airborne_minutes.where(distance > 0, 0.0)
+            airborne_minutes = airborne_minutes.where(distance <= 0, airborne_minutes.clip(lower=min_air_minutes))
+
+            dep_est = pd.Series(0.0, index=raw.index, dtype="float64")
+
+            air_time = pd.to_numeric(raw["AIR_TIME"], errors="coerce").fillna(0.0) if "AIR_TIME" in raw.columns else None
+            if air_time is not None:
+                dep_air = (air_time / airborne_minutes).replace([float("inf"), -float("inf")], 0.0).fillna(0.0)
+                dep_est = dep_air.where(distance > 0, 0.0)
+
+            ramp_to_ramp = pd.to_numeric(raw["RAMP_TO_RAMP"], errors="coerce").fillna(0.0) if "RAMP_TO_RAMP" in raw.columns else None
+            if ramp_to_ramp is not None:
+                block_minutes = taxi_minutes + airborne_minutes
+                block_minutes = block_minutes.where(distance > 0, 0.0)
+                block_minutes = block_minutes.where(distance <= 0, block_minutes.clip(lower=min_block_minutes))
+                dep_block = (ramp_to_ramp / block_minutes).replace([float("inf"), -float("inf")], 0.0).fillna(0.0)
+                dep_block = dep_block.where(distance > 0, 0.0)
+
+                both = (dep_est > 0) & (dep_block > 0)
+                dep_est = dep_est.where(dep_est > 0, dep_block)
+                dep_est = dep_est.where(~both, (dep_est + dep_block) / 2.0)
+
+            departures_series = dep_est.clip(lower=0.0).clip(upper=seats)
+            metric = "ESTIMATED_DEPARTURES"
+
+        if departures_series is None:
+            self.t100_equipment_usage = None
+            self.t100_equipment_usage_metric = None
+            return
+
+        # Focus on passenger operations (seats > 0) for the fleet signal.
+        passenger_mask = seats > 0
+        usage = pd.DataFrame(
+            {
+                "Airline Code": airline_code,
+                "Equipment Code": equipment_code,
+                "Departures": departures_series,
+            }
+        )
+        usage = usage.loc[passenger_mask].copy()
+        usage = usage[usage["Airline Code"].astype(str).str.len() > 0]
+        usage = usage[usage["Equipment Code"].astype(str).str.len() > 0]
+
+        grouped = (
+            usage.groupby(["Airline Code", "Equipment Code"], dropna=False)["Departures"]
+            .sum()
+            .reset_index()
+        )
+        grouped["Equipment Display"] = grouped["Equipment Code"].map(aircraft_lookup).fillna(grouped["Equipment Code"])
+        self.t100_equipment_usage = grouped
+        self.t100_equipment_usage_metric = metric
+
+    def top_equipment_by_departures(self, airline_code: str, top_n: int = 5) -> Dict[str, int]:
+        if not airline_code or self.t100_equipment_usage is None or self.t100_equipment_usage.empty:
+            return {}
+        subset = self.t100_equipment_usage[
+            self.t100_equipment_usage["Airline Code"].astype(str).str.upper() == str(airline_code).upper()
+        ]
+        if subset.empty:
+            return {}
+        top = subset.sort_values("Departures", ascending=False).head(int(top_n))
+        out: Dict[str, int] = {}
+        for _, row in top.iterrows():
+            label = row.get("Equipment Display") or row.get("Equipment Code")
+            if not isinstance(label, str) or not label.strip():
+                continue
+            departures = pd.to_numeric(row.get("Departures"), errors="coerce")
+            if pd.isna(departures):
+                continue
+            out[label] = int(round(float(departures)))
+        return out
 
     def _load_airport_lookup(self):
         """Load BTS airport code -> description mapping if available."""
