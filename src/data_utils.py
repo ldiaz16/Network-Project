@@ -108,11 +108,19 @@ def load_routes(path: str = None, rolling_quarters: int = 4, domestic_only: bool
     """
     Load route-level aggregates.
 
-    Defaults to the raw BTS T-100 segment export (`T_T100_SEGMENT_ALL_CARRIER.csv` in the repo root).
+    Defaults to the BTS T-100 segment export in the repo root
+    (`T_T100_SEGMENT_ALL_CARRIER.csv` or `T_T100_SEGMENT_ALL_CARRIER.csv.gz`).
 
     If `path` is provided, it is treated as an alternate T-100 segment CSV.
     """
-    t100_segments_path = Path(path) if path else (BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv")
+    if path:
+        t100_segments_path = Path(path)
+    else:
+        t100_segments_path = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"
+        if not t100_segments_path.exists():
+            gz_path = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
+            if gz_path.exists():
+                t100_segments_path = gz_path
     if not t100_segments_path.exists():
         raise FileNotFoundError(f"Missing T-100 segment file: {t100_segments_path}")
 

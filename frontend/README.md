@@ -4,7 +4,7 @@ This directory hosts a lightweight static UI that talks to the FastAPI backend (
 
 - Summary counts (routes, seats, average/long routes).
 - Network stats (hubs, airports, etc.).
-- Top ASM-ranked routes pulled directly from `T_T100_SEGMENT_ALL_CARRIER.csv`.
+- Top ASM-ranked routes pulled directly from `T_T100_SEGMENT_ALL_CARRIER.csv` (or `T_T100_SEGMENT_ALL_CARRIER.csv.gz`).
 
 ## Running
 

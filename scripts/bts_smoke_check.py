@@ -1,5 +1,5 @@
 """
-Quick smoke check for the raw BTS T-100 segment export (repo-root CSV).
+Quick smoke check for the raw BTS T-100 segment export (repo-root CSV/CSV.GZ).
 
 Usage:
     python3 scripts/bts_smoke_check.py
@@ -14,7 +14,9 @@ import sys
 import pandas as pd
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
-T100_PATH = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"
+T100_CSV = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"
+T100_GZ = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
+T100_PATH = T100_CSV if T100_CSV.exists() else (T100_GZ if T100_GZ.exists() else T100_CSV)
 DB1B_PARQUET = BASE_DIR / "data" / "db1b.parquet"
 DB1B_CSV = BASE_DIR / "data" / "db1b.csv"
 

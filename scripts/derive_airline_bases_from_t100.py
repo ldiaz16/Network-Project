@@ -8,7 +8,7 @@ seat capacity by carrier + origin, and classifies each carrier's top origins int
 
 Usage:
   python3 scripts/derive_airline_bases_from_t100.py \
-    --input T_T100_SEGMENT_ALL_CARRIER.csv \
+    --input T_T100_SEGMENT_ALL_CARRIER.csv(.gz) \
     --output resources/airline_bases_t100.json
 """
 
@@ -415,11 +415,15 @@ def build_airline_bases(
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    csv_path = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"
+    gz_path = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
+    default_input = str(csv_path if csv_path.exists() else (gz_path if gz_path.exists() else csv_path))
+
     parser = argparse.ArgumentParser(description="Derive hubs and focus cities from BTS T-100 data.")
     parser.add_argument(
         "--input",
-        default=str(BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"),
-        help="Path to T_T100_SEGMENT_ALL_CARRIER.csv.",
+        default=default_input,
+        help="Path to T_T100_SEGMENT_ALL_CARRIER.csv (or .csv.gz).",
     )
     parser.add_argument(
         "--output",

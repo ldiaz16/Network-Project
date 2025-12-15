@@ -504,7 +504,12 @@ class DataStore:
 
     def load_data(self):
         """Load BTS T-100 routes plus supporting lookup tables."""
-        t100_segments_path = Path(__file__).resolve().parents[1] / "T_T100_SEGMENT_ALL_CARRIER.csv"
+        base_dir = Path(__file__).resolve().parents[1]
+        t100_segments_path = base_dir / "T_T100_SEGMENT_ALL_CARRIER.csv"
+        if not t100_segments_path.exists():
+            gz_path = base_dir / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
+            if gz_path.exists():
+                t100_segments_path = gz_path
         self.routes = None
         route_source_path = None
 
@@ -517,7 +522,8 @@ class DataStore:
 
         if self.routes is None:
             raise FileNotFoundError(
-                "Missing BTS T-100 routes data. Provide `T_T100_SEGMENT_ALL_CARRIER.csv` in the repo root."
+                "Missing BTS T-100 routes data. Provide `T_T100_SEGMENT_ALL_CARRIER.csv` "
+                "(or the gzipped `T_T100_SEGMENT_ALL_CARRIER.csv.gz`) in the repo root."
             )
 
         # Ensure expected columns exist for downstream processing.

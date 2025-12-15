@@ -3,8 +3,10 @@
 This toolkit is now a **T-100-first route lens**: it reads the BTS `T_T100_SEGMENT_ALL_CARRIER.csv` export from the repository root, summarizes an airline’s network, and shows its top ASM-powered routes. No additional datasets (DB1B, CBSA, etc.) are required for the core experience today.
 
 ## Data prerequisites
-- `T_T100_SEGMENT_ALL_CARRIER.csv` (place it in the repo root; the app uses it directly).  
-  Files such as this are ignored by git because they are large and regularly refreshed.
+- The app reads the BTS T-100 export from the repo root:
+  - `T_T100_SEGMENT_ALL_CARRIER.csv` (preferred if you have a fresh download), or
+  - `T_T100_SEGMENT_ALL_CARRIER.csv.gz` (a compressed snapshot suitable for GitHub).
+  The raw `.csv` is ignored by git because it is large and regularly refreshed.
 
 ## Environment
 
