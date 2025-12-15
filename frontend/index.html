@@ -4,21 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="api-base" content="/api">
-    <title>Airline Route Optimizer</title>
+    <title>Airline Route Lens</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="root"></div>
+    <main class="app-shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">T-100 only</p>
+                <h1>Airline Route Lens</h1>
+                <p class="hero-intro">
+                    Run focused BTS T-100 analyses so you can explore an airline’s network strength,
+                    hubs, and top-performing routes without relying on auxiliary datasets.
+                </p>
+            </div>
+            <div id="airline-meta" class="airline-meta">
+                <span class="meta-label">Selected airline</span>
+                <span id="meta-name">—</span>
+                <span id="meta-code" class="meta-code">—</span>
+            </div>
+        </header>
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@emotion/react@11.11.4/dist/emotion-react.umd.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@mui/material@5.15.15/umd/material-ui.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
-    <script type="text/babel" data-presets="env,react" src="app.js"></script>
+        <section class="panel form-panel">
+            <form id="analysis-form" class="form-row">
+                <label>
+                    Airline name or code
+                    <input id="airline-input" name="airline" type="text" placeholder="e.g. Delta Air Lines" autocomplete="off">
+                </label>
+                <button id="analyze-btn" type="submit">Analyze routes</button>
+            </form>
+            <p id="form-message" class="form-message" role="status"></p>
+        </section>
+
+        <section class="panel summary-panel">
+            <div class="summary-grid">
+                <article class="stat-card">
+                    <div class="stat-label">Routes analyzed</div>
+                    <div class="stat-value" id="stat-routes">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Total seats</div>
+                    <div class="stat-value" id="stat-seats">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Average distance</div>
+                    <div class="stat-value" id="stat-distance">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Longest route</div>
+                    <div class="stat-value" id="stat-longest">—</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel network-panel">
+            <h2>Network overview</h2>
+            <ul id="network-stats" class="stats-list"></ul>
+        </section>
+
+        <section class="panel equipment-panel">
+            <h2>Fleet signal</h2>
+            <p class="panel-intro">Top equipment types (by number of routes in the T-100 export).</p>
+            <ul id="equipment-list" class="equipment-list"></ul>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top routes by ASM</h2>
+                <span class="panel-note">Limited to 20 routes for quick scanning.</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Origin</th>
+                            <th>Destination</th>
+                            <th>Equipment</th>
+                            <th>Distance (mi)</th>
+                            <th>Seats</th>
+                            <th>ASM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routes-body">
+                        <tr>
+                            <td colspan="6" class="placeholder-row">Submit an airline to display top routes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
 </body>
 </html>

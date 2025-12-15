@@ -9,22 +9,7 @@ all: data report run
 
 # Step 2: Ensure data files exist (BTS T-100 + lookup tables)
 data:
-	@python3 - <<'PY'
-from pathlib import Path
-
-required = [
-    Path("Lookup Tables/L_UNIQUE_CARRIERS.csv"),
-    Path("Lookup Tables/L_AIRPORT.csv"),
-    Path("data/cbsa.csv"),
-    Path("T_T100_SEGMENT_ALL_CARRIER.csv"),
-]
-
-missing = [str(p) for p in required if not p.exists()]
-if missing:
-    raise SystemExit("Missing required data files:\\n- " + "\\n- ".join(missing))
-
-print("Data check: ok")
-PY
+	python3 scripts/ensure_data.py
 
 # Step 3: Run the main script
 run:

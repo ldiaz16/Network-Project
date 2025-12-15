@@ -6,30 +6,20 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel
 
-from src.backend_service import (
-    AnalysisError,
-    AnalysisRequest,
-    AirlineSearchResponse,
-    FleetAssignmentRequest,
-    RouteShareRequest,
-    analyze_route_market_share,
-    get_airline_fleet_profile,
-    list_airlines as list_airlines_logic,
-    run_analysis as run_analysis_logic,
-    simulate_live_assignment,
-)
-from src.load_data import DataStore
+from src.backend_service import AnalysisError, RouteAnalysisRequest, list_airlines, route_analysis
 from src.cors_config import combine_regex_patterns, get_cors_settings
 from src.logging_setup import setup_logging
+from src.load_data import DataStore
 from src.security import RateLimiter
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Airline Route Optimizer API",
-    description="HTTP API for running airline comparison and CBSA opportunity simulations.",
+    title="Airline Route Optimizer (T-100 only)",
+    description="Lightweight route analysis powered solely by the BTS T-100 segment export.",
     version="0.1.0",
 )
 
@@ -74,43 +64,31 @@ async def add_timing_and_rate_limit(request: Request, call_next):
     return response
 
 
+class AirlineSearchResponse(BaseModel):
+    airline: str
+    alias: Optional[str]
+    iata: Optional[str]
+    country: Optional[str]
+
+
 @app.get("/health")
 async def health() -> Dict[str, str]:
     return {"status": "ok"}
 
 
 @app.get("/api/airlines", response_model=List[AirlineSearchResponse])
-async def list_airlines(query: Optional[str] = Query(default=None, description="Filter airlines by case-insensitive substring match.")) -> List[Dict[str, Any]]:
-    return await run_in_threadpool(list_airlines_logic, data_store, query)
+async def get_airlines(
+    query: Optional[str] = Query(
+        default=None, description="Filter airlines by substring match."
+    )
+) -> List[Dict[str, Any]]:
+    return await run_in_threadpool(list_airlines, data_store, query)
 
 
-@app.post("/api/run")
-async def run_analysis(payload: AnalysisRequest) -> Dict[str, Any]:
+@app.post("/api/analysis")
+async def analyze(payload: RouteAnalysisRequest) -> Dict[str, Any]:
     try:
-        return await run_in_threadpool(run_analysis_logic, data_store, payload)
+        return await run_in_threadpool(route_analysis, data_store, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-
-@app.get("/api/fleet")
-async def get_fleet_profile(airline: str = Query(..., description="Airline name, alias, or code to profile.")) -> Dict[str, Any]:
-    try:
-        return await run_in_threadpool(get_airline_fleet_profile, data_store, airline)
-    except AnalysisError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-
-
-@app.post("/api/fleet-assignment")
-async def run_fleet_assignment(payload: FleetAssignmentRequest) -> Dict[str, Any]:
-    try:
-        return await run_in_threadpool(simulate_live_assignment, data_store, payload)
-    except AnalysisError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
-
-
-@app.post("/api/route-share")
-async def get_route_market_share(payload: RouteShareRequest) -> Dict[str, Any]:
-    try:
-        return await run_in_threadpool(analyze_route_market_share, data_store, payload)
-    except AnalysisError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
