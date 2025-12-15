@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base" content="/api">
+    <title>Alliance Network Lens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">T-100 only</p>
+                <h1>Alliance Network Lens</h1>
+                <nav class="page-nav" aria-label="Primary">
+                    <a href="index.html">Airline</a>
+                    <a class="active" href="alliance.html">Alliance</a>
+                </nav>
+                <p class="hero-intro">
+                    Explore aggregate route networks by carrier group (BTS <code>CARRIER_GROUP</code>) so you can compare
+                    major, national, regional, and international carriers at the network level.
+                </p>
+            </div>
+            <div id="alliance-meta" class="airline-meta">
+                <span class="meta-label">Selected alliance</span>
+                <span id="meta-name">—</span>
+                <span id="meta-code" class="meta-code">—</span>
+            </div>
+        </header>
+
+        <section class="panel form-panel">
+            <form id="alliance-form" class="form-row">
+                <label>
+                    Alliance / carrier group
+                    <select id="alliance-select" name="carrier_group"></select>
+                </label>
+                <button id="analyze-btn" type="submit">Analyze alliance</button>
+            </form>
+            <p id="form-message" class="form-message" role="status"></p>
+        </section>
+
+        <section class="panel summary-panel">
+            <div class="summary-grid">
+                <article class="stat-card">
+                    <div class="stat-label">Member carriers</div>
+                    <div class="stat-value" id="stat-members">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Routes analyzed</div>
+                    <div class="stat-value" id="stat-routes">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Total seats</div>
+                    <div class="stat-value" id="stat-seats">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Average distance</div>
+                    <div class="stat-value" id="stat-distance">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Longest route</div>
+                    <div class="stat-value" id="stat-longest">—</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel network-panel">
+            <h2>Network overview</h2>
+            <ul id="network-stats" class="stats-list"></ul>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top member carriers by seats</h2>
+                <span class="panel-note">Top 15 carriers by total seats (rolling window).</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Airline</th>
+                            <th>IATA</th>
+                            <th>Country</th>
+                            <th>Total routes</th>
+                            <th>Total seats</th>
+                        </tr>
+                    </thead>
+                    <tbody id="carriers-body">
+                        <tr>
+                            <td colspan="5" class="placeholder-row">Select an alliance to display member carriers.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top domestic routes by ASM</h2>
+                <span class="panel-note">Limited to 20 routes for quick scanning.</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Origin</th>
+                            <th>Destination</th>
+                            <th>Equipment</th>
+                            <th>Distance (mi)</th>
+                            <th>Seats</th>
+                            <th>ASM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routes-body">
+                        <tr>
+                            <td colspan="6" class="placeholder-row">Select an alliance to display top domestic routes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top international routes by ASM</h2>
+                <span class="panel-note">Limited to 20 routes for quick scanning.</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Origin</th>
+                            <th>Destination</th>
+                            <th>Equipment</th>
+                            <th>Distance (mi)</th>
+                            <th>Seats</th>
+                            <th>ASM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="intl-routes-body">
+                        <tr>
+                            <td colspan="6" class="placeholder-row">Select an alliance to display top international routes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="alliance.js"></script>
+</body>
+</html>
+

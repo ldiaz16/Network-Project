@@ -7,7 +7,15 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from pydantic import ValidationError
 
-from src.backend_service import AnalysisError, RouteAnalysisRequest, list_airlines, route_analysis
+from src.backend_service import (
+    AllianceAnalysisRequest,
+    AnalysisError,
+    RouteAnalysisRequest,
+    alliance_analysis,
+    list_airlines,
+    list_alliances,
+    route_analysis,
+)
 from src.cors_config import get_cors_settings
 from src.load_data import DataStore
 from src.logging_setup import setup_logging
@@ -82,6 +90,11 @@ def airlines():
     return jsonify(list_airlines(data_store, query))
 
 
+@app.get("/api/alliances")
+def alliances():
+    return jsonify(list_alliances(data_store))
+
+
 @app.post("/api/analysis")
 def analysis():
     payload = request.get_json(force=True, silent=True) or {}
@@ -92,6 +105,22 @@ def analysis():
 
     try:
         result = route_analysis(data_store, request_model)
+    except AnalysisError as exc:
+        return jsonify({"detail": str(exc)}), exc.status_code
+
+    return jsonify(result)
+
+
+@app.post("/api/alliance")
+def alliance():
+    payload = request.get_json(force=True, silent=True) or {}
+    try:
+        request_model = AllianceAnalysisRequest(**payload)
+    except ValidationError as exc:
+        return jsonify({"detail": exc.errors()}), 422
+
+    try:
+        result = alliance_analysis(data_store, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 

@@ -8,7 +8,15 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
-from src.backend_service import AnalysisError, RouteAnalysisRequest, list_airlines, route_analysis
+from src.backend_service import (
+    AllianceAnalysisRequest,
+    AnalysisError,
+    RouteAnalysisRequest,
+    alliance_analysis,
+    list_airlines,
+    list_alliances,
+    route_analysis,
+)
 from src.cors_config import combine_regex_patterns, get_cors_settings
 from src.logging_setup import setup_logging
 from src.load_data import DataStore
@@ -85,6 +93,11 @@ async def get_airlines(
     return await run_in_threadpool(list_airlines, data_store, query)
 
 
+@app.get("/api/alliances")
+async def get_alliances() -> List[Dict[str, Any]]:
+    return await run_in_threadpool(list_alliances, data_store)
+
+
 @app.post("/api/analysis")
 async def analyze(payload: RouteAnalysisRequest) -> Dict[str, Any]:
     try:
@@ -92,3 +105,10 @@ async def analyze(payload: RouteAnalysisRequest) -> Dict[str, Any]:
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
+
+@app.post("/api/alliance")
+async def analyze_alliance(payload: AllianceAnalysisRequest) -> Dict[str, Any]:
+    try:
+        return await run_in_threadpool(alliance_analysis, data_store, payload)
+    except AnalysisError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

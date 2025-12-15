@@ -31,6 +31,37 @@ body {
     font-size: 2.6rem;
 }
 
+.page-nav {
+    margin-top: 14px;
+    display: inline-flex;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.page-nav a {
+    text-decoration: none;
+    color: rgba(229, 231, 235, 0.8);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border-radius: 999px;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.page-nav a:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e5e7eb;
+}
+
+.page-nav a.active {
+    background: rgba(100, 255, 218, 0.12);
+    border: 1px solid rgba(100, 255, 218, 0.28);
+    color: #e5e7eb;
+}
+
 .hero-intro {
     margin: 8px 0 0;
     max-width: 640px;
@@ -98,7 +129,22 @@ body {
     font-size: 1rem;
 }
 
+.form-row select {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+    color: white;
+    font-size: 1rem;
+}
+
 .form-row input:focus {
+    outline: none;
+    border-color: #64ffda;
+    box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.2);
+}
+
+.form-row select:focus {
     outline: none;
     border-color: #64ffda;
     box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.2);

@@ -145,6 +145,7 @@ class DataStore:
         self.t100_equipment_usage = None
         self.t100_equipment_usage_metric = None
         self.t100_equipment_usage_window_days = None
+        self.carrier_group_lookup: Dict[int, str] = {}
 
     def _load_routes_from_t100_segments(
         self,
@@ -189,9 +190,19 @@ class DataStore:
             "MONTH",
             "ORIGIN_STATE_ABR",
             "DEST_STATE_ABR",
+            "CARRIER_GROUP",
         ]
         usecols = [col for col in desired_cols if col in columns]
         raw = pd.read_csv(path, usecols=usecols)
+        if "CARRIER_GROUP" not in raw.columns:
+            sidecar_path = path.with_name("T_T100_SEGMENT_ALL_CARRIER-2.csv")
+            if sidecar_path.exists():
+                try:
+                    sidecar = pd.read_csv(sidecar_path, usecols=["CARRIER_GROUP"])
+                    if len(sidecar) == len(raw):
+                        raw["CARRIER_GROUP"] = sidecar["CARRIER_GROUP"]
+                except Exception:
+                    pass
 
         # Map BTS aircraft type codes to readable labels when the lookup is available.
         lookup_path = Path(__file__).resolve().parents[1] / "Lookup Tables" / "L_AIRCRAFT_TYPE.csv"
@@ -221,6 +232,8 @@ class DataStore:
         raw[carrier_col] = _clean_str(raw[carrier_col]).replace({"\\N": ""})
         raw["ORIGIN"] = _clean_str(raw["ORIGIN"]).replace({"\\N": ""})
         raw["DEST"] = _clean_str(raw["DEST"]).replace({"\\N": ""})
+        if "CARRIER_GROUP" in raw.columns:
+            raw["CARRIER_GROUP"] = pd.to_numeric(raw["CARRIER_GROUP"], errors="coerce")
         for city_col in ("ORIGIN_CITY_NAME", "DEST_CITY_NAME"):
             if city_col in raw.columns:
                 raw[city_col] = (
@@ -271,6 +284,13 @@ class DataStore:
 
         self._cache_t100_equipment_usage(raw, carrier_col=carrier_col, aircraft_lookup=aircraft_lookup)
 
+        def _most_common_scalar(series: pd.Series):
+            cleaned = series.dropna()
+            if cleaned.empty:
+                return None
+            mode = cleaned.mode()
+            return mode.iloc[0] if not mode.empty else None
+
         agg_kwargs = {
             "Total": ("SEATS", "sum"),
         }
@@ -280,6 +300,8 @@ class DataStore:
             agg_kwargs["Distance (reported)"] = ("DISTANCE", "mean")
         if "AIRCRAFT_TYPE" in raw.columns:
             agg_kwargs["Equipment"] = ("AIRCRAFT_TYPE", _most_common)
+        if "CARRIER_GROUP" in raw.columns:
+            agg_kwargs["Carrier Group"] = ("CARRIER_GROUP", _most_common_scalar)
         if "ORIGIN_CITY_NAME" in raw.columns:
             agg_kwargs["Source city"] = ("ORIGIN_CITY_NAME", _most_common)
         if "DEST_CITY_NAME" in raw.columns:
@@ -299,6 +321,8 @@ class DataStore:
             },
             inplace=True,
         )
+        if "Carrier Group" in grouped.columns:
+            grouped["Carrier Group"] = pd.to_numeric(grouped["Carrier Group"], errors="coerce").astype("Int64")
         grouped["Total"] = pd.to_numeric(grouped.get("Total"), errors="coerce").fillna(0.0)
         grouped["Passengers"] = pd.to_numeric(grouped.get("Passengers"), errors="coerce").fillna(0.0)
         if "Equipment" in grouped.columns:
@@ -757,9 +781,41 @@ class DataStore:
                 return out
         return None
 
+    def _load_carrier_group_lookup(self, base_dir: Path) -> Dict[int, str]:
+        candidates = [
+            base_dir / "L_CARRIER_GROUP.csv",
+            base_dir / "Lookup Tables" / "L_CARRIER_GROUP.csv",
+        ]
+
+        for path in candidates:
+            if not path.exists():
+                continue
+            try:
+                df = pd.read_csv(path, dtype=str)
+            except Exception:
+                continue
+            if not {"Code", "Description"}.issubset(df.columns):
+                continue
+
+            mapping: Dict[int, str] = {}
+            for _, row in df.iterrows():
+                raw_code = str(row.get("Code") or "").strip().strip('"')
+                description = str(row.get("Description") or "").strip().strip('"')
+                if not raw_code or not description:
+                    continue
+                try:
+                    code = int(raw_code)
+                except ValueError:
+                    continue
+                mapping.setdefault(code, description)
+            return mapping
+
+        return {}
+
     def load_data(self):
         """Load BTS T-100 routes plus supporting lookup tables."""
         base_dir = Path(__file__).resolve().parents[1]
+        self.carrier_group_lookup = self._load_carrier_group_lookup(base_dir)
         t100_segments_path = base_dir / "T_T100_SEGMENT_ALL_CARRIER.csv"
         if not t100_segments_path.exists():
             gz_path = base_dir / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
@@ -2355,7 +2411,9 @@ class DataStore:
             total_x = routes_df["Total_x"] if "Total_x" in routes_df.columns else None
             total_y = routes_df["Total_y"] if "Total_y" in routes_df.columns else None
             if total_x is not None and total_y is not None:
-                routes_df["Total"] = total_x.combine_first(total_y)
+                routes_df["Total"] = pd.to_numeric(total_x, errors="coerce").combine_first(
+                    pd.to_numeric(total_y, errors="coerce")
+                )
             elif total_x is not None:
                 routes_df["Total"] = total_x
             else:

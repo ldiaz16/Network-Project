@@ -19,6 +19,7 @@ This project now ships with a Flask-powered backend (`backend/app.py`) and a sta
 3. **Production command**  
    - A `Procfile` is included: `web: gunicorn backend.app:app --bind 0.0.0.0:$PORT`.  
    - Ensure the `data/` directory ships with the deployment – it contains all precomputed datasets.
+   - If you want the alliance/carrier-group views, also ship `T_T100_SEGMENT_ALL_CARRIER-2.csv` and `L_CARRIER_GROUP.csv` (the API will omit `/api/alliances` when they are missing).
 
 4. **Example: Render Web Service**
    - New Web Service → select this repository.
