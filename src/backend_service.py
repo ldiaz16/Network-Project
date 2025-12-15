@@ -119,7 +119,7 @@ def route_analysis(data_store, payload: RouteAnalysisRequest) -> Dict[str, Any]:
     )
 
     equipment_counts = (
-        processed["Equipment"]
+        processed["Equipment Display" if "Equipment Display" in processed.columns else "Equipment"]
         .fillna("Unknown")
         .astype(str)
         .str.strip()
