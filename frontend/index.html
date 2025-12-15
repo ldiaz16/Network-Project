@@ -32,7 +32,8 @@
             <form id="analysis-form" class="form-row">
                 <label>
                     Airline name or code
-                    <input id="airline-input" name="airline" type="text" placeholder="e.g. Delta Air Lines" autocomplete="off">
+                    <input id="airline-input" name="airline" type="text" placeholder="e.g. Delta Air Lines" autocomplete="off" list="airline-options">
+                    <datalist id="airline-options"></datalist>
                 </label>
                 <button id="analyze-btn" type="submit">Analyze routes</button>
             </form>
@@ -67,13 +68,13 @@
 
         <section class="panel equipment-panel">
             <h2>Fleet signal</h2>
-            <p class="panel-intro">Top equipment types (by estimated departures in the T-100 export).</p>
+            <p class="panel-intro">Top equipment types (average flights per day in the T-100 export).</p>
             <ul id="equipment-list" class="equipment-list"></ul>
         </section>
 
         <section class="panel table-panel">
             <div class="panel-header">
-                <h2>Top routes by ASM</h2>
+                <h2>Top domestic routes by ASM</h2>
                 <span class="panel-note">Limited to 20 routes for quick scanning.</span>
             </div>
             <div class="table-wrapper">
@@ -90,7 +91,33 @@
                     </thead>
                     <tbody id="routes-body">
                         <tr>
-                            <td colspan="6" class="placeholder-row">Submit an airline to display top routes.</td>
+                            <td colspan="6" class="placeholder-row">Submit an airline to display top domestic routes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top international routes by ASM</h2>
+                <span class="panel-note">Limited to 20 routes for quick scanning.</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Origin</th>
+                            <th>Destination</th>
+                            <th>Equipment</th>
+                            <th>Distance (mi)</th>
+                            <th>Seats</th>
+                            <th>ASM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="intl-routes-body">
+                        <tr>
+                            <td colspan="6" class="placeholder-row">Submit an airline to display top international routes.</td>
                         </tr>
                     </tbody>
                 </table>

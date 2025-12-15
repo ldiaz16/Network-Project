@@ -1,3 +1,4 @@
+import calendar
 import json
 import re
 from pathlib import Path
@@ -85,6 +86,37 @@ GENERIC_SEAT_GUESSES = {
     "SU9": 98,
 }
 
+
+_AIRCRAFT_MANUFACTURER_PREFIXES = [
+    "mcdonnell douglas",
+    "de havilland canada",
+    "british aerospace",
+    "boeing",
+    "airbus",
+    "embraer",
+    "bombardier",
+    "atr",
+    "fokker",
+    "saab",
+]
+
+
+def compact_aircraft_name(label: object) -> object:
+    if not isinstance(label, str):
+        return label
+    cleaned = label.strip()
+    if not cleaned:
+        return cleaned
+
+    lowered = cleaned.lower()
+    for prefix in _AIRCRAFT_MANUFACTURER_PREFIXES:
+        if lowered.startswith(prefix + " "):
+            compacted = cleaned[len(prefix) :].strip()
+            return compacted or cleaned
+
+    return cleaned
+
+
 class DataStore:
     def __init__(self, data_dir=None):
         base_dir = Path(data_dir) if data_dir else DATA_DIR_ROOT
@@ -112,6 +144,7 @@ class DataStore:
         self.airport_lookup = {}
         self.t100_equipment_usage = None
         self.t100_equipment_usage_metric = None
+        self.t100_equipment_usage_window_days = None
 
     def _load_routes_from_t100_segments(
         self,
@@ -141,6 +174,8 @@ class DataStore:
             carrier_col,
             "ORIGIN",
             "DEST",
+            "ORIGIN_CITY_NAME",
+            "DEST_CITY_NAME",
             "SEATS",
             "PASSENGERS",
             "DEPARTURES_PERFORMED",
@@ -151,6 +186,7 @@ class DataStore:
             "AIRCRAFT_TYPE",
             "YEAR",
             "QUARTER",
+            "MONTH",
             "ORIGIN_STATE_ABR",
             "DEST_STATE_ABR",
         ]
@@ -185,6 +221,16 @@ class DataStore:
         raw[carrier_col] = _clean_str(raw[carrier_col]).replace({"\\N": ""})
         raw["ORIGIN"] = _clean_str(raw["ORIGIN"]).replace({"\\N": ""})
         raw["DEST"] = _clean_str(raw["DEST"]).replace({"\\N": ""})
+        for city_col in ("ORIGIN_CITY_NAME", "DEST_CITY_NAME"):
+            if city_col in raw.columns:
+                raw[city_col] = (
+                    raw[city_col]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                    .str.strip('"')
+                    .replace({"\\N": ""})
+                )
 
         if rolling_quarters and "YEAR" in raw.columns and "QUARTER" in raw.columns:
             years = pd.to_numeric(raw["YEAR"], errors="coerce")
@@ -234,6 +280,10 @@ class DataStore:
             agg_kwargs["Distance (reported)"] = ("DISTANCE", "mean")
         if "AIRCRAFT_TYPE" in raw.columns:
             agg_kwargs["Equipment"] = ("AIRCRAFT_TYPE", _most_common)
+        if "ORIGIN_CITY_NAME" in raw.columns:
+            agg_kwargs["Source city"] = ("ORIGIN_CITY_NAME", _most_common)
+        if "DEST_CITY_NAME" in raw.columns:
+            agg_kwargs["Destination city"] = ("DEST_CITY_NAME", _most_common)
 
         grouped = (
             raw.groupby([carrier_col, "ORIGIN", "DEST"], dropna=False)
@@ -270,12 +320,57 @@ class DataStore:
 
         return grouped
 
+    @staticmethod
+    def _estimate_t100_window_days(raw: pd.DataFrame) -> Optional[int]:
+        if raw is None or raw.empty:
+            return None
+
+        if {"YEAR", "MONTH"}.issubset(raw.columns):
+            years = pd.to_numeric(raw["YEAR"], errors="coerce")
+            months = pd.to_numeric(raw["MONTH"], errors="coerce")
+            pairs = pd.DataFrame({"year": years, "month": months}).dropna().drop_duplicates()
+            total_days = 0
+            for year, month in pairs.itertuples(index=False, name=None):
+                try:
+                    year_int = int(year)
+                    month_int = int(month)
+                except (TypeError, ValueError):
+                    continue
+                if year_int <= 0 or month_int < 1 or month_int > 12:
+                    continue
+                total_days += calendar.monthrange(year_int, month_int)[1]
+            return total_days or None
+
+        if {"YEAR", "QUARTER"}.issubset(raw.columns):
+            years = pd.to_numeric(raw["YEAR"], errors="coerce")
+            quarters = pd.to_numeric(raw["QUARTER"], errors="coerce")
+            pairs = pd.DataFrame({"year": years, "quarter": quarters}).dropna().drop_duplicates()
+            quarter_months = {1: (1, 2, 3), 2: (4, 5, 6), 3: (7, 8, 9), 4: (10, 11, 12)}
+            total_days = 0
+            for year, quarter in pairs.itertuples(index=False, name=None):
+                try:
+                    year_int = int(year)
+                    quarter_int = int(quarter)
+                except (TypeError, ValueError):
+                    continue
+                months = quarter_months.get(quarter_int)
+                if year_int <= 0 or months is None:
+                    continue
+                for month in months:
+                    total_days += calendar.monthrange(year_int, month)[1]
+            return total_days or None
+
+        return None
+
     def _cache_t100_equipment_usage(self, raw: pd.DataFrame, carrier_col: str, aircraft_lookup: Dict[str, str]) -> None:
         """Cache equipment usage aggregates (departures) for fleet signal cards."""
         if raw is None or raw.empty or carrier_col not in raw.columns or "AIRCRAFT_TYPE" not in raw.columns:
             self.t100_equipment_usage = None
             self.t100_equipment_usage_metric = None
+            self.t100_equipment_usage_window_days = None
             return
+
+        self.t100_equipment_usage_window_days = self._estimate_t100_window_days(raw)
 
         equipment_code = raw["AIRCRAFT_TYPE"].astype(str).str.strip().str.strip('"')
         airline_code = raw[carrier_col].astype(str).str.strip().str.upper()
@@ -328,6 +423,7 @@ class DataStore:
         if departures_series is None:
             self.t100_equipment_usage = None
             self.t100_equipment_usage_metric = None
+            self.t100_equipment_usage_window_days = None
             return
 
         # Focus on passenger operations (seats > 0) for the fleet signal.
@@ -348,7 +444,12 @@ class DataStore:
             .sum()
             .reset_index()
         )
-        grouped["Equipment Display"] = grouped["Equipment Code"].map(aircraft_lookup).fillna(grouped["Equipment Code"])
+        grouped["Equipment Display"] = (
+            grouped["Equipment Code"]
+            .map(aircraft_lookup)
+            .fillna(grouped["Equipment Code"])
+            .apply(compact_aircraft_name)
+        )
         self.t100_equipment_usage = grouped
         self.t100_equipment_usage_metric = metric
 
@@ -366,10 +467,46 @@ class DataStore:
             label = row.get("Equipment Display") or row.get("Equipment Code")
             if not isinstance(label, str) or not label.strip():
                 continue
+            label = compact_aircraft_name(label)
+            if not isinstance(label, str) or not label.strip():
+                continue
             departures = pd.to_numeric(row.get("Departures"), errors="coerce")
             if pd.isna(departures):
                 continue
             out[label] = int(round(float(departures)))
+        return out
+
+    def top_equipment_flights_per_day(self, airline_code: str, top_n: int = 5) -> Dict[str, float]:
+        if (
+            not airline_code
+            or self.t100_equipment_usage is None
+            or self.t100_equipment_usage.empty
+            or not self.t100_equipment_usage_window_days
+        ):
+            return {}
+        window_days = float(self.t100_equipment_usage_window_days)
+        if window_days <= 0:
+            return {}
+
+        subset = self.t100_equipment_usage[
+            self.t100_equipment_usage["Airline Code"].astype(str).str.upper() == str(airline_code).upper()
+        ]
+        if subset.empty:
+            return {}
+
+        top = subset.sort_values("Departures", ascending=False).head(int(top_n))
+        out: Dict[str, float] = {}
+        for _, row in top.iterrows():
+            label = row.get("Equipment Display") or row.get("Equipment Code")
+            if not isinstance(label, str) or not label.strip():
+                continue
+            label = compact_aircraft_name(label)
+            if not isinstance(label, str) or not label.strip():
+                continue
+            departures = pd.to_numeric(row.get("Departures"), errors="coerce")
+            if pd.isna(departures):
+                continue
+            out[label] = float(departures) / window_days
         return out
 
     def _load_airport_lookup(self):
@@ -633,7 +770,7 @@ class DataStore:
 
         if t100_segments_path.exists():
             try:
-                self.routes = self._load_routes_from_t100_segments(t100_segments_path, rolling_quarters=4, domestic_only=True)
+                self.routes = self._load_routes_from_t100_segments(t100_segments_path, rolling_quarters=4, domestic_only=False)
                 route_source_path = t100_segments_path
             except Exception:
                 self.routes = None
@@ -2027,8 +2164,8 @@ class DataStore:
             "Top 5 Hubs": top_hubs,
         }
         if derived_bases:
-            stats["Base Airports"] = derived_bases.get("hubs", [])
-            stats["Base Overrides"] = derived_bases.get("focus_cities", [])
+            stats["Hubs"] = derived_bases.get("hubs", [])
+            stats["Focus Cities"] = derived_bases.get("focus_cities", [])
         return stats
 
     def draw_network(self, G, layout='spring'):
@@ -2054,23 +2191,32 @@ class DataStore:
         if (not self.equipment_capacity_lookup) and self.aircraft_config is not None and not self.aircraft_config.empty:
             self.equipment_capacity_lookup = self._build_equipment_capacity_lookup(self.aircraft_config)
 
+        airport_columns = ["IATA", "Name", "Latitude", "Longitude"]
+        for optional in ("City", "Country"):
+            if optional in self.airports.columns and optional not in airport_columns:
+                airport_columns.insert(2, optional)
+
         # Merge source airport info
-        source_airports = self.airports[["IATA", "Name", "Latitude", "Longitude"]].rename(
+        source_airports = self.airports[airport_columns].rename(
             columns={
                 "IATA": "Source airport",
                 "Name": "Source Name",
+                "City": "Source City",
+                "Country": "Source Country",
                 "Latitude": "Source Latitude",
-                "Longitude": "Source Longitude"
+                "Longitude": "Source Longitude",
             }
         )
 
         # Merge destination airport info
-        dest_airports = self.airports[["IATA", "Name", "Latitude", "Longitude"]].rename(
+        dest_airports = self.airports[airport_columns].rename(
             columns={
                 "IATA": "Destination airport",
                 "Name": "Destination Name",
+                "City": "Destination City",
+                "Country": "Destination Country",
                 "Latitude": "Destination Latitude",
-                "Longitude": "Destination Longitude"
+                "Longitude": "Destination Longitude",
             }
         )
 
@@ -2146,8 +2292,42 @@ class DataStore:
         # Provide display-friendly airport labels while keeping raw codes.
         enriched_df["Source airport Code"] = enriched_df["Source airport"]
         enriched_df["Destination airport Code"] = enriched_df["Destination airport"]
-        enriched_df["Source airport Display"] = enriched_df["Source Name"].fillna(enriched_df["Source airport"])
-        enriched_df["Destination airport Display"] = enriched_df["Destination Name"].fillna(enriched_df["Destination airport"])
+
+        def _clean_text(series: pd.Series) -> pd.Series:
+            return series.fillna("").astype(str).str.strip().replace({"": pd.NA})
+
+        source_code = _clean_text(enriched_df["Source airport Code"])
+        destination_code = _clean_text(enriched_df["Destination airport Code"])
+
+        source_city = (
+            _clean_text(enriched_df["Source city"]) if "Source city" in enriched_df.columns else pd.Series(pd.NA, index=enriched_df.index)
+        )
+        destination_city = (
+            _clean_text(enriched_df["Destination city"]) if "Destination city" in enriched_df.columns else pd.Series(pd.NA, index=enriched_df.index)
+        )
+        source_city = source_city.combine_first(
+            _clean_text(enriched_df["Source City"]) if "Source City" in enriched_df.columns else pd.Series(pd.NA, index=enriched_df.index)
+        )
+        destination_city = destination_city.combine_first(
+            _clean_text(enriched_df["Destination City"]) if "Destination City" in enriched_df.columns else pd.Series(pd.NA, index=enriched_df.index)
+        )
+
+        source_name = _clean_text(enriched_df["Source Name"]) if "Source Name" in enriched_df.columns else pd.Series(pd.NA, index=enriched_df.index)
+        destination_name = (
+            _clean_text(enriched_df["Destination Name"]) if "Destination Name" in enriched_df.columns else pd.Series(pd.NA, index=enriched_df.index)
+        )
+
+        source_label = source_city.combine_first(source_name).combine_first(source_code)
+        destination_label = destination_city.combine_first(destination_name).combine_first(destination_code)
+
+        source_display = source_label.copy()
+        destination_display = destination_label.copy()
+        src_mask = source_code.notna() & source_label.notna() & (source_label != source_code)
+        dst_mask = destination_code.notna() & destination_label.notna() & (destination_label != destination_code)
+        source_display.loc[src_mask] = source_label.loc[src_mask] + " (" + source_code.loc[src_mask] + ")"
+        destination_display.loc[dst_mask] = destination_label.loc[dst_mask] + " (" + destination_code.loc[dst_mask] + ")"
+        enriched_df["Source airport Display"] = source_display.fillna(source_code)
+        enriched_df["Destination airport Display"] = destination_display.fillna(destination_code)
 
         # Drop unnecessary columns
         if 'Airline_x' in enriched_df.columns and 'Airline_y' in enriched_df.columns:
@@ -2177,6 +2357,7 @@ class DataStore:
             enriched_df["Equipment Display"] = enriched_df["Equipment Description"].fillna(enriched_df["Equipment"])
         else:
             enriched_df["Equipment Display"] = enriched_df["Equipment"]
+        enriched_df["Equipment Display"] = enriched_df["Equipment Display"].apply(compact_aircraft_name)
 
         # Temporarily set display options
         pd.set_option('display.max_rows', None)       # Show all rows

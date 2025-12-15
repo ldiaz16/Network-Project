@@ -3,6 +3,7 @@ const API_BASE = (metaApiBase?.content || "/api").replace(/\/+$/, "");
 
 const form = document.getElementById("analysis-form");
 const airlineInput = document.getElementById("airline-input");
+const airlineOptions = document.getElementById("airline-options");
 const analyzeBtn = document.getElementById("analyze-btn");
 const messageEl = document.getElementById("form-message");
 const summaryEls = {
@@ -16,6 +17,7 @@ const metaCode = document.getElementById("meta-code");
 const networkList = document.getElementById("network-stats");
 const equipmentList = document.getElementById("equipment-list");
 const routesBody = document.getElementById("routes-body");
+const intlRoutesBody = document.getElementById("intl-routes-body");
 
 const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 const distanceFormatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -25,8 +27,70 @@ form.addEventListener("submit", async (event) => {
     await handleSubmission();
 });
 
+let airlineAutocompleteTimer = null;
+let airlineAutocompleteController = null;
+airlineInput.addEventListener("input", () => {
+    if (!airlineOptions) {
+        return;
+    }
+    const query = (airlineInput.value || "").trim();
+    if (query.length < 2) {
+        airlineOptions.innerHTML = "";
+        return;
+    }
+    window.clearTimeout(airlineAutocompleteTimer);
+    airlineAutocompleteTimer = window.setTimeout(() => {
+        fetchAirlineSuggestions(query);
+    }, 250);
+});
+
+async function fetchAirlineSuggestions(query) {
+    if (!airlineOptions) {
+        return;
+    }
+
+    if (airlineAutocompleteController) {
+        airlineAutocompleteController.abort();
+    }
+    airlineAutocompleteController = new AbortController();
+
+    try {
+        const response = await fetch(
+            `${API_BASE}/airlines?query=${encodeURIComponent(query)}`,
+            { signal: airlineAutocompleteController.signal }
+        );
+        if (!response.ok) {
+            return;
+        }
+        const payload = await response.json();
+        airlineOptions.innerHTML = "";
+        (payload || []).forEach((row) => {
+            const airline = row?.airline;
+            if (!airline) {
+                return;
+            }
+            const iata = row?.iata;
+            const country = row?.country;
+            const option = document.createElement("option");
+            option.value = iata ? `${airline} (${iata})` : airline;
+            if (iata || country) {
+                option.label = `${airline}${iata ? ` • ${iata}` : ""}${country ? ` • ${country}` : ""}`;
+            } else {
+                option.label = airline;
+            }
+            airlineOptions.appendChild(option);
+        });
+    } catch (error) {
+        if (error?.name === "AbortError") {
+            return;
+        }
+        console.warn("Unable to load airline suggestions.", error);
+    }
+}
+
 async function handleSubmission() {
-    const airline = (airlineInput.value || "").trim();
+    const raw = (airlineInput.value || "").trim();
+    const airline = extractAirlineQuery(raw);
     if (!airline) {
         displayMessage("Enter an airline name or IATA code before submitting.", "warning");
         return;
@@ -67,6 +131,7 @@ function renderResults(payload) {
     const summary = payload.summary || {};
     const network = payload.network || {};
     const topRoutes = payload.top_routes || [];
+    const topInternationalRoutes = payload.top_international_routes || [];
     const equipment = payload.top_equipment || {};
 
     metaName.textContent = airline.name || "Unknown";
@@ -83,7 +148,8 @@ function renderResults(payload) {
 
     renderList(networkList, network);
     renderEquipment(equipment);
-    renderRoutes(topRoutes);
+    renderRoutes(routesBody, topRoutes, "No top domestic routes available.");
+    renderRoutes(intlRoutesBody, topInternationalRoutes, "No top international routes available.");
 }
 
 function renderList(listElement, values) {
@@ -116,10 +182,13 @@ function renderEquipment(equipment) {
     });
 }
 
-function renderRoutes(routes) {
-    routesBody.innerHTML = "";
+function renderRoutes(bodyElement, routes, emptyLabel) {
+    if (!bodyElement) {
+        return;
+    }
+    bodyElement.innerHTML = "";
     if (!routes.length) {
-        routesBody.innerHTML = `<tr><td colspan="6" class="placeholder-row">No top routes available.</td></tr>`;
+        bodyElement.innerHTML = `<tr><td colspan="6" class="placeholder-row">${emptyLabel}</td></tr>`;
         return;
     }
     routes.forEach((row) => {
@@ -132,8 +201,20 @@ function renderRoutes(routes) {
             <td>${formatValue(row["Total"])}</td>
             <td>${formatValue(row["ASM"])}</td>
         `;
-        routesBody.appendChild(tr);
+        bodyElement.appendChild(tr);
     });
+}
+
+function extractAirlineQuery(raw) {
+    const trimmed = (raw || "").trim();
+    if (!trimmed) {
+        return "";
+    }
+    const match = trimmed.match(/\(([A-Z0-9]{2,3})\)\s*$/i);
+    if (match) {
+        return match[1].toUpperCase();
+    }
+    return trimmed;
 }
 
 function formatValue(value) {
@@ -196,7 +277,7 @@ function formatObject(obj) {
             parts.push(`Hubs: ${hubs.join(", ")}`);
         }
         if (focusCities.length) {
-            parts.push(`Focus: ${focusCities.join(", ")}`);
+            parts.push(`Focus Cities: ${focusCities.join(", ")}`);
         }
         if (obj.source) {
             parts.push(`Source: ${String(obj.source)}`);
@@ -233,7 +314,10 @@ function resetDisplay() {
     summaryEls.longest.textContent = "—";
     networkList.innerHTML = `<li class="legend">Network stats appear here after an analysis.</li>`;
     equipmentList.innerHTML = `<li class="legend">Equipment signals will populate after the analysis.</li>`;
-    routesBody.innerHTML = `<tr><td colspan="6" class="placeholder-row">Submit an airline to display top routes.</td></tr>`;
+    routesBody.innerHTML = `<tr><td colspan="6" class="placeholder-row">Submit an airline to display top domestic routes.</td></tr>`;
+    if (intlRoutesBody) {
+        intlRoutesBody.innerHTML = `<tr><td colspan="6" class="placeholder-row">Submit an airline to display top international routes.</td></tr>`;
+    }
 }
 
 function setLoading(active) {

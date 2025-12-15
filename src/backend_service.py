@@ -67,6 +67,7 @@ def list_airlines(data_store, query: Optional[str]) -> List[Dict[str, Any]]:
         mask = (
             airlines_df["Airline"].str.contains(query, case=False, na=False)
             | airlines_df["Alias"].str.contains(query, case=False, na=False)
+            | airlines_df["IATA"].str.contains(query, case=False, na=False)
         )
         airlines_df = airlines_df[mask]
     subset = airlines_df.head(50)[["Airline", "Alias", "IATA", "Country"]]
@@ -121,7 +122,9 @@ def route_analysis(data_store, payload: RouteAnalysisRequest) -> Dict[str, Any]:
     airline_code = (metadata.get("IATA") if metadata is not None else "") or ""
     airline_code = str(airline_code).strip().upper()
     equipment_counts = {}
-    if airline_code and hasattr(data_store, "top_equipment_by_departures"):
+    if airline_code and hasattr(data_store, "top_equipment_flights_per_day"):
+        equipment_counts = data_store.top_equipment_flights_per_day(airline_code, top_n=5)
+    elif airline_code and hasattr(data_store, "top_equipment_by_departures"):
         equipment_counts = data_store.top_equipment_by_departures(airline_code, top_n=5)
     if not equipment_counts:
         equipment_counts = (
@@ -135,20 +138,38 @@ def route_analysis(data_store, payload: RouteAnalysisRequest) -> Dict[str, Any]:
             .to_dict()
         )
 
+    route_columns = [
+        "Source airport Display",
+        "Destination airport Display",
+        "Equipment Display",
+        "Distance (miles)",
+        "Total",
+        "ASM",
+    ]
+
+    if {"Source Country", "Destination Country"}.issubset(processed.columns):
+        source_country = processed["Source Country"].fillna("").astype(str).str.strip()
+        destination_country = processed["Destination Country"].fillna("").astype(str).str.strip()
+        international_mask = (
+            source_country.ne("")
+            & destination_country.ne("")
+            & source_country.ne(destination_country)
+        )
+    else:
+        international_mask = pd.Series(False, index=processed.index)
+
     top_routes = (
-        processed.sort_values("ASM", ascending=False)
+        processed.loc[~international_mask]
+        .sort_values("ASM", ascending=False)
         .head(payload.limit)
-        .loc[
-            :,
-            [
-                "Source airport Display",
-                "Destination airport Display",
-                "Equipment Display",
-                "Distance (miles)",
-                "Total",
-                "ASM",
-            ],
-        ]
+        .loc[:, route_columns]
+        .copy()
+    )
+    top_international_routes = (
+        processed.loc[international_mask]
+        .sort_values("ASM", ascending=False)
+        .head(payload.limit)
+        .loc[:, route_columns]
         .copy()
     )
 
@@ -158,4 +179,22 @@ def route_analysis(data_store, payload: RouteAnalysisRequest) -> Dict[str, Any]:
         "network": network_stats,
         "top_equipment": equipment_counts,
         "top_routes": _dataframe_to_records(top_routes),
+        "top_international_routes": _dataframe_to_records(top_international_routes),
+    }
+
+
+def get_airline_fleet_profile(data_store, airline_query: str, limit: int = 20) -> Dict[str, Any]:
+    """Legacy helper retained for test coverage and compatibility."""
+    request = RouteAnalysisRequest(airline=str(airline_query), limit=int(limit))
+    result = route_analysis(data_store, request)
+
+    airline = result.get("airline") or {}
+    metadata_total_routes = (result.get("summary") or {}).get("total_routes")
+    if isinstance(metadata_total_routes, (int, float)):
+        airline["total_routes"] = int(metadata_total_routes)
+
+    return {
+        "airline": airline,
+        "network_stats": result.get("network") or {},
+        "top_routes": result.get("top_routes") or [],
     }
