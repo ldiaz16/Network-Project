@@ -88,9 +88,13 @@ function renderResults(payload) {
 
 function renderList(listElement, values) {
     listElement.innerHTML = "";
-    Object.entries(values).forEach(([label, value]) => {
+    Object.entries(values || {}).forEach(([label, value]) => {
         const li = document.createElement("li");
-        li.innerHTML = `<span>${label}</span><span>${formatValue(value)}</span>`;
+        const labelSpan = document.createElement("span");
+        labelSpan.textContent = label;
+        const valueSpan = document.createElement("span");
+        valueSpan.textContent = formatValue(value);
+        li.append(labelSpan, valueSpan);
         listElement.appendChild(li);
     });
     if (!listElement.children.length) {
@@ -142,7 +146,71 @@ function formatValue(value) {
             : distanceFormatter;
         return formatter.format(value);
     }
+    if (Array.isArray(value)) {
+        return formatArray(value);
+    }
+    if (typeof value === "object") {
+        return formatObject(value);
+    }
     return String(value);
+}
+
+function formatArray(values) {
+    if (!values.length) {
+        return "—";
+    }
+
+    const isPairList = values.every(
+        (item) => Array.isArray(item) && item.length === 2
+    );
+    if (isPairList) {
+        return values
+            .map(([label, metric]) => `${formatValue(label)} (${formatValue(metric)})`)
+            .join(", ");
+    }
+
+    const isScalarList = values.every(
+        (item) => item === null || ["string", "number", "boolean"].includes(typeof item)
+    );
+    if (isScalarList) {
+        return values.map((item) => formatValue(item)).join(", ");
+    }
+
+    try {
+        return JSON.stringify(values);
+    } catch {
+        return String(values);
+    }
+}
+
+function formatObject(obj) {
+    if (!obj) {
+        return "—";
+    }
+
+    if ("hubs" in obj || "focus_cities" in obj || "source" in obj) {
+        const parts = [];
+        const hubs = Array.isArray(obj.hubs) ? obj.hubs.filter(Boolean) : [];
+        const focusCities = Array.isArray(obj.focus_cities) ? obj.focus_cities.filter(Boolean) : [];
+        if (hubs.length) {
+            parts.push(`Hubs: ${hubs.join(", ")}`);
+        }
+        if (focusCities.length) {
+            parts.push(`Focus: ${focusCities.join(", ")}`);
+        }
+        if (obj.source) {
+            parts.push(`Source: ${String(obj.source)}`);
+        }
+        return parts.join(" • ") || "—";
+    }
+
+    const entries = Object.entries(obj);
+    if (!entries.length) {
+        return "—";
+    }
+    return entries
+        .map(([key, value]) => `${key}: ${formatValue(value)}`)
+        .join(" • ");
 }
 
 function formatDistance(value) {

@@ -17,13 +17,13 @@ This project now ships with a Flask-powered backend (`backend/app.py`) and a sta
    ```
 
 3. **Production command**  
-   - A `Procfile` is included: `web: gunicorn backend.app:app`.  
+   - A `Procfile` is included: `web: gunicorn backend.app:app --bind 0.0.0.0:$PORT`.  
    - Ensure the `data/` directory ships with the deployment – it contains all precomputed datasets.
 
 4. **Example: Render Web Service**
    - New Web Service → select this repository.
    - Build command: `pip install -r requirements.txt`.
-   - Start command: `gunicorn backend.app:app`.
+   - Start command: `gunicorn backend.app:app --bind 0.0.0.0:$PORT`.
    - Environment variables:  
      `PYTHON_VERSION=3.11.6` (optional but keeps parity with local runs).  
      `CORS_ALLOW_ORIGINS=https://<your-custom-domain>` (comma-separated list; only needed when you want stricter control, because the default now permits localhost plus any `*.vercel.app` domain).  
