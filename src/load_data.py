@@ -1896,8 +1896,11 @@ class DataStore:
         num_routes = G.number_of_edges()
 
         top_hubs = sorted(G.degree, key=lambda x: x[1], reverse=True)[:5]
-        base_overrides = self.get_airline_bases(airline_identifier) if airline_identifier else {}
-        derived_bases = self._derive_base_airports(processed_routes, airline_identifier) if processed_routes is not None else None
+        derived_bases = (
+            self._summarize_base_airports(self._derive_base_airports(processed_routes, airline_identifier))
+            if processed_routes is not None
+            else {}
+        )
 
         ## avg_degree = sum(dict(G.degree()).values()) / num_nodes if num_nodes > 0 else 0
         stats = {
@@ -1905,10 +1908,9 @@ class DataStore:
             "Number of Routes Flown": num_routes,
             "Top 5 Hubs": top_hubs,
         }
-        if base_overrides:
-            stats["Base Overrides"] = self._summarize_base_airports(base_overrides)
         if derived_bases:
-            stats["Base Airports"] = self._summarize_base_airports(derived_bases)
+            stats["Base Airports"] = derived_bases.get("hubs", [])
+            stats["Base Overrides"] = derived_bases.get("focus_cities", [])
         return stats
 
     def draw_network(self, G, layout='spring'):
