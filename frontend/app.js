@@ -156,6 +156,9 @@ function renderList(listElement, values) {
     listElement.innerHTML = "";
     Object.entries(values || {}).forEach(([label, value]) => {
         const li = document.createElement("li");
+        if (label === "Hubs" || label === "Focus Cities") {
+            li.classList.add("stats-wide");
+        }
         const labelSpan = document.createElement("span");
         labelSpan.textContent = label;
         const valueSpan = document.createElement("span");

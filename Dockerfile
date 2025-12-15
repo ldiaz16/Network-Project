@@ -23,4 +23,4 @@ COPY . .
 EXPOSE 8000
 
 # Default command uses Gunicorn to serve the Flask adapter (FastAPI also works via ASGI)
-CMD ["gunicorn", "backend.app:app", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "90"]
+CMD ["sh", "-c", "gunicorn backend.app:app --bind 0.0.0.0:${PORT:-8000} --workers 4 --timeout 90"]

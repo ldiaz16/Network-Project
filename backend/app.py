@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -95,3 +96,8 @@ def analysis():
         return jsonify({"detail": str(exc)}), exc.status_code
 
     return jsonify(result)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "8000"))
+    app.run(host="0.0.0.0", port=port)

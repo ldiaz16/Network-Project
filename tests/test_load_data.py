@@ -925,3 +925,37 @@ def test_select_airline_routes_respects_codeshare_overrides(datastore):
         (routes_df["Source airport"] == "EEE") & (routes_df["Destination airport"] == "AAA")
     )
     assert not blocked.any()
+
+
+def test_select_airline_routes_accepts_iata_code_queries(datastore):
+    seed_sample_airline(datastore)
+
+    routes_df, meta = datastore.select_airline_routes("SA")
+
+    assert meta["IATA"] == "SA"
+    assert not routes_df.empty
+    assert routes_df["Airline Code"].str.upper().eq("SA").all()
+    assert routes_df["Airline"].eq("Sample Airways").all()
+
+
+def test_select_airline_routes_accepts_parenthetical_code_queries(datastore):
+    seed_sample_airline(datastore)
+
+    routes_df, meta = datastore.select_airline_routes("Sample Airways (SA)")
+
+    assert meta["IATA"] == "SA"
+    assert not routes_df.empty
+    assert routes_df["Airline Code"].str.upper().eq("SA").all()
+    assert routes_df["Airline"].eq("Sample Airways").all()
+
+
+def test_select_airline_routes_accepts_icao_code_queries(datastore):
+    seed_sample_airline(datastore)
+
+    routes_df, meta = datastore.select_airline_routes("SMP")
+
+    assert meta["IATA"] == "SA"
+    assert meta["ICAO"] == "SMP"
+    assert not routes_df.empty
+    assert routes_df["Airline Code"].str.upper().eq("SA").all()
+    assert routes_df["Airline"].eq("Sample Airways").all()

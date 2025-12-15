@@ -184,11 +184,34 @@ button:not(:disabled):hover {
     flex: 1 1 220px;
     display: flex;
     justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
     padding: 12px 14px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
     font-size: 0.95rem;
+}
+
+.equipment-list li {
+    align-items: center;
+}
+
+.stats-list li span:last-child {
+    line-height: 1.4;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.stats-list li.stats-wide {
+    flex: 1 1 100%;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 6px;
+}
+
+.stats-list li.stats-wide span:last-child {
+    text-align: left;
 }
 
 .panel-intro {

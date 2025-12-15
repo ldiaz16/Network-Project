@@ -2078,7 +2078,124 @@ class DataStore:
         if not isinstance(airline_query, str) or not airline_query.strip():
             raise ValueError("Airline query must be a non-empty string.")
 
-        norm_airline = normalize_name(airline_query)
+        query = airline_query.strip()
+        code_match = re.search(r"\(([A-Z0-9]{2,3})\)\s*$", query, flags=re.IGNORECASE)
+        explicit_code = False
+        candidate_code = None
+        if code_match:
+            explicit_code = True
+            candidate_code = code_match.group(1).upper()
+        elif re.fullmatch(r"[A-Z0-9]{2,3}", query, flags=re.IGNORECASE):
+            candidate_code = query.upper()
+
+        if candidate_code:
+            best_match = None
+            highest_num_routes = -1
+
+            airlines_df = self.airlines if isinstance(self.airlines, pd.DataFrame) else None
+            if airlines_df is not None and not airlines_df.empty:
+                if "IATA" in airlines_df.columns:
+                    iata_values = (
+                        airlines_df["IATA"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.upper()
+                    )
+                    candidates = airlines_df.loc[iata_values == candidate_code]
+                    for _, row in candidates.iterrows():
+                        iata = row.get("IATA")
+                        if not isinstance(iata, str) or not iata.strip():
+                            continue
+                        route_count = self.calculate_total_airline_routes(iata)
+                        if route_count > highest_num_routes:
+                            highest_num_routes = route_count
+                            best_match = row.copy()
+
+                    if best_match is not None:
+                        best_match["Total Routes"] = highest_num_routes
+
+                if best_match is None and len(candidate_code) == 3 and "ICAO" in airlines_df.columns:
+                    icao_values = (
+                        airlines_df["ICAO"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.upper()
+                    )
+                    candidates = airlines_df.loc[icao_values == candidate_code]
+                    for _, row in candidates.iterrows():
+                        iata = row.get("IATA")
+                        if not isinstance(iata, str) or not iata.strip():
+                            continue
+                        route_count = self.calculate_total_airline_routes(iata)
+                        if route_count > highest_num_routes:
+                            highest_num_routes = route_count
+                            best_match = row.copy()
+
+                    if best_match is not None:
+                        best_match["Total Routes"] = highest_num_routes
+
+            matched_iata = None
+            if best_match is not None:
+                matched_iata = best_match.get("IATA")
+                if isinstance(matched_iata, str) and matched_iata.strip():
+                    matched_iata = matched_iata.strip().upper()
+                else:
+                    matched_iata = None
+
+            carrier_code = matched_iata or candidate_code
+
+            routes_df = pd.DataFrame()
+            if isinstance(self.routes, pd.DataFrame) and not self.routes.empty and "Airline Code" in self.routes.columns:
+                route_codes = (
+                    self.routes["Airline Code"]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                )
+                routes_df = self.routes.loc[route_codes == carrier_code].copy()
+
+            if best_match is not None or not routes_df.empty:
+                matched_airline_name = best_match.get("Airline") if isinstance(best_match, pd.Series) else None
+                matched_airline_name_normalized = (
+                    best_match.get("Airline (Normalized)") if isinstance(best_match, pd.Series) else None
+                )
+
+                if not isinstance(matched_airline_name, str) or not matched_airline_name.strip():
+                    matched_airline_name = carrier_code
+                if not isinstance(matched_airline_name_normalized, str) or not matched_airline_name_normalized.strip():
+                    matched_airline_name_normalized = normalize_name(matched_airline_name)
+
+                routes_df["Airline"] = matched_airline_name
+                routes_df["Airline (Normalized)"] = matched_airline_name_normalized
+                routes_df = self._apply_codeshare_overrides(routes_df, matched_airline_name_normalized)
+
+                if best_match is None:
+                    best_match = {
+                        "Airline": matched_airline_name,
+                        "Alias": None,
+                        "IATA": carrier_code,
+                        "ICAO": None,
+                        "Callsign": None,
+                        "Country": None,
+                        "Active": None,
+                        "Airline (Normalized)": matched_airline_name_normalized,
+                        "Total Routes": len(routes_df),
+                    }
+
+                if verbose:
+                    print(
+                        f"Best match: {matched_airline_name} with IATA code {carrier_code} and {len(routes_df)} routes."
+                    )
+
+                return routes_df, best_match
+
+            if explicit_code:
+                raise ValueError(f"No airline match found for code '{candidate_code}'.")
+
+        norm_airline = normalize_name(query)
         matched_airlines = process.extract(
             norm_airline,
             self.airlines["Airline (Normalized)"],
