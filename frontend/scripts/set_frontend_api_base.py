@@ -22,7 +22,12 @@ def main():
     parser = argparse.ArgumentParser(description="Inject API base URL into the static frontend.")
     parser.add_argument("--api-base", dest="api_base", default=os.environ.get("API_BASE_URL"), help="API base URL (e.g. https://service.onrender.com/api)")
     parser.add_argument("--index", dest="index_path", default=None, help="Optional single HTML file to patch (defaults to patching every *.html under --frontend-dir).")
-    parser.add_argument("--frontend-dir", dest="frontend_dir", default=".", ...)
+    parser.add_argument(
+        "--frontend-dir",
+        dest="frontend_dir",
+        default=".",
+        help="Frontend directory containing HTML files to patch."
+    )
     args = parser.parse_args()
 
     if not args.api_base:
