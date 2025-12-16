@@ -1,0 +1,12 @@
+{
+  "name": "airline-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static frontend for Airline Route Optimizer",
+  "scripts": {
+    "build": "node scripts/set_frontend_api_base.js --api-base \"$API_BASE_URL\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
