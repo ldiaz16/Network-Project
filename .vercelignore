@@ -16,7 +16,9 @@ US Passenger Data (All airlines)/
 
 # Root-level Python entrypoints/config that can be auto-detected as Functions.
 main.py
+app.py
 gunicorn.conf.py
+requirements.txt
 
 # BTS raw exports (frontend does not need them).
 T_T100_SEGMENT_ALL_CARRIER*.csv*

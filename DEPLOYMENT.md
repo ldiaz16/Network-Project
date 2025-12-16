@@ -51,7 +51,7 @@ Any other WSGI-friendly host (Railway, Fly.io, traditional VPS) can use the same
    - Set the project root to the repository root.
    - This repo includes `vercel.json` + `.vercelignore` so Vercel deploys only the static `frontend/` output (and does not try to bundle the Python backend/data into a Serverless Function, which can hit the 250 MB limit).
    - Configure the build step so the API base is injected automatically:
-     - Build command: `python3 scripts/set_frontend_api_base.py --api-base "$API_BASE_URL"`
+     - Build command: `node scripts/set_frontend_api_base.js --api-base "$API_BASE_URL"`
      - Output directory: `frontend`
    - Define an Environment Variable `API_BASE_URL` with your deployed backend’s `/api` base (e.g. `https://airline-backend.onrender.com/api`).
 
