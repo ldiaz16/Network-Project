@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 import threading
 from pathlib import Path
@@ -20,7 +21,6 @@ from src.backend_service import (
     route_analysis,
 )
 from src.cors_config import combine_regex_patterns, get_cors_settings
-from src.demand_service import DemandMartCache, get_concentration_summary, get_stability_page, get_top_markets
 from src.logging_setup import setup_logging
 from src.load_data import DataStore
 from src.security import RateLimiter
@@ -72,7 +72,11 @@ def get_data_store() -> DataStore:
 
 
 rate_limiter = RateLimiter.from_env()
-DEMAND_CACHE = DemandMartCache(base_dir=Path(__file__).resolve().parents[1])
+ENABLE_DB1B_DEMAND_API = os.environ.get("ENABLE_DB1B_DEMAND_API", "").strip().lower() in {"1", "true", "yes", "y"}
+if ENABLE_DB1B_DEMAND_API:
+    from src.demand_service import DemandMartCache, get_concentration_summary, get_stability_page, get_top_markets
+
+    DEMAND_CACHE = DemandMartCache(base_dir=Path(__file__).resolve().parents[1])
 
 
 @app.middleware("http")
@@ -157,107 +161,106 @@ async def analyze_alliance(payload: AllianceAnalysisRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
-@app.get("/api/demand/markets/top")
-async def demand_top_markets(
-    since_year: int = Query(default=2022, ge=1900, le=2100),
-    top_n: int = Query(default=50, ge=1, le=500),
-    directional: bool = Query(default=False),
-    exclude_big3: bool = Query(default=False),
-) -> Dict[str, Any]:
-    try:
-        df = await run_in_threadpool(
-            get_top_markets,
-            DEMAND_CACHE,
-            since_year=since_year,
-            directional=directional,
-            top_n=top_n,
-            exclude_big3=exclude_big3,
-        )
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {
-        "since_year": since_year,
-        "directional": directional,
-        "exclude_big3": exclude_big3,
-        "top_n": top_n,
-        "markets": df.to_dict(orient="records"),
-    }
-
-
-@app.get("/api/demand/markets/concentration")
-async def demand_market_concentration(
-    since_year: int = Query(default=2022, ge=1900, le=2100),
-    directional: bool = Query(default=False),
-) -> Dict[str, Any]:
-    try:
-        top_10 = await run_in_threadpool(
-            get_concentration_summary,
-            DEMAND_CACHE,
-            since_year=since_year,
-            directional=directional,
-            top_share=0.10,
-        )
-        top_01 = await run_in_threadpool(
-            get_concentration_summary,
-            DEMAND_CACHE,
-            since_year=since_year,
-            directional=directional,
-            top_share=0.01,
-        )
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    def _serialize(stats):
+if ENABLE_DB1B_DEMAND_API:
+    @app.get("/api/demand/markets/top")
+    async def demand_top_markets(
+        since_year: int = Query(default=2022, ge=1900, le=2100),
+        top_n: int = Query(default=50, ge=1, le=500),
+        directional: bool = Query(default=False),
+        exclude_big3: bool = Query(default=False),
+    ) -> Dict[str, Any]:
+        try:
+            df = await run_in_threadpool(
+                get_top_markets,
+                DEMAND_CACHE,
+                since_year=since_year,
+                directional=directional,
+                top_n=top_n,
+                exclude_big3=exclude_big3,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
         return {
-            "markets": stats.markets,
-            "total_passengers": stats.total_passengers,
-            "top_share": stats.top_share,
-            "top_markets": stats.top_markets,
-            "top_passengers": stats.top_passengers,
-            "top_passenger_share": stats.top_passenger_share,
-            "long_tail_markets": stats.long_tail_markets,
-            "long_tail_passengers": stats.long_tail_passengers,
-            "long_tail_passenger_share": stats.long_tail_passenger_share,
+            "since_year": since_year,
+            "directional": directional,
+            "exclude_big3": exclude_big3,
+            "top_n": top_n,
+            "markets": df.to_dict(orient="records"),
         }
 
-    return {
-        "since_year": since_year,
-        "directional": directional,
-        "top_10pct": _serialize(top_10),
-        "top_1pct": _serialize(top_01),
-    }
+    @app.get("/api/demand/markets/concentration")
+    async def demand_market_concentration(
+        since_year: int = Query(default=2022, ge=1900, le=2100),
+        directional: bool = Query(default=False),
+    ) -> Dict[str, Any]:
+        try:
+            top_10 = await run_in_threadpool(
+                get_concentration_summary,
+                DEMAND_CACHE,
+                since_year=since_year,
+                directional=directional,
+                top_share=0.10,
+            )
+            top_01 = await run_in_threadpool(
+                get_concentration_summary,
+                DEMAND_CACHE,
+                since_year=since_year,
+                directional=directional,
+                top_share=0.01,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+        def _serialize(stats):
+            return {
+                "markets": stats.markets,
+                "total_passengers": stats.total_passengers,
+                "top_share": stats.top_share,
+                "top_markets": stats.top_markets,
+                "top_passengers": stats.top_passengers,
+                "top_passenger_share": stats.top_passenger_share,
+                "long_tail_markets": stats.long_tail_markets,
+                "long_tail_passengers": stats.long_tail_passengers,
+                "long_tail_passenger_share": stats.long_tail_passenger_share,
+            }
 
-@app.get("/api/demand/markets/stability")
-async def demand_market_stability(
-    since_year: int = Query(default=2022, ge=1900, le=2100),
-    directional: bool = Query(default=False),
-    q: Optional[str] = Query(default=None),
-    classification: Optional[str] = Query(default=None),
-    min_total_passengers: float = Query(default=0.0, ge=0.0),
-    sort_by: str = Query(default="total_passengers"),
-    sort_dir: str = Query(default="desc"),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=500, ge=1, le=10000),
-) -> Dict[str, Any]:
-    try:
-        payload = await run_in_threadpool(
-            get_stability_page,
-            DEMAND_CACHE,
-            since_year=since_year,
-            directional=directional,
-            q=q,
-            classification=classification,
-            min_total_passengers=min_total_passengers,
-            sort_by=sort_by,
-            sort_dir=sort_dir,
-            offset=offset,
-            limit=limit,
-        )
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    payload["since_year"] = since_year
-    payload["directional"] = directional
-    payload["q"] = (q or "").strip()
-    payload["classification"] = (classification or "").strip()
-    return payload
+        return {
+            "since_year": since_year,
+            "directional": directional,
+            "top_10pct": _serialize(top_10),
+            "top_1pct": _serialize(top_01),
+        }
+
+    @app.get("/api/demand/markets/stability")
+    async def demand_market_stability(
+        since_year: int = Query(default=2022, ge=1900, le=2100),
+        directional: bool = Query(default=False),
+        q: Optional[str] = Query(default=None),
+        classification: Optional[str] = Query(default=None),
+        min_total_passengers: float = Query(default=0.0, ge=0.0),
+        sort_by: str = Query(default="total_passengers"),
+        sort_dir: str = Query(default="desc"),
+        offset: int = Query(default=0, ge=0),
+        limit: int = Query(default=500, ge=1, le=10000),
+    ) -> Dict[str, Any]:
+        try:
+            payload = await run_in_threadpool(
+                get_stability_page,
+                DEMAND_CACHE,
+                since_year=since_year,
+                directional=directional,
+                q=q,
+                classification=classification,
+                min_total_passengers=min_total_passengers,
+                sort_by=sort_by,
+                sort_dir=sort_dir,
+                offset=offset,
+                limit=limit,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        payload["since_year"] = since_year
+        payload["directional"] = directional
+        payload["q"] = (q or "").strip()
+        payload["classification"] = (classification or "").strip()
+        return payload
