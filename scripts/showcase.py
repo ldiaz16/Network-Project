@@ -12,6 +12,8 @@ if PROJECT_ROOT not in sys.path:
 
 from src.load_data import DataStore
 
+QUARTER_RANGE = ((2022, 2), (2025, 2))
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -68,7 +70,38 @@ def parse_args():
         default=0.1,
         help="Alert threshold for unknown seat-source ASM share (0-1).",
     )
+    parser.add_argument(
+        "--top-airlines",
+        type=int,
+        default=5,
+        help="When no --airline is supplied, highlight this many carriers ranked by passenger volume.",
+    )
     return parser.parse_args()
+
+
+def _top_airline_codes_by_passengers(ds, limit):
+    try:
+        max_limit = max(0, int(limit))
+    except (TypeError, ValueError):
+        return []
+    if max_limit <= 0:
+        return []
+    routes = getattr(ds, "routes", None)
+    if routes is None or routes.empty or "Airline Code" not in routes.columns:
+        return []
+    metric = "Passengers" if "Passengers" in routes.columns else "Total"
+    if metric not in routes.columns:
+        return []
+    grouped = (
+        routes[["Airline Code", metric]]
+        .dropna(subset=["Airline Code"])
+        .copy()
+        .groupby("Airline Code", as_index=False)[metric]
+        .sum()
+        .sort_values(metric, ascending=False)
+    )
+    codes = grouped["Airline Code"].fillna("").astype(str).str.strip().tolist()
+    return [code for code in codes if code][:max_limit]
 
 
 def print_section(title, body=""):
@@ -182,16 +215,23 @@ def showcase_cbsa(ds, package, args):
 
 def main():
     args = parse_args()
-    ds = DataStore()
+    ds = DataStore(quarter_range=QUARTER_RANGE)
     ds.load_data()
 
-    default_compare = ["Delta Air Lines", "American Airlines"]
-    compare_queries = args.airline or default_compare
+    fallback_queries = ["Delta Air Lines", "American Airlines"]
+    limit = max(0, int(args.top_airlines))
+    candidate_queries = args.airline or _top_airline_codes_by_passengers(ds, limit)
+    if not candidate_queries:
+        candidate_queries = fallback_queries
+    if not args.airline and limit > 0:
+        candidate_queries = candidate_queries[:limit]
+    compare_queries = candidate_queries
+
 
     packages = []
     package_registry = {}
 
-    for query in compare_queries[:2]:
+    for query in compare_queries:
         pkg = build_airline_package(ds, query, announce=True)
         packages.append(pkg)
         package_registry[pkg["normalized"]] = pkg

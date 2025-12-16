@@ -3,7 +3,7 @@ import os
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 import requests
 import pandas as pd
 from data.airlines import normalize_name
@@ -118,11 +118,34 @@ def compact_aircraft_name(label: object) -> object:
     return cleaned
 
 
+def _quarter_pair_to_index(pair: Optional[Tuple[int, int]]) -> Optional[int]:
+    if pair is None:
+        return None
+    if not (isinstance(pair, (list, tuple)) and len(pair) == 2):
+        return None
+    try:
+        year = int(pair[0])
+        quarter = int(pair[1])
+    except (TypeError, ValueError):
+        return None
+    if quarter < 1 or quarter > 4:
+        return None
+    return year * 4 + quarter
+
+
 class DataStore:
-    def __init__(self, data_dir=None):
+    def __init__(
+        self,
+        data_dir=None,
+        *,
+        rolling_quarters: int = 4,
+        quarter_range: Optional[Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]] = None,
+    ):
         base_dir = Path(data_dir) if data_dir else DATA_DIR_ROOT
         self.data_dir = base_dir
         self.resources_dir = RESOURCES_DIR
+        self._rolling_quarters = rolling_quarters
+        self._quarter_range = quarter_range
         self.routes = None
         self.airlines = None
         self.airports = None
@@ -151,7 +174,9 @@ class DataStore:
     def _load_routes_from_t100_segments(
         self,
         path: Path,
-        rolling_quarters: int = 4,
+        *,
+        rolling_quarters: Optional[int] = 4,
+        quarter_range: Optional[Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]] = None,
         domestic_only: bool = True,
     ) -> pd.DataFrame:
         """
@@ -246,7 +271,21 @@ class DataStore:
                     .replace({"\\N": ""})
                 )
 
-        if rolling_quarters and "YEAR" in raw.columns and "QUARTER" in raw.columns:
+        year_column_present = "YEAR" in raw.columns and "QUARTER" in raw.columns
+        if quarter_range and year_column_present:
+            start_idx = _quarter_pair_to_index(quarter_range[0])
+            end_idx = _quarter_pair_to_index(quarter_range[1])
+            if start_idx is not None or end_idx is not None:
+                years = pd.to_numeric(raw["YEAR"], errors="coerce")
+                quarters = pd.to_numeric(raw["QUARTER"], errors="coerce")
+                quarter_index = years * 4 + quarters
+                mask = pd.Series(True, index=raw.index)
+                if start_idx is not None:
+                    mask &= quarter_index >= start_idx
+                if end_idx is not None:
+                    mask &= quarter_index <= end_idx
+                raw = raw.loc[mask].copy()
+        elif rolling_quarters and year_column_present:
             years = pd.to_numeric(raw["YEAR"], errors="coerce")
             quarters = pd.to_numeric(raw["QUARTER"], errors="coerce")
             quarter_index = years * 4 + quarters
@@ -819,6 +858,7 @@ class DataStore:
         *,
         rolling_quarters: int = 4,
         domestic_only: bool = False,
+        quarter_range: Optional[Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]] = None,
     ) -> pd.DataFrame:
         """
         Build the canonical routes table from a processed BTS T-100 dataset.
@@ -828,7 +868,12 @@ class DataStore:
         """
         from .bts_ingest import load_t100
 
-        df = load_t100(str(path), rolling_quarters=rolling_quarters, domestic_only=domestic_only)
+        df = load_t100(
+            str(path),
+            rolling_quarters=rolling_quarters,
+            domestic_only=domestic_only,
+            quarter_range=quarter_range,
+        )
         if df is None or df.empty:
             raise ValueError(f"Processed T-100 dataset is empty: {path}")
 
@@ -897,16 +942,30 @@ class DataStore:
         self.routes = None
         route_source_path = None
 
+        load_kwargs = {}
+        if self._quarter_range is not None:
+            load_kwargs["quarter_range"] = self._quarter_range
+        else:
+            load_kwargs["rolling_quarters"] = self._rolling_quarters
+
         if processed_t100_path is not None:
             try:
-                self.routes = self._load_routes_from_bts_t100(processed_t100_path, rolling_quarters=4, domestic_only=False)
+                self.routes = self._load_routes_from_bts_t100(
+                    processed_t100_path,
+                    domestic_only=False,
+                    **load_kwargs,
+                )
                 route_source_path = processed_t100_path
             except Exception:
                 self.routes = None
 
         if self.routes is None and t100_segments_path.exists():
             try:
-                self.routes = self._load_routes_from_t100_segments(t100_segments_path, rolling_quarters=4, domestic_only=False)
+                self.routes = self._load_routes_from_t100_segments(
+                    t100_segments_path,
+                    domestic_only=False,
+                    **load_kwargs,
+                )
                 route_source_path = t100_segments_path
             except Exception:
                 self.routes = None

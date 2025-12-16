@@ -60,7 +60,58 @@ def _filter_to_quarters(
     return df[mask]
 
 
-def load_t100(path: str, rolling_quarters: int = 4, domestic_only: bool = True) -> pd.DataFrame:
+def _quarter_pair_to_index(pair: Optional[Tuple[int, int]]) -> Optional[int]:
+    if pair is None:
+        return None
+    if not (isinstance(pair, (list, tuple)) and len(pair) == 2):
+        return None
+    try:
+        year = int(pair[0])
+        quarter = int(pair[1])
+    except (TypeError, ValueError):
+        return None
+    if quarter < 1 or quarter > 4:
+        return None
+    return year * 4 + quarter
+
+
+def _filter_to_quarter_range(
+    df: pd.DataFrame,
+    quarter_range: Optional[Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]],
+    *,
+    year_col: str = "year",
+    quarter_col: str = "quarter",
+) -> pd.DataFrame:
+    if (
+        df.empty
+        or quarter_range is None
+        or year_col not in df
+        or quarter_col not in df
+    ):
+        return df
+    start_pair, end_pair = quarter_range
+    start_idx = _quarter_pair_to_index(start_pair)
+    end_idx = _quarter_pair_to_index(end_pair)
+    if start_idx is None and end_idx is None:
+        return df
+    year = pd.to_numeric(df[year_col], errors="coerce")
+    quarter = pd.to_numeric(df[quarter_col], errors="coerce")
+    quarter_index = year * 4 + quarter
+    mask = pd.Series(True, index=df.index)
+    if start_idx is not None:
+        mask &= quarter_index >= start_idx
+    if end_idx is not None:
+        mask &= quarter_index <= end_idx
+    return df.loc[mask]
+
+
+def load_t100(
+    path: str,
+    rolling_quarters: int = 4,
+    domestic_only: bool = True,
+    *,
+    quarter_range: Optional[Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]] = None,
+) -> pd.DataFrame:
     """Load and normalize BTS T-100 segment/market data."""
     df = _read_frame(path)
     df = _canonicalize_columns(
@@ -86,9 +137,17 @@ def load_t100(path: str, rolling_quarters: int = 4, domestic_only: bool = True) 
         if col in df:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    latest = _latest_quarter(df, "year", "quarter")
-    if latest:
-        df = _filter_to_quarters(df, _rolling_quarters(latest, window=rolling_quarters))
+    if quarter_range is not None:
+        df = _filter_to_quarter_range(
+            df,
+            quarter_range,
+            year_col="year",
+            quarter_col="quarter",
+        )
+    else:
+        latest = _latest_quarter(df, "year", "quarter")
+        if latest:
+            df = _filter_to_quarters(df, _rolling_quarters(latest, window=rolling_quarters))
 
     if domestic_only and "domestic" in (c.lower() for c in df.columns):
         # If a domestic flag exists, use it; otherwise assume input already filtered.
@@ -98,7 +157,13 @@ def load_t100(path: str, rolling_quarters: int = 4, domestic_only: bool = True) 
     return df.reset_index(drop=True)
 
 
-def load_db1b(path: str, rolling_quarters: int = 4, domestic_only: bool = True) -> pd.DataFrame:
+def load_db1b(
+    path: str,
+    rolling_quarters: int = 4,
+    domestic_only: bool = True,
+    *,
+    quarter_range: Optional[Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]] = None,
+) -> pd.DataFrame:
     """Load and normalize DB1B O&D data (ticket sample)."""
     df = _read_frame(path)
     df = _canonicalize_columns(
@@ -122,9 +187,17 @@ def load_db1b(path: str, rolling_quarters: int = 4, domestic_only: bool = True) 
         if col in df:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    latest = _latest_quarter(df, "year", "quarter")
-    if latest:
-        df = _filter_to_quarters(df, _rolling_quarters(latest, window=rolling_quarters))
+    if quarter_range is not None:
+        df = _filter_to_quarter_range(
+            df,
+            quarter_range,
+            year_col="year",
+            quarter_col="quarter",
+        )
+    else:
+        latest = _latest_quarter(df, "year", "quarter")
+        if latest:
+            df = _filter_to_quarters(df, _rolling_quarters(latest, window=rolling_quarters))
 
     if domestic_only and "domestic" in (c.lower() for c in df.columns):
         domestic_col = [c for c in df.columns if c.lower() == "domestic"][0]
