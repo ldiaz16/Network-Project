@@ -919,7 +919,14 @@ class DataStore:
         # Opportunistically load BTS data if local caches exist (rolling 4Q, domestic).
         default_db1b = self.data_dir / "db1b.parquet"
         default_db1b_csv = self.data_dir / "db1b.csv"
-        db1b_path = default_db1b if default_db1b.exists() else (default_db1b_csv if default_db1b_csv.exists() else None)
+        db1b_processed_dir = Path(__file__).resolve().parents[1] / "datasets" / "db1b" / "processed"
+        db1b_processed_parquet = db1b_processed_dir / "db1b.parquet"
+        db1b_processed_csv = db1b_processed_dir / "db1b.csv"
+
+        db1b_path = next(
+            (p for p in (default_db1b, default_db1b_csv, db1b_processed_parquet, db1b_processed_csv) if p.exists()),
+            None,
+        )
         if db1b_path:
             try:
                 from .bts_ingest import load_db1b, build_profitability_table

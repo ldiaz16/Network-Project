@@ -3,7 +3,7 @@ Convert BTS .asc dumps (DB1B public) into Parquet/CSV files the app can ingest.
 
 Input folder: "BTS DATA" in repo root (pipe-delimited, no headers).
 Outputs:
-  data/db1b.parquet   -> DB1B market-level sample (carrier, origin, dest, passengers, fare, year, quarter)
+  datasets/db1b/processed/db1b.parquet -> DB1B market-level sample (carrier, origin, dest, passengers, fare, year, quarter)
 
 Notes:
 - The app reads `T_T100_SEGMENT_ALL_CARRIER.csv` directly from the repo root for route data, so this script no longer
@@ -20,7 +20,7 @@ import pandas as pd
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 RAW_DIR = BASE_DIR / "BTS DATA"
-OUT_DB1B = BASE_DIR / "data" / "db1b.parquet"
+OUT_DB1B = BASE_DIR / "datasets" / "db1b" / "processed" / "db1b.parquet"
 
 
 def iter_rows(path: pathlib.Path) -> Iterable[List[str]]:

@@ -17,8 +17,11 @@ BASE_DIR = pathlib.Path(__file__).resolve().parents[1]
 T100_CSV = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv"
 T100_GZ = BASE_DIR / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
 T100_PATH = T100_CSV if T100_CSV.exists() else (T100_GZ if T100_GZ.exists() else T100_CSV)
-DB1B_PARQUET = BASE_DIR / "data" / "db1b.parquet"
-DB1B_CSV = BASE_DIR / "data" / "db1b.csv"
+DB1B_PROCESSED_DIR = BASE_DIR / "datasets" / "db1b" / "processed"
+DB1B_PARQUET = DB1B_PROCESSED_DIR / "db1b.parquet"
+DB1B_CSV = DB1B_PROCESSED_DIR / "db1b.csv"
+LEGACY_DB1B_PARQUET = BASE_DIR / "data" / "db1b.parquet"
+LEGACY_DB1B_CSV = BASE_DIR / "data" / "db1b.csv"
 
 
 def _canonicalize_columns(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
@@ -89,17 +92,20 @@ def load_t100_segment(path: pathlib.Path) -> pd.DataFrame:
 def load_db1b_optional() -> tuple[pathlib.Path | None, pd.DataFrame | None]:
     path = None
     df = None
-    if DB1B_CSV.exists():
-        path = DB1B_CSV
-        df = pd.read_csv(DB1B_CSV)
-    elif DB1B_PARQUET.exists():
-        path = DB1B_PARQUET
+    for candidate in (DB1B_CSV, DB1B_PARQUET, LEGACY_DB1B_CSV, LEGACY_DB1B_PARQUET):
+        if not candidate.exists():
+            continue
+        path = candidate
+        if candidate.suffix.lower() == ".csv":
+            df = pd.read_csv(candidate)
+            break
         try:
-            df = pd.read_parquet(DB1B_PARQUET)
+            df = pd.read_parquet(candidate)
+            break
         except Exception as exc:
             raise SystemExit(
-                f"Failed to read {DB1B_PARQUET} ({exc}). "
-                "Install a parquet engine (pyarrow/fastparquet) or provide data/db1b.csv instead."
+                f"Failed to read {candidate} ({exc}). "
+                "Install a parquet engine (pyarrow/fastparquet) or provide a CSV instead."
             ) from exc
 
     if df is None:

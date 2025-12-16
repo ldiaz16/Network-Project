@@ -43,6 +43,23 @@ def _rolling_quarters(latest: Tuple[int, int], window: int = 4) -> List[Tuple[in
     return quarters
 
 
+def _filter_to_quarters(
+    df: pd.DataFrame,
+    quarters: List[Tuple[int, int]],
+    *,
+    year_col: str = "year",
+    quarter_col: str = "quarter",
+) -> pd.DataFrame:
+    if df.empty or not quarters or year_col not in df or quarter_col not in df:
+        return df
+    mask = pd.Series(False, index=df.index)
+    year = df[year_col]
+    quarter = df[quarter_col]
+    for y, q in quarters:
+        mask |= ((year == y) & (quarter == q)).fillna(False)
+    return df[mask]
+
+
 def load_t100(path: str, rolling_quarters: int = 4, domestic_only: bool = True) -> pd.DataFrame:
     """Load and normalize BTS T-100 segment/market data."""
     df = _read_frame(path)
@@ -71,8 +88,7 @@ def load_t100(path: str, rolling_quarters: int = 4, domestic_only: bool = True) 
 
     latest = _latest_quarter(df, "year", "quarter")
     if latest:
-        target_quarters = set(_rolling_quarters(latest, window=rolling_quarters))
-        df = df[df.apply(lambda row: (int(row["year"]), int(row["quarter"])) in target_quarters, axis=1)]
+        df = _filter_to_quarters(df, _rolling_quarters(latest, window=rolling_quarters))
 
     if domestic_only and "domestic" in (c.lower() for c in df.columns):
         # If a domestic flag exists, use it; otherwise assume input already filtered.
@@ -108,8 +124,7 @@ def load_db1b(path: str, rolling_quarters: int = 4, domestic_only: bool = True) 
 
     latest = _latest_quarter(df, "year", "quarter")
     if latest:
-        target_quarters = set(_rolling_quarters(latest, window=rolling_quarters))
-        df = df[df.apply(lambda row: (int(row["year"]), int(row["quarter"])) in target_quarters, axis=1)]
+        df = _filter_to_quarters(df, _rolling_quarters(latest, window=rolling_quarters))
 
     if domestic_only and "domestic" in (c.lower() for c in df.columns):
         domestic_col = [c for c in df.columns if c.lower() == "domestic"][0]

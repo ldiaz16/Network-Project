@@ -20,8 +20,11 @@ from src.cors_config import get_cors_settings
 from src.load_data import DataStore
 from src.logging_setup import setup_logging
 from src.security import RateLimiter
+from src.demand_service import DemandMartCache, get_concentration_summary, get_stability_page, get_top_markets
 
 FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
+BASE_DIR = Path(__file__).resolve().parents[1]
+DEMAND_CACHE = DemandMartCache(base_dir=BASE_DIR)
 
 explicit_origins, regex_origins = get_cors_settings()
 cors_origins = explicit_origins if explicit_origins == ["*"] else list(dict.fromkeys([*explicit_origins, *regex_origins]))
@@ -125,6 +128,140 @@ def alliance():
         return jsonify({"detail": str(exc)}), exc.status_code
 
     return jsonify(result)
+
+@app.get("/api/demand/markets/top")
+def demand_top_markets():
+    try:
+        top_n = int(request.args.get("top_n", request.args.get("n", "50")))
+    except ValueError:
+        top_n = 50
+    top_n = max(1, min(500, top_n))
+
+    since_year_raw = request.args.get("since_year", "2022")
+    try:
+        since_year = int(since_year_raw)
+    except ValueError:
+        since_year = 2022
+
+    directional = request.args.get("directional", "0").strip().lower() in {"1", "true", "yes", "y"}
+    exclude_big3 = request.args.get("exclude_big3", "0").strip().lower() in {"1", "true", "yes", "y"}
+
+    try:
+        df = get_top_markets(
+            DEMAND_CACHE,
+            since_year=since_year,
+            directional=directional,
+            top_n=top_n,
+            exclude_big3=exclude_big3,
+        )
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 404
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+
+    return jsonify(
+        {
+            "since_year": since_year,
+            "directional": directional,
+            "exclude_big3": exclude_big3,
+            "top_n": top_n,
+            "markets": df.to_dict(orient="records"),
+        }
+    )
+
+
+@app.get("/api/demand/markets/concentration")
+def demand_market_concentration():
+    since_year_raw = request.args.get("since_year", "2022")
+    try:
+        since_year = int(since_year_raw)
+    except ValueError:
+        since_year = 2022
+
+    directional = request.args.get("directional", "0").strip().lower() in {"1", "true", "yes", "y"}
+
+    try:
+        top_10 = get_concentration_summary(DEMAND_CACHE, since_year=since_year, directional=directional, top_share=0.10)
+        top_01 = get_concentration_summary(DEMAND_CACHE, since_year=since_year, directional=directional, top_share=0.01)
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 404
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+
+    def _serialize(stats):
+        return {
+            "markets": stats.markets,
+            "total_passengers": stats.total_passengers,
+            "top_share": stats.top_share,
+            "top_markets": stats.top_markets,
+            "top_passengers": stats.top_passengers,
+            "top_passenger_share": stats.top_passenger_share,
+            "long_tail_markets": stats.long_tail_markets,
+            "long_tail_passengers": stats.long_tail_passengers,
+            "long_tail_passenger_share": stats.long_tail_passenger_share,
+        }
+
+    return jsonify(
+        {
+            "since_year": since_year,
+            "directional": directional,
+            "top_10pct": _serialize(top_10),
+            "top_1pct": _serialize(top_01),
+        }
+    )
+
+
+@app.get("/api/demand/markets/stability")
+def demand_market_stability():
+    since_year_raw = request.args.get("since_year", "2022")
+    try:
+        since_year = int(since_year_raw)
+    except ValueError:
+        since_year = 2022
+
+    directional = request.args.get("directional", "0").strip().lower() in {"1", "true", "yes", "y"}
+    q = request.args.get("q")
+    classification = request.args.get("classification")
+
+    try:
+        min_total_passengers = float(request.args.get("min_total_passengers", "0") or 0.0)
+    except ValueError:
+        min_total_passengers = 0.0
+
+    sort_by = request.args.get("sort_by", "total_passengers")
+    sort_dir = request.args.get("sort_dir", "desc")
+    try:
+        offset = int(request.args.get("offset", "0"))
+    except ValueError:
+        offset = 0
+    try:
+        limit = int(request.args.get("limit", "500"))
+    except ValueError:
+        limit = 500
+
+    try:
+        payload = get_stability_page(
+            DEMAND_CACHE,
+            since_year=since_year,
+            directional=directional,
+            q=q,
+            classification=classification,
+            min_total_passengers=min_total_passengers,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+            offset=offset,
+            limit=limit,
+        )
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 404
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+
+    payload["since_year"] = since_year
+    payload["directional"] = directional
+    payload["q"] = (q or "").strip()
+    payload["classification"] = (classification or "").strip()
+    return jsonify(payload)
 
 
 if __name__ == "__main__":

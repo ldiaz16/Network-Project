@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base" content="/api">
+    <title>Domestic Demand Markets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">DB1B market</p>
+                <h1>Domestic Demand Markets</h1>
+                <nav class="page-nav" aria-label="Primary">
+                    <a href="index.html">Airline</a>
+                    <a href="alliance.html">Alliance</a>
+                    <a class="active" href="markets.html">Markets</a>
+                </nav>
+                <p class="hero-intro">
+                    Rank domestic O&amp;D markets by passengers and classify stability vs seasonality using quarterly DB1B data.
+                </p>
+            </div>
+            <div class="airline-meta">
+                <span class="meta-label">Demand window</span>
+                <span id="meta-window">—</span>
+                <span id="meta-definition" class="meta-code">—</span>
+            </div>
+        </header>
+
+        <section class="panel form-panel">
+            <form id="markets-form" class="form-row">
+                <label>
+                    Since year
+                    <select id="since-year" name="since_year">
+                        <option value="2022" selected>2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </label>
+                <label>
+                    Market definition
+                    <select id="market-definition" name="directional">
+                        <option value="0" selected>Undirected (A–B)</option>
+                        <option value="1">Directional (A→B)</option>
+                    </select>
+                </label>
+                <button id="refresh-btn" type="submit">Refresh</button>
+            </form>
+            <p id="form-message" class="form-message" role="status"></p>
+        </section>
+
+        <section class="panel summary-panel">
+            <div class="summary-grid">
+                <article class="stat-card">
+                    <div class="stat-label">Markets</div>
+                    <div class="stat-value" id="stat-markets">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Total passengers</div>
+                    <div class="stat-value" id="stat-passengers">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Top 10% share</div>
+                    <div class="stat-value" id="stat-top10">—</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Top 1% share</div>
+                    <div class="stat-value" id="stat-top1">—</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top markets by passengers</h2>
+                <span class="panel-note">Top 50 markets, all airports.</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Market</th>
+                            <th>Passengers</th>
+                            <th>Avg fare</th>
+                            <th>Distance</th>
+                            <th>Fare / mile</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-markets-body">
+                        <tr>
+                            <td colspan="6" class="placeholder-row">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Top markets (excluding NYC/LA/CHI)</h2>
+                <span class="panel-note">Top 50 markets with endpoints outside NYC/LA/CHI airport groups.</span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Market</th>
+                            <th>Passengers</th>
+                            <th>Avg fare</th>
+                            <th>Distance</th>
+                            <th>Fare / mile</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-markets-excl-body">
+                        <tr>
+                            <td colspan="6" class="placeholder-row">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-header">
+                <h2>Market stability</h2>
+                <span class="panel-note">Filter/search the stability classification table.</span>
+            </div>
+            <form id="stability-filters" class="filters-row" autocomplete="off">
+                <label>
+                    Search airport
+                    <input id="stability-search" type="text" placeholder="e.g. JFK" />
+                </label>
+                <label>
+                    Classification
+                    <select id="stability-classification">
+                        <option value="" selected>All</option>
+                        <option value="Stable core">Stable core</option>
+                        <option value="Seasonal leisure">Seasonal leisure</option>
+                        <option value="Volatile / emerging">Volatile / emerging</option>
+                        <option value="No demand">No demand</option>
+                    </select>
+                </label>
+                <label>
+                    Min total passengers
+                    <input id="stability-min-total" type="number" min="0" step="1000" placeholder="0" />
+                </label>
+            </form>
+            <div class="pagination-row">
+                <span id="stability-count" class="panel-note">—</span>
+                <div class="pagination-actions">
+                    <button id="stability-prev" class="button-small" type="button" disabled>Prev</button>
+                    <button id="stability-next" class="button-small" type="button" disabled>Next</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Market</th>
+                            <th>Total pax</th>
+                            <th>Mean</th>
+                            <th>CV</th>
+                            <th>Seasonality</th>
+                            <th>Residual CV</th>
+                            <th>Active share</th>
+                            <th>Class</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stability-body">
+                        <tr>
+                            <td colspan="8" class="placeholder-row">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="markets.js"></script>
+</body>
+</html>
+
