@@ -1,0 +1,25 @@
+.venv/
+.pytest_cache/
+__pycache__/
+**/__pycache__/
+
+# Large data artifacts + backend code are deployed separately (Render/Gunicorn).
+backend/
+src/
+data/
+datasets/
+resources/
+reports/
+Lookup Tables/
+Fuel Data/
+US Passenger Data (All airlines)/
+
+# Root-level Python entrypoints/config that can be auto-detected as Functions.
+main.py
+gunicorn.conf.py
+
+# BTS raw exports (frontend does not need them).
+T_T100_SEGMENT_ALL_CARRIER*.csv*
+
+# Logs / caches.
+*.log

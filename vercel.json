@@ -1,0 +1,4 @@
+{
+  "buildCommand": "python3 scripts/set_frontend_api_base.py --api-base \"$API_BASE_URL\"",
+  "outputDirectory": "frontend"
+}
