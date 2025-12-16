@@ -1,5 +1,6 @@
 import logging
 import time
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -46,7 +47,30 @@ app.add_middleware(
 )
 
 data_store = DataStore()
-data_store.load_data()
+_data_store_lock = threading.Lock()
+_data_store_loaded = False
+_data_store_error = None
+
+
+def get_data_store() -> DataStore:
+    global _data_store_loaded, _data_store_error
+    if _data_store_loaded:
+        return data_store
+    if _data_store_error is not None:
+        raise _data_store_error
+
+    with _data_store_lock:
+        if _data_store_loaded:
+            return data_store
+        try:
+            data_store.load_data()
+        except Exception as exc:
+            _data_store_error = exc
+            raise
+        _data_store_loaded = True
+        return data_store
+
+
 rate_limiter = RateLimiter.from_env()
 DEMAND_CACHE = DemandMartCache(base_dir=Path(__file__).resolve().parents[1])
 
@@ -93,18 +117,30 @@ async def get_airlines(
         default=None, description="Filter airlines by substring match."
     )
 ) -> List[Dict[str, Any]]:
-    return await run_in_threadpool(list_airlines, data_store, query)
+    try:
+        ds = await run_in_threadpool(get_data_store)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return await run_in_threadpool(list_airlines, ds, query)
 
 
 @app.get("/api/alliances")
 async def get_alliances() -> List[Dict[str, Any]]:
-    return await run_in_threadpool(list_alliances, data_store)
+    try:
+        ds = await run_in_threadpool(get_data_store)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return await run_in_threadpool(list_alliances, ds)
 
 
 @app.post("/api/analysis")
 async def analyze(payload: RouteAnalysisRequest) -> Dict[str, Any]:
     try:
-        return await run_in_threadpool(route_analysis, data_store, payload)
+        ds = await run_in_threadpool(get_data_store)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    try:
+        return await run_in_threadpool(route_analysis, ds, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
@@ -112,7 +148,11 @@ async def analyze(payload: RouteAnalysisRequest) -> Dict[str, Any]:
 @app.post("/api/alliance")
 async def analyze_alliance(payload: AllianceAnalysisRequest) -> Dict[str, Any]:
     try:
-        return await run_in_threadpool(alliance_analysis, data_store, payload)
+        ds = await run_in_threadpool(get_data_store)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    try:
+        return await run_in_threadpool(alliance_analysis, ds, payload)
     except AnalysisError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 

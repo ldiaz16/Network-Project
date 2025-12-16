@@ -17,16 +17,20 @@ This project now ships with a Flask-powered backend (`backend/app.py`) and a sta
    ```
 
 3. **Production command**  
-   - A `Procfile` is included: `web: gunicorn backend.app:app --bind 0.0.0.0:$PORT`.  
+   - A `Procfile` is included: `web: gunicorn backend.app:app --config gunicorn.conf.py`.  
+   - `gunicorn.conf.py` binds to `0.0.0.0:$PORT` and defaults to a single worker to fit small-memory hosts (override with `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT`).
    - Ensure the `data/` directory ships with the deployment – it contains all precomputed datasets.
    - If you want the alliance/carrier-group views, also ship `T_T100_SEGMENT_ALL_CARRIER-2.csv` and `L_CARRIER_GROUP.csv` (the API will omit `/api/alliances` when they are missing).
+   - DB1B (profitability proxy) is intentionally **not** loaded by default on startup to avoid exceeding 512Mi instances. Enable it only on larger instances via `ENABLE_BTS_PROFITABILITY=1`.
 
 4. **Example: Render Web Service**
    - New Web Service → select this repository.
    - Build command: `pip install -r requirements.txt`.
-   - Start command: `gunicorn backend.app:app --bind 0.0.0.0:$PORT`.
+   - Start command: `gunicorn backend.app:app --config gunicorn.conf.py`.
+   - Alternatively: create the service via Render Blueprint using `render.yaml` in this repo.
    - Environment variables:  
      `PYTHON_VERSION=3.11.6` (optional but keeps parity with local runs).  
+     `WEB_CONCURRENCY=1` (recommended for Render free tier; higher values multiply RAM usage).  
      `CORS_ALLOW_ORIGINS=https://<your-custom-domain>` (comma-separated list; only needed when you want stricter control, because the default now permits localhost plus any `*.vercel.app` domain).  
      `CORS_ALLOW_ORIGIN_REGEXES=https://(.+\.)?example\.com` (optional comma-separated regex list; defaults to `https://(.+\.)?vercel\.app` so any Vercel preview/production site can reach the API).
    - Once live, note the service URL; the API surface is exposed at `<service-url>/api/...`.
@@ -78,4 +82,4 @@ make asm-check
 
 `scripts/check_asm_quality.py` is CI-friendly: it prints alerts for each airline and exits with status 1 when `--fail-on-alert` is present. Run the command after generating fresh ASM summaries in your pipeline to stop regressions before they ship.
 
-With both services online, the frontend will call `GET /api/airlines` for autocomplete and `POST /api/run` for the full analysis pipeline.
+With both services online, the frontend will call `GET /api/airlines` for autocomplete and `POST /api/analysis` (plus `POST /api/alliance` for carrier-group views) for the full analysis pipeline.

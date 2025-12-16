@@ -1,4 +1,5 @@
 import calendar
+import os
 import json
 import re
 from pathlib import Path
@@ -812,10 +813,82 @@ class DataStore:
 
         return {}
 
+    def _load_routes_from_bts_t100(
+        self,
+        path: Path,
+        *,
+        rolling_quarters: int = 4,
+        domestic_only: bool = False,
+    ) -> pd.DataFrame:
+        """
+        Build the canonical routes table from a processed BTS T-100 dataset.
+
+        Expected input is a "tidy" quarterly dataset (CSV or Parquet) with columns that
+        can be canonicalized by `src.bts_ingest.load_t100` (carrier/origin/destination/seats/passengers/distance).
+        """
+        from .bts_ingest import load_t100
+
+        df = load_t100(str(path), rolling_quarters=rolling_quarters, domestic_only=domestic_only)
+        if df is None or df.empty:
+            raise ValueError(f"Processed T-100 dataset is empty: {path}")
+
+        required = {"carrier", "origin", "destination", "seats"}
+        missing = sorted(required - set(df.columns))
+        if missing:
+            raise ValueError(f"Processed T-100 dataset missing columns: {', '.join(missing)}")
+
+        for col in ("carrier", "origin", "destination"):
+            df[col] = (
+                df[col]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .str.upper()
+                .replace({"\\N": ""})
+            )
+
+        for col in ("seats", "passengers", "distance"):
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+        if "passengers" not in df.columns:
+            df["passengers"] = 0.0
+        if "distance" not in df.columns:
+            df["distance"] = 0.0
+
+        grouped = (
+            df.groupby(["carrier", "origin", "destination"], dropna=False)
+            .agg(
+                Total=("seats", "sum"),
+                Passengers=("passengers", "sum"),
+                Distance=("distance", "mean"),
+            )
+            .reset_index()
+        )
+
+        routes = grouped.rename(
+            columns={
+                "carrier": "Airline Code",
+                "origin": "Source airport",
+                "destination": "Destination airport",
+                "Distance": "Distance (reported)",
+            }
+        )
+
+        routes["Equipment"] = ""
+        routes["Seat Source"] = "t100_segments"
+        return routes
+
     def load_data(self):
         """Load BTS T-100 routes plus supporting lookup tables."""
         base_dir = Path(__file__).resolve().parents[1]
         self.carrier_group_lookup = self._load_carrier_group_lookup(base_dir)
+
+        processed_t100_candidates = [
+            self.data_dir / "bts_t100.parquet",
+            self.data_dir / "bts_t100.csv",
+        ]
+        processed_t100_path = next((path for path in processed_t100_candidates if path.exists()), None)
+
         t100_segments_path = base_dir / "T_T100_SEGMENT_ALL_CARRIER.csv"
         if not t100_segments_path.exists():
             gz_path = base_dir / "T_T100_SEGMENT_ALL_CARRIER.csv.gz"
@@ -824,7 +897,14 @@ class DataStore:
         self.routes = None
         route_source_path = None
 
-        if t100_segments_path.exists():
+        if processed_t100_path is not None:
+            try:
+                self.routes = self._load_routes_from_bts_t100(processed_t100_path, rolling_quarters=4, domestic_only=False)
+                route_source_path = processed_t100_path
+            except Exception:
+                self.routes = None
+
+        if self.routes is None and t100_segments_path.exists():
             try:
                 self.routes = self._load_routes_from_t100_segments(t100_segments_path, rolling_quarters=4, domestic_only=False)
                 route_source_path = t100_segments_path
@@ -833,7 +913,8 @@ class DataStore:
 
         if self.routes is None:
             raise FileNotFoundError(
-                "Missing BTS T-100 routes data. Provide `T_T100_SEGMENT_ALL_CARRIER.csv` "
+                "Missing BTS T-100 routes data. Provide either `data/bts_t100.parquet` "
+                "(recommended) or `T_T100_SEGMENT_ALL_CARRIER.csv` "
                 "(or the gzipped `T_T100_SEGMENT_ALL_CARRIER.csv.gz`) in the repo root."
             )
 
@@ -916,41 +997,50 @@ class DataStore:
         ## print(self.aircraft_config.head())
         self.airport_lookup = self._load_airport_lookup()
 
-        # Opportunistically load BTS data if local caches exist (rolling 4Q, domestic).
-        default_db1b = self.data_dir / "db1b.parquet"
-        default_db1b_csv = self.data_dir / "db1b.csv"
-        db1b_processed_dir = Path(__file__).resolve().parents[1] / "datasets" / "db1b" / "processed"
-        db1b_processed_parquet = db1b_processed_dir / "db1b.parquet"
-        db1b_processed_csv = db1b_processed_dir / "db1b.csv"
+        # DB1B profitability is optional and intentionally disabled by default.
+        # The raw DB1B parquet can exceed 512Mi RAM when fully materialized.
+        self.bts_db1b = None
+        self.bts_profitability = None
+        self.t100_segments = None
 
-        db1b_path = next(
-            (p for p in (default_db1b, default_db1b_csv, db1b_processed_parquet, db1b_processed_csv) if p.exists()),
-            None,
-        )
-        if db1b_path:
-            try:
-                from .bts_ingest import load_db1b, build_profitability_table
-                self.bts_db1b = load_db1b(str(db1b_path), rolling_quarters=4, domestic_only=True)
-                if self.bts_db1b is not None and not self.bts_db1b.empty:
-                    t100_for_profit = pd.DataFrame(
-                        {
-                            "carrier": self.routes.get("Airline Code"),
-                            "origin": self.routes.get("Source airport"),
-                            "destination": self.routes.get("Destination airport"),
-                            "departures": 0.0,
-                            "seats": pd.to_numeric(self.routes.get("Total"), errors="coerce").fillna(0.0),
-                            "passengers": pd.to_numeric(self.routes.get("Passengers"), errors="coerce").fillna(0.0),
-                            "distance": pd.to_numeric(self.routes.get("Distance (reported)"), errors="coerce").fillna(0.0),
-                        }
-                    )
-                    self.t100_segments = t100_for_profit
-                    try:
-                        self.bts_profitability = build_profitability_table(self.t100_segments, self.bts_db1b)
-                    except Exception:
-                        self.bts_profitability = None
-            except Exception:
-                self.bts_db1b = None
-                self.bts_profitability = None
+        enable_profitability = os.environ.get("ENABLE_BTS_PROFITABILITY", "").strip().lower() in {"1", "true", "yes", "y"}
+        if enable_profitability:
+            default_db1b = self.data_dir / "db1b.parquet"
+            default_db1b_csv = self.data_dir / "db1b.csv"
+            db1b_processed_dir = Path(__file__).resolve().parents[1] / "datasets" / "db1b" / "processed"
+            db1b_processed_parquet = db1b_processed_dir / "db1b.parquet"
+            db1b_processed_csv = db1b_processed_dir / "db1b.csv"
+
+            db1b_path = next(
+                (p for p in (default_db1b, default_db1b_csv, db1b_processed_parquet, db1b_processed_csv) if p.exists()),
+                None,
+            )
+            if db1b_path:
+                try:
+                    from .bts_ingest import load_db1b, build_profitability_table
+
+                    self.bts_db1b = load_db1b(str(db1b_path), rolling_quarters=4, domestic_only=True)
+                    if self.bts_db1b is not None and not self.bts_db1b.empty:
+                        t100_for_profit = pd.DataFrame(
+                            {
+                                "carrier": self.routes.get("Airline Code"),
+                                "origin": self.routes.get("Source airport"),
+                                "destination": self.routes.get("Destination airport"),
+                                "departures": 0.0,
+                                "seats": pd.to_numeric(self.routes.get("Total"), errors="coerce").fillna(0.0),
+                                "passengers": pd.to_numeric(self.routes.get("Passengers"), errors="coerce").fillna(0.0),
+                                "distance": pd.to_numeric(self.routes.get("Distance (reported)"), errors="coerce").fillna(0.0),
+                            }
+                        )
+                        self.t100_segments = t100_for_profit
+                        try:
+                            self.bts_profitability = build_profitability_table(self.t100_segments, self.bts_db1b)
+                        except Exception:
+                            self.bts_profitability = None
+                except Exception:
+                    self.bts_db1b = None
+                    self.bts_profitability = None
+                    self.t100_segments = None
         
 
     def convert_aircraft_config_to_df(self, config_dict):

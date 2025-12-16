@@ -14,10 +14,12 @@ def main() -> None:
     ]
     missing = [str(path) for path in required if not path.exists()]
 
+    t100_processed_parquet = Path("data/bts_t100.parquet")
+    t100_processed_csv = Path("data/bts_t100.csv")
     t100_csv = Path("T_T100_SEGMENT_ALL_CARRIER.csv")
     t100_gz = Path("T_T100_SEGMENT_ALL_CARRIER.csv.gz")
-    if not (t100_csv.exists() or t100_gz.exists()):
-        missing.append("T_T100_SEGMENT_ALL_CARRIER.csv(.gz)")
+    if not (t100_processed_parquet.exists() or t100_processed_csv.exists() or t100_csv.exists() or t100_gz.exists()):
+        missing.append("data/bts_t100.parquet (or T_T100_SEGMENT_ALL_CARRIER.csv(.gz))")
     if missing:
         raise SystemExit(
             "Missing required data files:\n- " + "\n- ".join(missing)

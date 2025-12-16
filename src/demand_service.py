@@ -4,12 +4,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 
 from src.demand_analysis import (
     BIG3_AIRPORTS,
     ConcentrationStats,
-    aggregate_market_totals,
     build_market_quarterly,
     compute_concentration,
     load_domestic_demand_mart,
@@ -41,9 +41,9 @@ class DemandMartCache:
     mart_path: Optional[Path] = None
     mart_mtime_ns: int = 0
     mart: Optional[pd.DataFrame] = None
-    market_quarterly: Dict[Tuple[int, bool, int], pd.DataFrame] = field(default_factory=dict)
     market_totals: Dict[Tuple[int, bool, int], pd.DataFrame] = field(default_factory=dict)
     stability: Dict[Tuple[int, bool, int], pd.DataFrame] = field(default_factory=dict)
+    max_cache_entries: int = 4
 
     def _resolve_mart_path(self, override: Optional[Path] = None) -> Path:
         if override is not None:
@@ -70,39 +70,102 @@ class DemandMartCache:
         if self.mart is None or mtime != self.mart_mtime_ns:
             self.mart = load_domestic_demand_mart(path)
             self.mart_mtime_ns = mtime
-            self.market_quarterly.clear()
             self.market_totals.clear()
             self.stability.clear()
         return self.mart
 
-    def get_market_quarterly(self, *, since_year: int, directional: bool, mart_path: Optional[Path] = None) -> pd.DataFrame:
-        mart = self.get_mart(mart_path=mart_path)
-        key = (int(since_year), bool(directional), int(self.mart_mtime_ns))
-        cached = self.market_quarterly.get(key)
-        if cached is not None:
-            return cached
-        built = build_market_quarterly(mart, directional=directional, since_year=since_year)
-        self.market_quarterly[key] = built
-        return built
+    def _prune_cache(self, cache: Dict[Tuple[int, bool, int], pd.DataFrame]) -> None:
+        limit = max(0, int(self.max_cache_entries))
+        if limit == 0:
+            cache.clear()
+            return
+        while len(cache) > limit:
+            cache.pop(next(iter(cache)))
+
+    def _build_market_totals(self, mart: pd.DataFrame, *, since_year: int, directional: bool) -> pd.DataFrame:
+        required = {"year", "origin", "dest", "passengers", "avg_fare", "distance"}
+        missing = sorted(required - set(mart.columns))
+        if missing:
+            raise ValueError(f"Domestic demand mart missing required columns: {', '.join(missing)}")
+
+        years = pd.to_numeric(mart["year"], errors="coerce")
+        mask = years.notna() & (years >= int(since_year))
+
+        origin = mart["origin"].fillna("").astype(str).str.strip().str.upper()
+        dest = mart["dest"].fillna("").astype(str).str.strip().str.upper()
+        mask &= origin.ne("") & dest.ne("")
+
+        passengers = pd.to_numeric(mart["passengers"], errors="coerce").fillna(0.0)
+        avg_fare = pd.to_numeric(mart["avg_fare"], errors="coerce").fillna(0.0)
+        distance = pd.to_numeric(mart["distance"], errors="coerce").fillna(0.0)
+
+        origin_values = origin[mask].to_numpy(dtype=str)
+        dest_values = dest[mask].to_numpy(dtype=str)
+
+        if directional:
+            market_a = origin_values
+            market_b = dest_values
+        else:
+            swap = origin_values > dest_values
+            market_a = np.where(swap, dest_values, origin_values)
+            market_b = np.where(swap, origin_values, dest_values)
+
+        pax = passengers[mask].to_numpy(dtype=float)
+        revenue_proxy = pax * avg_fare[mask].to_numpy(dtype=float)
+        distance_x_pax = pax * distance[mask].to_numpy(dtype=float)
+
+        base = pd.DataFrame(
+            {
+                "market_a": market_a,
+                "market_b": market_b,
+                "passengers_total": pax,
+                "revenue_proxy": revenue_proxy,
+                "distance_x_pax": distance_x_pax,
+            }
+        )
+
+        grouped = (
+            base.groupby(["market_a", "market_b"], as_index=False)
+            .agg(
+                passengers_total=("passengers_total", "sum"),
+                revenue_proxy=("revenue_proxy", "sum"),
+                distance_x_pax=("distance_x_pax", "sum"),
+            )
+            .reset_index(drop=True)
+        )
+
+        denom = grouped["passengers_total"].where(grouped["passengers_total"] > 0, pd.NA)
+        grouped["avg_fare"] = grouped["revenue_proxy"] / denom
+        grouped["distance"] = grouped["distance_x_pax"] / denom
+        grouped["fare_per_mile"] = grouped["avg_fare"] / grouped["distance"].where(grouped["distance"] > 0, pd.NA)
+        grouped["market"] = grouped["market_a"].astype(str) + "-" + grouped["market_b"].astype(str)
+        return grouped.drop(columns=["revenue_proxy", "distance_x_pax"]).sort_values(
+            ["passengers_total", "market_a", "market_b"],
+            ascending=[False, True, True],
+            kind="mergesort",
+        ).reset_index(drop=True)
 
     def get_market_totals(self, *, since_year: int, directional: bool, mart_path: Optional[Path] = None) -> pd.DataFrame:
+        mart = self.get_mart(mart_path=mart_path)
         key = (int(since_year), bool(directional), int(self.mart_mtime_ns))
         cached = self.market_totals.get(key)
         if cached is not None:
             return cached
-        quarterly = self.get_market_quarterly(since_year=since_year, directional=directional, mart_path=mart_path)
-        totals = aggregate_market_totals(quarterly)
+        totals = self._build_market_totals(mart, since_year=since_year, directional=directional)
         self.market_totals[key] = totals
+        self._prune_cache(self.market_totals)
         return totals
 
     def get_stability(self, *, since_year: int, directional: bool, mart_path: Optional[Path] = None) -> pd.DataFrame:
+        mart = self.get_mart(mart_path=mart_path)
         key = (int(since_year), bool(directional), int(self.mart_mtime_ns))
         cached = self.stability.get(key)
         if cached is not None:
             return cached
-        quarterly = self.get_market_quarterly(since_year=since_year, directional=directional, mart_path=mart_path)
+        quarterly = build_market_quarterly(mart, directional=directional, since_year=since_year)
         stats = market_stability_analysis(quarterly)
         self.stability[key] = stats
+        self._prune_cache(self.stability)
         return stats
 
 

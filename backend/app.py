@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import threading
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -36,7 +37,30 @@ app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": cors_origins}}, supports_credentials=True)
 
 data_store = DataStore()
-data_store.load_data()
+_data_store_lock = threading.Lock()
+_data_store_loaded = False
+_data_store_error = None
+
+
+def get_data_store() -> DataStore:
+    global _data_store_loaded, _data_store_error
+    if _data_store_loaded:
+        return data_store
+    if _data_store_error is not None:
+        raise _data_store_error
+
+    with _data_store_lock:
+        if _data_store_loaded:
+            return data_store
+        try:
+            data_store.load_data()
+        except Exception as exc:
+            _data_store_error = exc
+            raise
+        _data_store_loaded = True
+        return data_store
+
+
 rate_limiter = RateLimiter.from_env()
 
 
@@ -90,12 +114,24 @@ def healthcheck():
 @app.get("/api/airlines")
 def airlines():
     query = request.args.get("query")
-    return jsonify(list_airlines(data_store, query))
+    try:
+        ds = get_data_store()
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 503
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+    return jsonify(list_airlines(ds, query))
 
 
 @app.get("/api/alliances")
 def alliances():
-    return jsonify(list_alliances(data_store))
+    try:
+        ds = get_data_store()
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 503
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+    return jsonify(list_alliances(ds))
 
 
 @app.post("/api/analysis")
@@ -107,7 +143,14 @@ def analysis():
         return jsonify({"detail": exc.errors()}), 422
 
     try:
-        result = route_analysis(data_store, request_model)
+        ds = get_data_store()
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 503
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+
+    try:
+        result = route_analysis(ds, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 
@@ -123,7 +166,14 @@ def alliance():
         return jsonify({"detail": exc.errors()}), 422
 
     try:
-        result = alliance_analysis(data_store, request_model)
+        ds = get_data_store()
+    except FileNotFoundError as exc:
+        return jsonify({"detail": str(exc)}), 503
+    except Exception as exc:
+        return jsonify({"detail": str(exc)}), 500
+
+    try:
+        result = alliance_analysis(ds, request_model)
     except AnalysisError as exc:
         return jsonify({"detail": str(exc)}), exc.status_code
 
